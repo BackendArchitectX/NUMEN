@@ -118,7 +118,8 @@ validate_port NUMEN_WEB_PORT "$WEB_PORT"
 validate_port NUMEN_API_PORT "$API_PORT"
 [[ "$WEB_PORT" != "$API_PORT" ]] || fail "NUMEN_WEB_PORT and NUMEN_API_PORT must be different."
 APP_URL="http://localhost:${WEB_PORT}"
-HEALTH_URL="${APP_URL}/api/v1/health"
+PROBE_HOST="127.0.0.1"
+HEALTH_URL="http://${PROBE_HOST}:${WEB_PORT}/api/v1/health"
 
 if health_ok "$HEALTH_URL"; then
   ok "NUMEN is already running and healthy"
@@ -164,7 +165,7 @@ done
 if [[ "$healthy" != true ]]; then
   docker compose ps || true
   docker compose logs --tail 200 || true
-  fail "Containers started, but the application health endpoint did not become ready."
+  fail "Containers are healthy, but the IPv4 loopback gateway probe failed at ${HEALTH_URL}. Check 'docker compose logs frontend backend' and verify that local security/proxy software is not blocking ${PROBE_HOST}:${WEB_PORT}."
 fi
 
 printf '\n'

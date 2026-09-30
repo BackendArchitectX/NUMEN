@@ -22,7 +22,7 @@ Double-click `start.bat`, or run:
 ./start.sh
 ```
 
-The launcher creates/repairs `.env`, generates the local database password, validates configuration and ports, starts PostgreSQL, builds the backend/frontend images, runs Flyway through backend startup, respects dependency readiness, verifies the public gateway, prints diagnostics if startup fails and opens the UI unless browser launch is disabled.
+The launcher creates/repairs `.env`, generates the local database password, validates configuration and ports, starts PostgreSQL, builds the backend/frontend images, runs Flyway through backend startup, respects dependency readiness, verifies the public gateway through the same explicit IPv4 loopback binding used by Docker, prints actionable diagnostics if startup fails and opens the UI unless browser launch is disabled.
 
 Service URLs:
 
@@ -206,7 +206,7 @@ The root launcher creates `.env` automatically from `.env.example`. The generate
 
 The one-step launchers are the supported fresh-clone path. They validate Docker/Compose, configuration, port ranges and conflicts before starting the stack. Docker Compose health checks enforce PostgreSQL → backend → frontend ordering.
 
-Running the start command again against an already healthy stack succeeds without rebuilding by default. See [docs/RUNBOOK.md](docs/RUNBOOK.md) for failure diagnostics and [docs/RECOVERY.md](docs/RECOVERY.md) for persisted-data recovery.
+Running the start command again against an already healthy stack succeeds without rebuilding by default. Startup health probes intentionally use `127.0.0.1` rather than `localhost` because the Compose host ports are deliberately IPv4-loopback bound; this avoids Windows environments that resolve `localhost` to `::1` first. Browser-facing URLs remain the friendlier `localhost` form. See [docs/RUNBOOK.md](docs/RUNBOOK.md) for failure diagnostics and [docs/RECOVERY.md](docs/RECOVERY.md) for persisted-data recovery.
 
 ## Development Workflow
 

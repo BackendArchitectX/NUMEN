@@ -72,11 +72,22 @@ function Start-DockerDesktopIfAvailable {
     return $false
 }
 
+$script:LastHealthFailure = ""
+
 function Test-AppHealthy([string]$Url) {
     try {
         $response = Invoke-RestMethod -Uri $Url -TimeoutSec 2
-        return $response.status -eq "UP" -and $response.service -eq "NUMEN"
-    } catch { return $false }
+        if ($response.status -eq "UP" -and $response.service -eq "NUMEN") {
+            $script:LastHealthFailure = ""
+            return $true
+        }
+
+        $script:LastHealthFailure = "Unexpected health response: status=$($response.status) service=$($response.service)"
+        return $false
+    } catch {
+        $script:LastHealthFailure = $_.Exception.Message
+        return $false
+    }
 }
 
 function Get-ValidatedPort([string]$Name, [string]$Default) {
@@ -114,7 +125,8 @@ $WebPort = Get-ValidatedPort "NUMEN_WEB_PORT" "5173"
 $ApiPort = Get-ValidatedPort "NUMEN_API_PORT" "8080"
 if ($WebPort -eq $ApiPort) { Fail "NUMEN_WEB_PORT and NUMEN_API_PORT must be different." }
 $AppUrl = "http://localhost:$WebPort"
-$HealthUrl = "$AppUrl/api/v1/health"
+$ProbeHost = "127.0.0.1"
+$HealthUrl = "http://$ProbeHost`:$WebPort/api/v1/health"
 
 if (Test-AppHealthy $HealthUrl) {
     Success "NUMEN is already running and healthy"
@@ -160,7 +172,8 @@ for ($i = 0; $i -lt 15; $i++) {
 if (-not $healthy) {
     docker compose ps
     docker compose logs --tail 200
-    Fail "Containers started, but the application health endpoint did not become ready."
+    $detail = if ([string]::IsNullOrWhiteSpace($script:LastHealthFailure)) { "no response details were available" } else { $script:LastHealthFailure }
+    Fail "Containers are healthy, but the IPv4 loopback gateway probe failed at $HealthUrl. Last probe result: $detail. Check 'docker compose logs frontend backend' and verify that local security/proxy software is not blocking 127.0.0.1:$WebPort."
 }
 
 Write-Host ""

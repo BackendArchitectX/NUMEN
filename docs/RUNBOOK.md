@@ -6,7 +6,7 @@ Windows: `start.bat` or `.\start.ps1`
 
 macOS/Linux: `./start.sh`
 
-The launcher performs Docker preflight checks, creates or repairs `.env`, generates a unique password when the placeholder is still present, validates port values and port separation, validates Compose, builds all images, starts the stack, verifies that the public health response identifies NUMEN, and opens the UI.
+The launcher performs Docker preflight checks, creates or repairs `.env`, generates a unique password when the placeholder is still present, validates port values and port separation, validates Compose, builds all images, starts the stack, verifies that the public health response identifies NUMEN, and opens the UI. The readiness probe uses `127.0.0.1` because Docker host ports are explicitly bound to IPv4 loopback; user-facing links continue to use `localhost`.
 
 ## Stop
 
@@ -63,6 +63,7 @@ See [`RECOVERY.md`](RECOVERY.md) for logical backup, restore, bad-release rollba
 - **Docker not running** — launcher exits before doing any work.
 - **Invalid or duplicate port configuration** — use distinct integer ports from 1–65535 in `.env`.
 - **Port already in use** — change the matching port in `.env`.
+- **Containers show healthy but startup says the public endpoint is not ready** — current launchers probe `127.0.0.1`, matching the Compose IPv4 bind. If this still occurs, run `Invoke-RestMethod http://127.0.0.1:5173/api/v1/health` on Windows (or `curl http://127.0.0.1:5173/api/v1/health` on Unix), then inspect `docker compose logs frontend backend` and check local proxy/firewall/security software.
 - **Backend unhealthy** — inspect `docker compose logs backend`.
 - **Database unhealthy** — inspect `docker compose logs db`.
 - **Source rejected** — ensure the supplied URL is public HTTP(S), uses port 80/443, contains no embedded credentials and is directly reachable without redirects. Transient network/408/429/5xx failures receive only a small bounded retry budget.
