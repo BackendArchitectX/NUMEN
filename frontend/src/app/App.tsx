@@ -13,10 +13,15 @@ export default function App() {
     <Sidebar tasks={workspace.tasks} selectedId={workspace.selectedId} totalRecords={workspace.totalRecords} onSelect={workspace.setSelectedId}/>
     <main id="main-content">
       <header>
-        <div>
+        <div className="heroCopy">
           <span className="eyebrow">AI-POWERED DATA INTELLIGENCE PLATFORM</span>
           <h1>From intent to <em>traceable data.</em></h1>
           <p>Describe what you need. NUMEN designs the workflow, collects permitted sources, validates evidence and returns a clean dataset.</p>
+          <div className="heroSignals" aria-label="Platform capabilities">
+            <span>Guarded collection</span>
+            <span>Source-backed</span>
+            <span>Live workflows</span>
+          </div>
         </div>
         <div className={`livePill ${workspace.online ? 'online' : 'offline'}`} role="status" aria-live="polite"><span aria-hidden="true"/> {workspace.online ? 'ENGINE ONLINE' : 'ENGINE OFFLINE'}</div>
       </header>

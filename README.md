@@ -68,6 +68,7 @@ NUMEN combines those steps into one managed workflow with explicit source proven
 - Bounded asynchronous execution, overload rejection and interrupted-workflow restart recovery.
 - Bounded transient source retries with backoff and jitter.
 - Genuine SSE progress updates with reconnect hints and polling fallback.
+- Premium warm-light workspace UI with a documented design-token system, responsive layout and accessible focus/motion behavior.
 - Search, quality filtering and spreadsheet-safe CSV export.
 - Stable API error codes and request correlation IDs.
 - Process-local gateway abuse controls for mutation bursts and excessive concurrent SSE streams, with deterministic HTTP 429 responses.
@@ -158,6 +159,7 @@ NUMEN/
 │   ├── API.md
 │   ├── ARCHITECTURE.md
 │   ├── DEVELOPMENT.md
+│   ├── DESIGN_SYSTEM.md
 │   ├── DEPLOYMENT.md
 │   ├── ENGINEERING_STANDARDS.md
 │   ├── PERFORMANCE.md
@@ -227,7 +229,7 @@ make reset
 
 `make quality` validates repository structure, source policy, launcher syntax and whitespace. `make test` runs backend tests plus the frontend check pipeline. `make verify` performs the complete static/backend/frontend verification path.
 
-For direct service development and debugging, see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+For direct service development and debugging, see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). The visual system is documented in [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md).
 
 ## API Documentation
 

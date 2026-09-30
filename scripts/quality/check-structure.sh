@@ -32,6 +32,7 @@ required_files=(
   docs/API.md
   docs/ARCHITECTURE.md
   docs/DEVELOPMENT.md
+  docs/DESIGN_SYSTEM.md
   docs/ENGINEERING_STANDARDS.md
   docs/RUNBOOK.md
   docs/RECOVERY.md
