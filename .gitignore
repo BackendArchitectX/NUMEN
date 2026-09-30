@@ -15,6 +15,7 @@ hs_err_pid*
 frontend/node_modules/
 frontend/dist/
 frontend/coverage/
+frontend/.test-dist/
 *.tsbuildinfo
 
 # Runtime / secrets

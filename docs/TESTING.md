@@ -21,9 +21,11 @@ Spring Boot integration tests boot the actual application context with Flyway an
 
 The default test datasource is H2 in PostgreSQL compatibility mode for fast deterministic CI. The full-stack stage below provides the PostgreSQL runtime check.
 
-## 4. Frontend build verification
+## 4. Frontend component and build verification
 
-CI installs only from `package-lock.json`, runs strict TypeScript typechecking and produces the Vite production build.
+CI installs only from `package-lock.json`, runs strict TypeScript typechecking, executes deterministic server-rendered component-state tests and produces the Vite production build.
+
+The component tests exercise meaningful presentation states without adding a browser-simulation dependency: offline and busy submission controls, accessible prompt semantics, completed-empty datasets, populated source/provenance rendering, active-vs-terminal workflow controls, progress semantics and metrics rendering. These tests intentionally complement rather than duplicate the full-stack browser-facing gateway smoke test.
 
 ## 5. Full-stack one-step smoke test
 

@@ -54,6 +54,7 @@ required_files=(
   backend/src/main/java/ai/numen/exception/IdempotencyConflictException.java
   backend/src/main/java/ai/numen/exception/UserVisibleWorkflowException.java
   frontend/src/app/AppErrorBoundary.tsx
+  frontend/tests/component-states.tsx
 )
 
 required_dirs=(
@@ -76,6 +77,7 @@ required_dirs=(
   frontend/src/services
   frontend/src/shared
   frontend/src/styles
+  frontend/tests
   docs/adr
 )
 

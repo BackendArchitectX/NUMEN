@@ -1,0 +1,131 @@
+import assert from 'node:assert/strict'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { DatasetExplorer } from '../src/components/DatasetExplorer'
+import { MetricsGrid } from '../src/components/MetricsGrid'
+import { PromptComposer } from '../src/components/PromptComposer'
+import { WorkflowPanel } from '../src/components/WorkflowPanel'
+import type { DatasetRecord, Task } from '../src/model/types'
+
+const noop = () => undefined
+
+function includes(markup: string, fragment: string, message: string) {
+  assert.ok(markup.includes(fragment), message + '\nRendered markup:\n' + markup)
+}
+
+function excludes(markup: string, fragment: string, message: string) {
+  assert.ok(!markup.includes(fragment), message + '\nRendered markup:\n' + markup)
+}
+
+const offlinePrompt = renderToStaticMarkup(
+  <PromptComposer
+    prompt="Collect traceable public intelligence"
+    busy={false}
+    online={false}
+    onPromptChange={noop}
+    onRun={noop}
+  />
+)
+includes(offlinePrompt, 'disabled=""', 'offline workflow submission must be disabled')
+includes(offlinePrompt, 'aria-busy="false"', 'idle submission must expose aria-busy=false')
+includes(offlinePrompt, 'Describe your business requirement', 'prompt composer must keep its accessible label')
+
+const busyPrompt = renderToStaticMarkup(
+  <PromptComposer
+    prompt="Collect traceable public intelligence"
+    busy={true}
+    online={true}
+    onPromptChange={noop}
+    onRun={noop}
+  />
+)
+includes(busyPrompt, 'aria-busy="true"', 'busy submission must expose aria-busy=true')
+includes(busyPrompt, 'disabled=""', 'busy submission must remain disabled')
+
+const emptyCompleted = renderToStaticMarkup(
+  <DatasetExplorer
+    records={[]}
+    status="COMPLETED"
+    query=""
+    minQuality={0}
+    onQueryChange={noop}
+    onMinQualityChange={noop}
+  />
+)
+includes(emptyCompleted, 'No records match the current filters.', 'completed empty datasets need a clear empty state')
+includes(emptyCompleted, 'Collected intelligence records and source provenance', 'dataset table needs an accessible caption')
+
+const record: DatasetRecord = {
+  id: 'record-1',
+  taskId: 'task-1',
+  title: 'Backend Engineer',
+  organization: 'Example Org',
+  location: 'Remote',
+  website: 'https://example.com',
+  sourceUrl: 'https://example.com/jobs/1',
+  sourceName: 'Example Careers',
+  sourceType: 'WEB',
+  excerpt: 'A source-backed engineering role used for deterministic component verification.',
+  qualityScore: 94.6,
+  fingerprint: 'a'.repeat(64),
+  collectedAt: '2026-09-30T00:00:00Z'
+}
+
+const populated = renderToStaticMarkup(
+  <DatasetExplorer
+    records={[record]}
+    status="COMPLETED"
+    query=""
+    minQuality={0}
+    onQueryChange={noop}
+    onMinQualityChange={noop}
+  />
+)
+includes(populated, 'Backend Engineer', 'dataset explorer must render returned records')
+includes(populated, '95%', 'quality display should round the persisted score')
+includes(populated, 'target="_blank"', 'live provenance links should open separately')
+includes(populated, 'rel="noreferrer"', 'external provenance links must suppress referrer leakage')
+
+const activeTask: Task = {
+  id: 'task-active',
+  prompt: 'Collect permitted public sources and return traceable records',
+  status: 'COLLECTING',
+  stage: 'Collecting permitted sources',
+  progress: 45,
+  recordCount: 0,
+  averageQuality: 0,
+  createdAt: '2026-09-30T00:00:00Z'
+}
+
+const activeWorkflow = renderToStaticMarkup(
+  <WorkflowPanel task={activeTask} exportUrl="#" onCancel={noop} />
+)
+includes(activeWorkflow, '>Cancel<', 'active workflows need a cancellation control')
+includes(activeWorkflow, 'aria-valuenow="45"', 'workflow progress must be exposed semantically')
+excludes(activeWorkflow, 'Export CSV', 'empty in-progress workflows must not advertise an export')
+
+const completedTask: Task = {
+  ...activeTask,
+  id: 'task-completed',
+  status: 'COMPLETED',
+  stage: 'Ready',
+  progress: 100,
+  recordCount: 3,
+  averageQuality: 92.3,
+  completedAt: '2026-09-30T00:01:00Z'
+}
+
+const completedWorkflow = renderToStaticMarkup(
+  <WorkflowPanel task={completedTask} exportUrl="/api/v1/tasks/task-completed/export.csv" onCancel={noop} />
+)
+excludes(completedWorkflow, '>Cancel<', 'terminal workflows must not expose cancellation')
+includes(completedWorkflow, 'Export CSV', 'completed workflows with records need export access')
+includes(completedWorkflow, 'aria-valuenow="100"', 'completed workflow progress must be 100')
+
+const metrics = renderToStaticMarkup(
+  <MetricsGrid workflows={4} completed={3} records={12} averageQuality={91} />
+)
+includes(metrics, 'WORKFLOWS', 'metrics grid should expose workflow summary')
+includes(metrics, '12', 'metrics grid should expose record count')
+includes(metrics, '91%', 'metrics grid should expose measured quality')
+
+console.log('[NUMEN] frontend component-state tests passed')

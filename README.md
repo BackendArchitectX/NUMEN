@@ -44,7 +44,7 @@ On macOS the launcher also attempts to open Docker Desktop when the engine is st
 | Realtime | Server-Sent Events with reconnect hints plus polling fallback |
 | Observability | Spring Boot Actuator, Micrometer, Prometheus metrics, correlation IDs |
 | Runtime | Docker Compose v2 with health/readiness dependency ordering |
-| CI | GitHub Actions, locked frontend installs, Maven verification, full-stack smoke tests |
+| CI | GitHub Actions, locked frontend installs, deterministic component-state tests, Maven verification, full-stack smoke tests |
 
 ## Environment configuration
 
@@ -161,7 +161,7 @@ NUMEN/
 - Correlation IDs in requests, logs and API errors plus machine-readable OpenAPI at `/api/v1/openapi`
 - Actuator metrics and Prometheus registry including workflow executor activity, pool size and queue depth
 - Pluggable source-connector boundary plus SSRF controls, reserved-range/credential/non-standard-port blocking, redirect restrictions, response-size/time limits, bounded transient retries with backoff/jitter and provenance
-- React/TypeScript feature separation with production typecheck/build gates, resilient request timeouts, accessible interaction states and exact manifest versions backed by `package-lock.json`
+- React/TypeScript feature separation with strict typecheck, deterministic component-state tests, production build gates, resilient request timeouts, accessible interaction states and exact manifest versions backed by `package-lock.json`
 - Non-root containers, read-only filesystems where practical, dropped capabilities and `no-new-privileges`
 - Loopback-only host ports, CSP/security headers, immutable asset caching, bounded logs and no runtime font/CDN dependency
 - Bounded task/result reads, spreadsheet-safe CSV export and forward-only database hardening migrations
@@ -175,7 +175,7 @@ The origin repository is intentionally maintained with **exactly one persistent 
 
 ## Verification model
 
-A green `main` run requires repository policy checks, Bash/PowerShell launcher parsing, backend unit/integration verification, strict TypeScript checks, production frontend build, Docker Compose validation and a full-stack test that starts NUMEN through the real one-step launcher. The full-stack test also creates a workflow, verifies idempotent replay, waits for completion, validates persisted provenance, exports CSV and verifies a second idempotent startup.
+A green `main` run requires repository policy checks, Bash/PowerShell launcher parsing, backend unit/integration verification, strict TypeScript checks, deterministic frontend component-state tests, production frontend build, Docker Compose validation and a full-stack test that starts NUMEN through the real one-step launcher. The full-stack test also creates a workflow, verifies idempotent replay, waits for completion, validates persisted provenance, exports CSV and verifies a second idempotent startup.
 
 No throughput, latency, concurrency or uptime claims are published without measurement.
 

@@ -12,8 +12,9 @@
     "dev": "vite",
     "typecheck": "tsc -b --pretty false",
     "build": "tsc -b && vite build",
-    "check": "npm run typecheck && npm run build",
-    "preview": "vite preview"
+    "check": "npm run typecheck && npm run test:components && npm run build",
+    "preview": "vite preview",
+    "test:components": "vite build --ssr tests/component-states.tsx --outDir .test-dist --emptyOutDir && node .test-dist/component-states.js"
   },
   "dependencies": {
     "lucide-react": "1.48.0",
