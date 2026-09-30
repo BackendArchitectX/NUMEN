@@ -37,23 +37,24 @@ public class TaskRunner {
         CollectionTask task = tasks.findById(taskId).orElseThrow();
         try {
             task.begin();
-            advance(task, TaskStatus.PLANNING, "Interpreting requirement", 10);
+            task = advance(task, TaskStatus.PLANNING, "Interpreting requirement", 10);
+
             WorkflowPlanner.Plan plan = planner.plan(task.getPrompt());
             task.setPlanJson(objectMapper.writeValueAsString(plan));
-            advance(task, TaskStatus.PLANNING, "Designing collection workflow", 25);
+            task = advance(task, TaskStatus.PLANNING, "Designing collection workflow", 25);
             sleep(250);
             if (isCancelled(taskId)) return;
 
-            advance(task, TaskStatus.COLLECTING, "Collecting permitted sources", 45);
+            task = advance(task, TaskStatus.COLLECTING, "Collecting permitted sources", 45);
             List<DatasetRecord> collected = engine.collect(taskId, task.getPrompt(), plan);
             if (isCancelled(taskId)) return;
 
-            advance(task, TaskStatus.PROCESSING, "Validating and deduplicating", 72);
+            task = advance(task, TaskStatus.PROCESSING, "Validating and deduplicating", 72);
             records.deleteByTaskId(taskId);
             records.saveAll(collected);
             if (isCancelled(taskId)) return;
 
-            advance(task, TaskStatus.PROCESSING, "Building provenance index", 90);
+            task = advance(task, TaskStatus.PROCESSING, "Building provenance index", 90);
             double average = collected.stream().mapToDouble(DatasetRecord::getQualityScore).average().orElse(0);
             if (isCancelled(taskId)) return;
 
@@ -69,10 +70,11 @@ public class TaskRunner {
         }
     }
 
-    private void advance(CollectionTask task, TaskStatus status, String stage, int progress) {
+    private CollectionTask advance(CollectionTask task, TaskStatus status, String stage, int progress) {
         task.update(status, stage, progress);
         CollectionTask saved = tasks.save(task);
         events.publish(saved.getId(), TaskEventResponse.from(saved));
+        return saved;
     }
 
     private boolean isCancelled(UUID taskId) {
