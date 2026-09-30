@@ -4,58 +4,79 @@ import ai.numen.dto.CreateTaskRequest;
 import ai.numen.dto.DatasetRecordResponse;
 import ai.numen.dto.TaskResponse;
 import ai.numen.entity.CollectionTask;
-import ai.numen.entity.DatasetRecord;
+import ai.numen.service.DatasetExportService;
 import ai.numen.service.TaskEventHub;
 import ai.numen.service.TaskService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.nio.charset.StandardCharsets;
+import java.net.URI;
 import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
 import java.util.UUID;
 
+@Validated
 @RestController
 @RequestMapping("/api/v1/tasks")
 public class TaskController {
     private final TaskService service;
     private final TaskEventHub events;
+    private final DatasetExportService exports;
 
-    public TaskController(TaskService service, TaskEventHub events) {
+    public TaskController(TaskService service, TaskEventHub events, DatasetExportService exports) {
         this.service = service;
         this.events = events;
+        this.exports = exports;
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public TaskResponse create(@Valid @RequestBody CreateTaskRequest request) { return TaskResponse.from(service.create(request.prompt())); }
+    public ResponseEntity<TaskResponse> create(@Valid @RequestBody CreateTaskRequest request) {
+        CollectionTask task = service.create(request.prompt());
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(task.getId())
+                .toUri();
+        return ResponseEntity.status(HttpStatus.ACCEPTED)
+                .location(location)
+                .body(TaskResponse.from(task));
+    }
 
     @GetMapping
-    public List<TaskResponse> list() { return service.list().stream().map(TaskResponse::from).toList(); }
+    public List<TaskResponse> list(@RequestParam(defaultValue = "50") @Min(1) @Max(100) int limit) {
+        return service.list(limit).stream().map(TaskResponse::from).toList();
+    }
 
     @GetMapping("/{id}")
-    public TaskResponse get(@PathVariable UUID id) { return TaskResponse.from(service.get(id)); }
+    public TaskResponse get(@PathVariable UUID id) {
+        return TaskResponse.from(service.get(id));
+    }
 
     @GetMapping("/{id}/records")
-    public List<DatasetRecordResponse> records(@PathVariable UUID id,
-                                               @RequestParam(defaultValue = "") String q,
-                                               @RequestParam(defaultValue = "0") double minQuality) {
-        String needle = q.toLowerCase(Locale.ROOT).trim();
-        return service.records(id).stream()
-                .filter(record -> record.getQualityScore() >= minQuality)
-                .filter(record -> needle.isBlank() || haystack(record).contains(needle))
+    public List<DatasetRecordResponse> records(
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "") @Size(max = 128) String q,
+            @RequestParam(defaultValue = "0") @DecimalMin("0.0") @DecimalMax("100.0") double minQuality,
+            @RequestParam(defaultValue = "250") @Min(1) @Max(500) int limit) {
+        return service.records(id, q, minQuality, limit).stream()
                 .map(DatasetRecordResponse::from)
                 .toList();
     }
 
     @PostMapping("/{id}/cancel")
-    public TaskResponse cancel(@PathVariable UUID id) { return TaskResponse.from(service.cancel(id)); }
+    public TaskResponse cancel(@PathVariable UUID id) {
+        return TaskResponse.from(service.cancel(id));
+    }
 
     @GetMapping(path = "/{id}/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter events(@PathVariable UUID id) {
@@ -63,30 +84,12 @@ public class TaskController {
         return events.subscribe(id);
     }
 
-    @GetMapping(value = "/{id}/export.csv", produces = "text/csv")
+    @GetMapping(value = "/{id}/export.csv", produces = "text/csv;charset=UTF-8")
     public ResponseEntity<byte[]> export(@PathVariable UUID id) {
-        CollectionTask task = service.get(id);
-        StringBuilder csv = new StringBuilder("title,organization,location,website,source_url,source_name,source_type,quality_score,collected_at\n");
-        for (DatasetRecord record : service.records(id)) {
-            csv.append(cell(record.getTitle())).append(',')
-                    .append(cell(record.getOrganization())).append(',')
-                    .append(cell(record.getLocation())).append(',')
-                    .append(cell(record.getWebsite())).append(',')
-                    .append(cell(record.getSourceUrl())).append(',')
-                    .append(cell(record.getSourceName())).append(',')
-                    .append(cell(record.getSourceType())).append(',')
-                    .append(record.getQualityScore()).append(',')
-                    .append(record.getCollectedAt()).append('\n');
-        }
+        DatasetExportService.CsvExport export = exports.export(id);
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"numen-" + task.getId() + ".csv\"")
-                .body(csv.toString().getBytes(StandardCharsets.UTF_8));
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + export.filename() + "\"")
+                .contentType(MediaType.parseMediaType("text/csv;charset=UTF-8"))
+                .body(export.content());
     }
-
-    private static String haystack(DatasetRecord record) {
-        return String.join(" ", Objects.toString(record.getTitle(), ""), Objects.toString(record.getOrganization(), ""),
-                Objects.toString(record.getLocation(), ""), Objects.toString(record.getExcerpt(), "")).toLowerCase(Locale.ROOT);
-    }
-
-    private static String cell(String value) { return "\"" + Objects.toString(value, "").replace("\"", "\"\"") + "\""; }
 }

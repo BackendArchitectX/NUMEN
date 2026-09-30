@@ -5,13 +5,16 @@ import ai.numen.entity.CollectionTask;
 import ai.numen.entity.DatasetRecord;
 import ai.numen.entity.TaskStatus;
 import ai.numen.exception.ResourceNotFoundException;
+import ai.numen.exception.WorkflowCapacityException;
 import ai.numen.repository.CollectionTaskRepository;
 import ai.numen.repository.DatasetRecordRepository;
+import org.springframework.core.task.TaskRejectedException;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 @Service
@@ -30,21 +33,35 @@ public class TaskService {
 
     public CollectionTask create(String prompt) {
         CollectionTask task = tasks.save(new CollectionTask(UUID.randomUUID(), prompt.trim()));
-        runner.run(task.getId());
-        return task;
+        try {
+            runner.run(task.getId());
+            return task;
+        } catch (TaskRejectedException ex) {
+            task.fail("Workflow capacity is temporarily exhausted. Retry shortly.");
+            tasks.save(task);
+            throw new WorkflowCapacityException("Workflow capacity is temporarily exhausted. Retry shortly.", ex);
+        }
     }
 
-    public List<CollectionTask> list() {
-        List<CollectionTask> all = tasks.findAll();
-        all.sort(Comparator.comparing(CollectionTask::getCreatedAt).reversed());
-        return all;
+    @Transactional(readOnly = true)
+    public List<CollectionTask> list(int limit) {
+        return tasks.findAllByOrderByCreatedAtDesc(PageRequest.of(0, limit));
     }
 
+    @Transactional(readOnly = true)
     public CollectionTask get(UUID id) {
         return tasks.findById(id).orElseThrow(() -> new ResourceNotFoundException("Task not found: " + id));
     }
 
-    public List<DatasetRecord> records(UUID id) {
+    @Transactional(readOnly = true)
+    public List<DatasetRecord> records(UUID id, String query, double minQuality, int limit) {
+        get(id);
+        String normalized = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+        return records.search(id, normalized, minQuality, PageRequest.of(0, limit));
+    }
+
+    @Transactional(readOnly = true)
+    public List<DatasetRecord> allRecords(UUID id) {
         get(id);
         return records.findByTaskIdOrderByQualityScoreDesc(id);
     }

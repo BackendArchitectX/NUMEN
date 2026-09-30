@@ -1,8 +1,12 @@
 package ai.numen.repository;
 
 import ai.numen.entity.CollectionTask;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.UUID;
 
-public interface CollectionTaskRepository extends JpaRepository<CollectionTask, UUID> { }
+public interface CollectionTaskRepository extends JpaRepository<CollectionTask, UUID> {
+    List<CollectionTask> findAllByOrderByCreatedAtDesc(Pageable pageable);
+}
