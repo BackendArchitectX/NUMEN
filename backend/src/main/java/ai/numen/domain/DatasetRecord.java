@@ -5,11 +5,13 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "dataset_records", indexes = {@Index(name = "idx_records_task", columnList = "taskId")}, uniqueConstraints = @UniqueConstraint(name = "uk_task_fingerprint", columnNames = {"taskId", "fingerprint"}))
+@Table(name = "dataset_records",
+        indexes = {@Index(name = "idx_records_task", columnList = "task_id")},
+        uniqueConstraints = @UniqueConstraint(name = "uk_task_fingerprint", columnNames = {"task_id", "fingerprint"}))
 public class DatasetRecord {
     @Id
     private UUID id;
-    @Column(nullable = false)
+    @Column(name = "task_id", nullable = false)
     private UUID taskId;
     private String title;
     private String organization;

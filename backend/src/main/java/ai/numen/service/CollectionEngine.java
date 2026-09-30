@@ -45,7 +45,7 @@ public class CollectionEngine {
                 .userAgent("NUMEN/1.0 (+data-intelligence-demo)")
                 .timeout(7000)
                 .maxBodySize(1_500_000)
-                .followRedirects(true)
+                .followRedirects(false)
                 .get();
         String title = clean(doc.title());
         if (title.isBlank()) title = clean(doc.selectFirst("h1") == null ? uri.getHost() : doc.selectFirst("h1").text());

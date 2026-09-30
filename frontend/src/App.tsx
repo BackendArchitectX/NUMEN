@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import { Activity, ArrowUpRight, CheckCircle2, Database, Download, FileSearch, Gauge, Layers3, Link2, LoaderCircle, Play, Search, ShieldCheck, Sparkles, XCircle } from 'lucide-react'
 import { api } from './api'
 import type { RecordRow, Task } from './types'
 
 const examples = [
-  'Find Java backend engineering roles in India from these permitted pages: https://example.com',
+  'Find Java backend engineering roles in India and structure title, company, location, URL and source',
   'Collect sponsor opportunities for an AI developer event and structure company, location and source',
   'Build a market-intelligence dataset for cloud data platforms with source provenance'
 ]
@@ -24,10 +25,14 @@ export default function App() {
   const refresh = async () => {
     const next = await api.listTasks()
     setTasks(next)
-    if (!selectedId && next[0]) setSelectedId(next[0].id)
+    setSelectedId(current => current || next[0]?.id)
   }
 
   useEffect(() => { refresh().catch(e => setError(e.message)) }, [])
+  useEffect(() => {
+    const timer = window.setInterval(() => refresh().catch(() => {}), 2500)
+    return () => window.clearInterval(timer)
+  }, [])
 
   useEffect(() => {
     if (!selectedId) return
@@ -115,5 +120,5 @@ export default function App() {
   </div>
 }
 
-function Metric({icon,label,value,detail}:{icon:React.ReactNode,label:string,value:string,detail:string}) { return <div className="metric panel"><div className="metricIcon">{icon}</div><div><span>{label}</span><strong>{value}</strong><small>{detail}</small></div></div> }
+function Metric({icon,label,value,detail}:{icon:ReactNode,label:string,value:string,detail:string}) { return <div className="metric panel"><div className="metricIcon">{icon}</div><div><span>{label}</span><strong>{value}</strong><small>{detail}</small></div></div> }
 function clip(value:string, max:number){ return value.length > max ? value.slice(0,max) + '…' : value }

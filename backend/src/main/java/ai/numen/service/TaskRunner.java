@@ -5,7 +5,6 @@ import ai.numen.repo.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -23,7 +22,6 @@ public class TaskRunner {
     }
 
     @Async
-    @Transactional
     public void run(UUID taskId) {
         CollectionTask task = tasks.findById(taskId).orElseThrow();
         try {
@@ -42,15 +40,19 @@ public class TaskRunner {
             advance(task, TaskStatus.PROCESSING, "Validating and deduplicating", 72);
             records.deleteByTaskId(taskId);
             records.saveAll(collected);
+            if (isCancelled(taskId)) return;
             advance(task, TaskStatus.PROCESSING, "Building provenance index", 90);
             double avg = collected.stream().mapToDouble(DatasetRecord::getQualityScore).average().orElse(0);
+            if (isCancelled(taskId)) return;
             task.complete(collected.size(), Math.round(avg * 10.0) / 10.0);
             tasks.save(task);
             events.publish(taskId, snapshot(task));
         } catch (Exception ex) {
-            task.fail(ex.getMessage() == null ? "Unexpected collection failure" : ex.getMessage());
-            tasks.save(task);
-            events.publish(taskId, snapshot(task));
+            CollectionTask latest = tasks.findById(taskId).orElse(task);
+            if (latest.getStatus() == TaskStatus.CANCELLED) return;
+            latest.fail(ex.getMessage() == null ? "Unexpected collection failure" : ex.getMessage());
+            tasks.save(latest);
+            events.publish(taskId, snapshot(latest));
         }
     }
 
