@@ -16,7 +16,7 @@ Double-click `start.bat`, or run:
 .\start.ps1
 ```
 
-If Docker Desktop is installed but not running, the Windows launcher attempts to start it automatically. The launcher also creates `.env` with a unique local DB password, validates Compose, recovers stale NUMEN containers, checks port conflicts, builds all images, waits for health probes, verifies the public gateway, prints diagnostics on failure, and opens the UI.
+If Docker Desktop is installed but not running, the Windows launcher attempts to start it automatically. The launcher creates or repairs `.env`, replaces the placeholder database password with a unique local secret, validates ports and Compose, recovers stale NUMEN containers, checks port conflicts, builds all images, waits for health probes, verifies the public gateway, prints diagnostics on failure, and opens the UI.
 
 ### macOS / Linux
 
@@ -108,7 +108,7 @@ NUMEN/
 
 ## Engineering baseline
 
-- Canonical one-command runtime tested by CI using the same launcher humans run
+- Canonical one-command runtime tested by CI using the same launcher humans run, including an idempotent second start
 - Java 17 / Spring Boot with DTO/entity separation and versioned `/api/v1` contracts
 - Flyway migrations with Hibernate schema validation and optimistic locking
 - Bounded async execution with explicit overload rejection, graceful shutdown, HikariCP limits and health probes
@@ -123,7 +123,7 @@ NUMEN/
 
 ## Single-branch policy
 
-The origin repository is intentionally maintained with **exactly one persistent branch: `main`**. A dedicated branch-policy workflow removes accidental non-`main` origin branches after pushes to `main`. Dependency bots that create origin branches are disabled. External contributions use branches in forks and target `main`. See [`CONTRIBUTING.md`](CONTRIBUTING.md), [`docs/DEPENDENCY_POLICY.md`](docs/DEPENDENCY_POLICY.md), and ADR 0002.
+The origin repository is intentionally maintained with **exactly one persistent branch: `main`**. A dedicated branch-policy workflow removes accidental non-`main` origin branches on branch creation, after pushes to `main`, and through a scheduled reconciliation pass. Dependency bots that create origin branches are disabled. External contributions use branches in forks and target `main`. See [`CONTRIBUTING.md`](CONTRIBUTING.md), [`docs/DEPENDENCY_POLICY.md`](docs/DEPENDENCY_POLICY.md), and ADR 0002.
 
 ## Developer commands
 
@@ -131,7 +131,7 @@ The origin repository is intentionally maintained with **exactly one persistent 
 make start    # one-step full stack
 make down     # stop and preserve local DB data
 make logs     # follow service logs
-make quality  # repository structure + whitespace checks
+make quality  # repository structure + Bash/PowerShell launcher syntax + whitespace checks
 make test     # backend tests + frontend checks
 make verify   # complete static/backend/frontend verification
 make smoke    # start stack through canonical launcher and verify health

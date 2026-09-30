@@ -26,6 +26,8 @@ required_files=(
   scripts/runtime/start.ps1
   scripts/runtime/start.sh
   scripts/quality/check-structure.sh
+  scripts/quality/check-runtime.sh
+  scripts/quality/check-powershell.ps1
   docs/ARCHITECTURE.md
   docs/DEVELOPMENT.md
   docs/ENGINEERING_STANDARDS.md

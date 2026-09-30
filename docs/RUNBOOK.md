@@ -6,7 +6,7 @@ Windows: `start.bat` or `.\start.ps1`
 
 macOS/Linux: `./start.sh`
 
-The launcher performs Docker preflight checks, creates `.env`, validates port values and port separation, validates Compose, builds all images, starts the stack, verifies that the public health response identifies NUMEN, and opens the UI.
+The launcher performs Docker preflight checks, creates or repairs `.env`, generates a unique password when the placeholder is still present, validates port values and port separation, validates Compose, builds all images, starts the stack, verifies that the public health response identifies NUMEN, and opens the UI.
 
 ## Stop
 
@@ -45,6 +45,10 @@ Edit `.env`:
 NUMEN_WEB_PORT=5173
 NUMEN_API_PORT=8080
 ```
+
+## Idempotent restart
+
+Running the same start command again against an already-healthy NUMEN stack exits successfully without rebuilding or replacing containers. CI verifies this behavior.
 
 ## Failure modes
 

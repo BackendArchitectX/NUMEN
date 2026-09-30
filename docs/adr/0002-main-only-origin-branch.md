@@ -14,7 +14,7 @@ The repository is intended to remain visually clean, keep project history attrib
 - External contributions use short-lived branches in forks and open pull requests against `main`.
 - Maintainer work may be reviewed and integrated directly into `main`.
 - When historical feature work already exists on an origin branch, its reviewed commits are merged into `main` before the branch is removed.
-- `.github/workflows/branch-policy.yml` runs after pushes to `main` and deletes any remaining non-`main` origin refs.
+- `.github/workflows/branch-policy.yml` runs on branch creation, after pushes to `main`, on manual dispatch, and on a scheduled reconciliation pass; it deletes any remaining non-`main` origin refs.
 - Dependabot configuration is intentionally absent because its default update model creates origin branches.
 - Dependency versions are reviewed and updated deliberately on `main`.
 

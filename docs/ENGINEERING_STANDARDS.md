@@ -4,7 +4,7 @@ NUMEN is intentionally structured as a maintainable product rather than a single
 
 ## Runtime contract
 
-A fresh checkout must start with one command (`start.bat`, `./start.ps1`, or `./start.sh`) and require only Docker with Compose v2. The launcher owns environment bootstrap, stale-container recovery, image builds, dependency ordering, health verification, diagnostics, and browser opening.
+A fresh checkout must start with one command (`start.bat`, `./start.ps1`, or `./start.sh`) and require only Docker with Compose v2. The launcher owns environment bootstrap and placeholder-secret repair, stale-container recovery, image builds, dependency ordering, port validation, health verification, diagnostics, browser opening, and idempotent re-entry.
 
 ## Backend
 
@@ -33,8 +33,8 @@ A fresh checkout must start with one command (`start.bat`, `./start.ps1`, or `./
 
 ## Repository governance
 
-- `main` is the only persistent origin branch; `.github/workflows/branch-policy.yml` automatically prunes accidental non-`main` origin branches.
+- `main` is the only persistent origin branch; `.github/workflows/branch-policy.yml` prunes accidental non-`main` origin branches on creation, after main pushes, and on a scheduled reconciliation pass.
 - Automated dependency PR generation is disabled because it creates origin branches; dependency upgrades are reviewed and committed manually after CI verification.
-- CI validates repository structure, backend verification, frontend typechecking/build, Compose validity, and a complete one-step startup smoke test.
+- CI validates repository structure, Bash and PowerShell launcher syntax, backend verification, frontend typechecking/build, Compose validity, a complete one-step startup smoke test, and idempotent startup.
 - Frontend dependency manifests use exact versions; the lockfile is authoritative for reproducible CI/container installs.
 - Generated artifacts, local secrets, `.env`, `node_modules`, `target`, and `dist` must never be tracked.

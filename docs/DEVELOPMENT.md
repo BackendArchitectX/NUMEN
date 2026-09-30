@@ -16,7 +16,7 @@ macOS/Linux:
 ./start.sh
 ```
 
-The launcher performs prerequisite checks, creates a local `.env` with a unique database password, validates Compose, builds images, starts the dependency graph, waits for container health, verifies the public API through Nginx, and opens the application.
+The launcher performs prerequisite checks, creates or repairs the local `.env`, replaces placeholder database credentials with a unique local password, validates distinct port values and Compose, builds images, starts the dependency graph, waits for container health, verifies the public API through Nginx, and opens the application.
 
 ## Useful options
 
@@ -40,7 +40,8 @@ A change is complete when:
 - backend verification passes;
 - frontend typecheck and production build pass;
 - Compose configuration validates;
-- the one-step launcher starts a healthy full stack;
+- Bash and PowerShell launcher syntax checks pass;
+- the one-step launcher starts a healthy full stack and a second invocation exits cleanly against the already-healthy stack;
 - database changes include Flyway migrations;
 - operational/environment changes are documented;
 - no secrets or generated artifacts are committed.
