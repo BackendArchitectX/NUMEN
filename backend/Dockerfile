@@ -1,14 +1,16 @@
 FROM maven:3.9.9-eclipse-temurin-17 AS build
-WORKDIR /app
-COPY pom.xml .
+WORKDIR /workspace
+COPY pom.xml ./
 RUN mvn -q -DskipTests dependency:go-offline
 COPY src ./src
 RUN mvn -q -DskipTests package
 
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
-RUN addgroup -S numen && adduser -S numen -G numen
-COPY --from=build /app/target/numen-backend-0.1.0.jar app.jar
+RUN apk add --no-cache curl \
+    && addgroup -S numen \
+    && adduser -S numen -G numen
+COPY --from=build /workspace/target/numen-backend-0.1.0.jar /app/app.jar
 USER numen
 EXPOSE 8080
-ENTRYPOINT ["java","-XX:MaxRAMPercentage=75","-jar","/app/app.jar"]
+ENTRYPOINT ["java","-XX:MaxRAMPercentage=75","-XX:+ExitOnOutOfMemoryError","-jar","/app/app.jar"]

@@ -1,10 +1,18 @@
 package ai.numen.service;
 
-import ai.numen.domain.*;
-import ai.numen.repo.*;
+import ai.numen.dto.TaskEventResponse;
+import ai.numen.entity.CollectionTask;
+import ai.numen.entity.DatasetRecord;
+import ai.numen.entity.TaskStatus;
+import ai.numen.exception.ResourceNotFoundException;
+import ai.numen.repository.CollectionTaskRepository;
+import ai.numen.repository.DatasetRecordRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.*;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 public class TaskService {
@@ -14,11 +22,14 @@ public class TaskService {
     private final TaskEventHub events;
 
     public TaskService(CollectionTaskRepository tasks, DatasetRecordRepository records, TaskRunner runner, TaskEventHub events) {
-        this.tasks = tasks; this.records = records; this.runner = runner; this.events = events;
+        this.tasks = tasks;
+        this.records = records;
+        this.runner = runner;
+        this.events = events;
     }
 
     public CollectionTask create(String prompt) {
-        CollectionTask task = tasks.save(new CollectionTask(UUID.randomUUID(), prompt));
+        CollectionTask task = tasks.save(new CollectionTask(UUID.randomUUID(), prompt.trim()));
         runner.run(task.getId());
         return task;
     }
@@ -29,16 +40,22 @@ public class TaskService {
         return all;
     }
 
-    public CollectionTask get(UUID id) { return tasks.findById(id).orElseThrow(() -> new NoSuchElementException("Task not found")); }
-    public List<DatasetRecord> records(UUID id) { get(id); return records.findByTaskIdOrderByQualityScoreDesc(id); }
+    public CollectionTask get(UUID id) {
+        return tasks.findById(id).orElseThrow(() -> new ResourceNotFoundException("Task not found: " + id));
+    }
+
+    public List<DatasetRecord> records(UUID id) {
+        get(id);
+        return records.findByTaskIdOrderByQualityScoreDesc(id);
+    }
 
     @Transactional
     public CollectionTask cancel(UUID id) {
         CollectionTask task = get(id);
-        if (task.getStatus() != TaskStatus.COMPLETED && task.getStatus() != TaskStatus.FAILED) {
+        if (task.getStatus() != TaskStatus.COMPLETED && task.getStatus() != TaskStatus.FAILED && task.getStatus() != TaskStatus.CANCELLED) {
             task.cancel();
-            tasks.save(task);
-            events.publish(id, Map.of("id", id, "status", task.getStatus(), "stage", task.getStage(), "progress", task.getProgress()));
+            task = tasks.save(task);
+            events.publish(id, TaskEventResponse.from(task));
         }
         return task;
     }

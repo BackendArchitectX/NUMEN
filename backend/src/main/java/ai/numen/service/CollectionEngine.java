@@ -1,15 +1,22 @@
 package ai.numen.service;
 
-import ai.numen.domain.DatasetRecord;
+import ai.numen.config.NumenProperties;
+import ai.numen.entity.DatasetRecord;
+import ai.numen.security.UrlSafetyGuard;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HexFormat;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,56 +24,50 @@ import java.util.regex.Pattern;
 public class CollectionEngine {
     private static final Pattern URL_PATTERN = Pattern.compile("https?://[^\\s,;]+", Pattern.CASE_INSENSITIVE);
     private final UrlSafetyGuard safetyGuard;
-    private final boolean httpFetchEnabled;
-    private final int maxFetchUrls;
+    private final NumenProperties properties;
 
-    public CollectionEngine(UrlSafetyGuard safetyGuard,
-                            @Value("${numen.http-fetch-enabled:true}") boolean httpFetchEnabled,
-                            @Value("${numen.max-fetch-urls:8}") int maxFetchUrls) {
+    public CollectionEngine(UrlSafetyGuard safetyGuard, NumenProperties properties) {
         this.safetyGuard = safetyGuard;
-        this.httpFetchEnabled = httpFetchEnabled;
-        this.maxFetchUrls = maxFetchUrls;
+        this.properties = properties;
     }
 
     public List<DatasetRecord> collect(UUID taskId, String prompt, WorkflowPlanner.Plan plan) {
-        List<String> urls = extractUrls(prompt).stream().limit(maxFetchUrls).toList();
+        List<String> urls = extractUrls(prompt).stream().limit(properties.getMaxFetchUrls()).toList();
+        if (urls.isEmpty()) return deduplicate(demoRecords(taskId, plan, prompt));
+        if (!properties.isHttpFetchEnabled()) throw new IllegalStateException("Web collection is disabled for this deployment");
+
         List<DatasetRecord> records = new ArrayList<>();
-        List<String> failures = new ArrayList<>();
-
-        if (!urls.isEmpty()) {
-            if (!httpFetchEnabled) throw new IllegalStateException("Web collection is disabled for this deployment");
-            for (String raw : urls) {
-                try {
-                    records.add(fetch(taskId, raw));
-                } catch (Exception ex) {
-                    failures.add(raw);
-                }
+        for (String raw : urls) {
+            try {
+                records.add(fetch(taskId, raw));
+            } catch (Exception ignored) {
+                // Multi-source workflows continue when one permitted source is unavailable.
             }
-            if (records.isEmpty()) {
-                throw new IllegalStateException("No supplied source could be collected safely. Verify that the URL is public, reachable and permits direct HTTP access.");
-            }
-        } else {
-            records.addAll(demoRecords(taskId, plan, prompt));
         }
-
+        if (records.isEmpty()) {
+            throw new IllegalStateException("No supplied source could be collected safely. Verify that each URL is public, reachable and permits direct HTTP access.");
+        }
         return deduplicate(records);
     }
 
     private DatasetRecord fetch(UUID taskId, String raw) throws Exception {
         URI uri = safetyGuard.requirePublicHttpUrl(raw);
-        Document doc = Jsoup.connect(uri.toString())
+        Document document = Jsoup.connect(uri.toString())
                 .userAgent("NUMEN/1.0 (+data-intelligence-demo)")
-                .timeout(7000)
+                .timeout(7_000)
                 .maxBodySize(1_500_000)
                 .followRedirects(false)
                 .get();
-        String title = clean(doc.title());
-        if (title.isBlank()) title = clean(doc.selectFirst("h1") == null ? uri.getHost() : doc.selectFirst("h1").text());
-        String excerpt = clean(doc.select("meta[name=description]").attr("content"));
-        if (excerpt.isBlank()) excerpt = clean(doc.body() == null ? "" : doc.body().text());
+
+        String title = clean(document.title());
+        if (title.isBlank()) title = clean(document.selectFirst("h1") == null ? uri.getHost() : document.selectFirst("h1").text());
+        String excerpt = clean(document.select("meta[name=description]").attr("content"));
+        if (excerpt.isBlank()) excerpt = clean(document.body() == null ? "" : document.body().text());
         if (excerpt.length() > 420) excerpt = excerpt.substring(0, 420) + "…";
+
         double quality = score(title, uri.getHost(), excerpt, uri.toString());
-        return new DatasetRecord(taskId, title, uri.getHost(), "Web", uri.toString(), uri.toString(), uri.getHost(), "WEB", excerpt, quality, sha256(title + "|" + uri));
+        return new DatasetRecord(taskId, title, uri.getHost(), "Web", uri.toString(), uri.toString(), uri.getHost(),
+                "WEB", excerpt, quality, sha256(title + "|" + uri));
     }
 
     private List<String> extractUrls(String prompt) {
@@ -102,15 +103,20 @@ public class CollectionEngine {
                     {"Opportunity Signal", "SignalWorks", "India", "https://example.net/opportunities"}
             };
         };
-        List<DatasetRecord> out = new ArrayList<>();
+
+        List<DatasetRecord> records = new ArrayList<>();
         for (int i = 0; i < rows.length; i++) {
             String[] row = rows[i];
-            String excerpt = "Offline demo record generated for the interpreted " + plan.useCase().replace('_', ' ').toLowerCase(Locale.ROOT) + " workflow. Prompt context: " + compact(prompt, 120);
+            String excerpt = "Offline demo record generated for the interpreted "
+                    + plan.useCase().replace('_', ' ').toLowerCase(Locale.ROOT)
+                    + " workflow. Prompt context: " + compact(prompt, 120);
             double quality = 86 + (i % 4) * 3;
             String source = "urn:numen:demo:" + plan.useCase().toLowerCase(Locale.ROOT) + ":" + (i + 1);
-            out.add(new DatasetRecord(taskId, row[0], row[1], row[2], row[3], source, "NUMEN Demo Catalog", "DEMO", excerpt, quality, sha256(row[0] + "|" + row[1] + "|" + row[2])));
+            records.add(new DatasetRecord(taskId, row[0], row[1], row[2], row[3], source,
+                    "NUMEN Demo Catalog", "DEMO", excerpt, quality,
+                    sha256(row[0] + "|" + row[1] + "|" + row[2])));
         }
-        return out;
+        return records;
     }
 
     private List<DatasetRecord> deduplicate(List<DatasetRecord> records) {
@@ -119,21 +125,26 @@ public class CollectionEngine {
         return new ArrayList<>(unique.values());
     }
 
-    private static double score(String title, String org, String excerpt, String url) {
+    private static double score(String title, String organization, String excerpt, String url) {
         int score = 55;
         if (!title.isBlank()) score += 12;
-        if (!org.isBlank()) score += 8;
+        if (!organization.isBlank()) score += 8;
         if (excerpt.length() > 80) score += 10;
         if (url.startsWith("https://")) score += 10;
         return Math.min(100, score);
     }
 
     private static String clean(String value) { return value == null ? "" : value.replaceAll("\\s+", " ").trim(); }
-    private static String compact(String value, int max) { String c = clean(value); return c.length() <= max ? c : c.substring(0, max) + "…"; }
+    private static String compact(String value, int max) {
+        String cleaned = clean(value);
+        return cleaned.length() <= max ? cleaned : cleaned.substring(0, max) + "…";
+    }
     private static String sha256(String input) {
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256").digest(input.getBytes(StandardCharsets.UTF_8));
             return HexFormat.of().formatHex(digest);
-        } catch (Exception ex) { throw new IllegalStateException(ex); }
+        } catch (Exception ex) {
+            throw new IllegalStateException("SHA-256 is unavailable", ex);
+        }
     }
 }

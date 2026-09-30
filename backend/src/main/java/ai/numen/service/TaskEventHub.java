@@ -1,9 +1,15 @@
 package ai.numen.service;
 
+import ai.numen.dto.TaskEventResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
@@ -20,7 +26,7 @@ public class TaskEventHub {
         return emitter;
     }
 
-    public void publish(UUID taskId, Object payload) {
+    public void publish(UUID taskId, TaskEventResponse payload) {
         List<SseEmitter> listeners = emitters.get(taskId);
         if (listeners == null) return;
         synchronized (listeners) {

@@ -2,12 +2,22 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   backend:
+    name: Backend · verify
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: backend
@@ -18,10 +28,12 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: maven
-      - run: mvn -B test package
+      - run: mvn -B verify
 
   frontend:
+    name: Frontend · build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: frontend
@@ -34,3 +46,25 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm install
       - run: npm run build
+
+  smoke:
+    name: Full stack · one-step smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate compose
+        run: docker compose config --quiet
+      - name: Start complete stack
+        run: docker compose up --build --detach --wait --wait-timeout 180
+      - name: Verify public entry point
+        run: |
+          curl --fail --retry 10 --retry-delay 2 http://localhost:5173/api/v1/health
+          curl --fail http://localhost:5173/healthz
+      - name: Show diagnostics on failure
+        if: failure()
+        run: docker compose logs --tail 200
+      - name: Stop stack
+        if: always()
+        run: docker compose down --volumes --remove-orphans
