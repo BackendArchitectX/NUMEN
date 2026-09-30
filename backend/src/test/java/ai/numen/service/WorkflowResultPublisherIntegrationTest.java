@@ -32,6 +32,8 @@ class WorkflowResultPublisherIntegrationTest {
         UUID taskId = UUID.randomUUID();
         CollectionTask task = new CollectionTask(taskId, "Collect a verified public dataset");
         task.begin();
+        task.update(TaskStatus.PLANNING, "Interpreting requirement", 10);
+        task.update(TaskStatus.COLLECTING, "Collecting permitted sources", 45);
         task.update(TaskStatus.PROCESSING, "Publishing verified dataset", 90);
         tasks.saveAndFlush(task);
 
