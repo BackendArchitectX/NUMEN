@@ -1,4 +1,3 @@
 #!/usr/bin/env bash
-set -euo pipefail
-echo "[NUMEN] Building and starting the platform..."
-docker compose up --build
+set -Eeuo pipefail
+exec "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/start.sh" "$@"
