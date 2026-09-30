@@ -1,15 +1,30 @@
 spring:
+  application:
+    name: numen-api
   datasource:
-    url: jdbc:h2:mem:numen;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    url: jdbc:h2:mem:numen;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
     username: sa
     password:
+  flyway:
+    enabled: true
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     open-in-view: false
   jackson:
     serialization:
       write-dates-as-timestamps: false
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+server:
+  shutdown: graceful
+  forward-headers-strategy: framework
+  compression:
+    enabled: true
+  error:
+    include-message: never
+
 management:
   endpoints:
     web:
@@ -19,9 +34,12 @@ management:
     health:
       probes:
         enabled: true
+
 numen:
   http-fetch-enabled: ${NUMEN_HTTP_FETCH_ENABLED:true}
   max-fetch-urls: ${NUMEN_MAX_FETCH_URLS:8}
+  allowed-origins: ${NUMEN_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
+
 ---
 spring:
   config:
@@ -32,6 +50,3 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update

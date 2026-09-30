@@ -1,19 +1,26 @@
 package ai.numen.service;
 
 import org.springframework.stereotype.Service;
-import java.util.*;
+
+import java.util.List;
+import java.util.Locale;
 
 @Service
 public class WorkflowPlanner {
-    public record Plan(String useCase, List<String> fields, List<String> stages, List<String> safeguards) {}
+    public record Plan(String useCase, List<String> fields, List<String> stages, List<String> safeguards) { }
 
     public Plan plan(String prompt) {
-        String p = prompt.toLowerCase(Locale.ROOT);
-        String useCase = p.contains("job") || p.contains("hiring") ? "JOB_INTELLIGENCE"
-                : p.contains("sponsor") ? "SPONSOR_DISCOVERY"
-                : p.contains("lead") || p.contains("sales") ? "LEAD_INTELLIGENCE"
-                : p.contains("market") || p.contains("competitor") ? "MARKET_INTELLIGENCE"
+        String normalized = prompt.toLowerCase(Locale.ROOT);
+        String useCase = normalized.contains("job") || normalized.contains("hiring")
+                ? "JOB_INTELLIGENCE"
+                : normalized.contains("sponsor")
+                ? "SPONSOR_DISCOVERY"
+                : normalized.contains("lead") || normalized.contains("sales")
+                ? "LEAD_INTELLIGENCE"
+                : normalized.contains("market") || normalized.contains("competitor")
+                ? "MARKET_INTELLIGENCE"
                 : "GENERAL_RESEARCH";
+
         return new Plan(
                 useCase,
                 List.of("title", "organization", "location", "website", "sourceUrl", "excerpt", "qualityScore"),
