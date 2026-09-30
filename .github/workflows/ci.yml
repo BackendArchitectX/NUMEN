@@ -29,6 +29,8 @@ jobs:
       - name: Validate whitespace in latest change
         run: git diff --check HEAD^ HEAD
       - name: Validate Compose model
+        env:
+          POSTGRES_PASSWORD: ci-compose-validation-only
         run: docker compose config --quiet
 
   backend:
