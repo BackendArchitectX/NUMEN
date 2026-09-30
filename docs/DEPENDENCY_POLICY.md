@@ -6,6 +6,9 @@ Frontend direct dependencies and build-tool dependencies are pinned to exact ver
 
 Backend versions are managed explicitly through Maven and the Spring Boot parent. Major framework/runtime upgrades are treated as architecture changes rather than automatic version bumps.
 
-Dependencies are updated manually on `main` after reviewing release notes and compatibility, then validated by the complete CI pipeline. At minimum, dependency maintenance checks Java/Spring Boot compatibility, Node/Vite/TypeScript compatibility, container base-image changes, database migration compatibility, security advisories, API breaking changes, and the one-step full-stack smoke test.
+Dependencies are updated manually on `main` after reviewing release notes and compatibility, then validated by the complete CI pipeline. Pull requests also run GitHub dependency review and fail when a newly introduced dependency has high-severity known risk. At minimum, dependency maintenance checks Java/Spring Boot compatibility, Node/Vite/TypeScript compatibility, container base-image changes, database migration compatibility, security advisories, API breaking changes, and the one-step full-stack smoke test.
 
 The single-origin-branch policy is enforced by `.github/workflows/branch-policy.yml`; dependency maintenance must not reintroduce bot-generated origin branches.
+
+
+Container base-image tags are intentionally explicit about major/runtime families while allowing patch-level security refreshes within those families. A production release process may additionally pin image digests after vulnerability review when exact byte-for-byte base-image reproducibility is required.

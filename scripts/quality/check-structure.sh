@@ -34,11 +34,14 @@ required_files=(
   docs/ENGINEERING_STANDARDS.md
   docs/RUNBOOK.md
   docs/RECOVERY.md
+  docs/DEPLOYMENT.md
+  docs/PERFORMANCE.md
   docs/SLO.md
   docs/SECURITY.md
   docs/THREAT_MODEL.md
   docs/TESTING.md
   docs/adr/0003-source-connector-boundary.md
+  docs/adr/0004-sse-for-workflow-progress.md
   .github/workflows/branch-policy.yml
   .github/workflows/dependency-review.yml
   backend/src/main/resources/db/migration/V2__runtime_hardening.sql

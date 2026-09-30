@@ -33,6 +33,36 @@ On macOS the launcher also attempts to open Docker Desktop when the engine is st
 - Stop: `./stop.sh` or `.\stop.ps1`
 - Reset local data: `./stop.sh --volumes` or `.\stop.ps1 -Volumes`
 
+## Technology stack
+
+| Area | Technology |
+| --- | --- |
+| Frontend | React 19, TypeScript 7, Vite 8, Lucide, unprivileged Nginx |
+| Backend | Java 17, Spring Boot 3.3, Spring MVC, Bean Validation, JPA/Hibernate |
+| Data | PostgreSQL 16, Flyway migrations, H2 PostgreSQL-mode integration tests |
+| Collection | Jsoup behind an explicit source-connector boundary |
+| Realtime | Server-Sent Events with reconnect hints plus polling fallback |
+| Observability | Spring Boot Actuator, Micrometer, Prometheus metrics, correlation IDs |
+| Runtime | Docker Compose v2 with health/readiness dependency ordering |
+| CI | GitHub Actions, locked frontend installs, Maven verification, full-stack smoke tests |
+
+## Environment configuration
+
+The root launcher creates `.env` from `.env.example` automatically. Defaults are safe for local use and host ports bind only to loopback.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `POSTGRES_DB` | `numen` | Local database name |
+| `POSTGRES_USER` | `numen` | Local database user |
+| `POSTGRES_PASSWORD` | generated | Unique local password created on first start |
+| `NUMEN_WEB_PORT` | `5173` | Browser/gateway port |
+| `NUMEN_API_PORT` | `8080` | Direct loopback API port |
+| `NUMEN_HTTP_FETCH_ENABLED` | `true` | Enables explicit public HTTP(S) collection |
+| `NUMEN_MAX_FETCH_URLS` | `8` | Maximum explicit source URLs per workflow |
+| `NUMEN_MAX_FETCH_ATTEMPTS` | `2` | Bounded attempts for transient source failures |
+| `NUMEN_RETRY_BASE_DELAY_MS` | `250` | Base backoff before retry jitter |
+| `NUMEN_ALLOWED_ORIGINS` | local web origins | Backend CORS allowlist |
+
 ## Architecture
 
 ```text
@@ -57,6 +87,16 @@ Spring Boot API (non-root)
         │
         └── Actuator / Micrometer / Prometheus instrumentation
 ```
+
+## API contract
+
+The HTTP API is versioned under `/api/v1`. Machine-readable OpenAPI is available at:
+
+```text
+http://localhost:5173/api/v1/openapi
+```
+
+Workflow creation accepts an optional `Idempotency-Key`. Replaying the same key and payload returns the same workflow; reusing the key with a different payload returns `409 IDEMPOTENCY_CONFLICT`. API failures use stable error codes and include the request correlation ID.
 
 ## Repository structure
 
@@ -133,6 +173,12 @@ NUMEN/
 
 The origin repository is intentionally maintained with **exactly one persistent branch: `main`**. A dedicated branch-policy workflow removes accidental non-`main` origin branches on branch creation, after pushes to `main`, and through a scheduled reconciliation pass. Dependency bots that create origin branches are disabled. External contributions use branches in forks and target `main`. See [`CONTRIBUTING.md`](CONTRIBUTING.md), [`docs/DEPENDENCY_POLICY.md`](docs/DEPENDENCY_POLICY.md), and ADR 0002.
 
+## Verification model
+
+A green `main` run requires repository policy checks, Bash/PowerShell launcher parsing, backend unit/integration verification, strict TypeScript checks, production frontend build, Docker Compose validation and a full-stack test that starts NUMEN through the real one-step launcher. The full-stack test also creates a workflow, verifies idempotent replay, waits for completion, validates persisted provenance, exports CSV and verifies a second idempotent startup.
+
+No throughput, latency, concurrency or uptime claims are published without measurement.
+
 ## Developer commands
 
 ```bash
@@ -146,9 +192,21 @@ make smoke    # start stack through canonical launcher and verify health
 make reset    # stop and delete the local DB volume
 ```
 
+## Troubleshooting
+
+The launcher fails fast and prints Compose diagnostics when startup does not become healthy. For manual diagnosis:
+
+```bash
+docker compose ps
+docker compose logs --tail 200
+docker compose logs -f backend
+```
+
+See the runbook for port conflicts, database failures, rejected sources, capacity errors and recovery procedures.
+
 ## Documentation
 
-See [Engineering Standards](docs/ENGINEERING_STANDARDS.md), [Architecture](docs/ARCHITECTURE.md), [Development](docs/DEVELOPMENT.md), [Testing](docs/TESTING.md), [Threat Model](docs/THREAT_MODEL.md), [Operations Runbook](docs/RUNBOOK.md), [Recovery](docs/RECOVERY.md), [Service-Level Indicators](docs/SLO.md), [Security](docs/SECURITY.md) and [Demo Script](docs/DEMO.md).
+See [Engineering Standards](docs/ENGINEERING_STANDARDS.md), [Architecture](docs/ARCHITECTURE.md), [Development](docs/DEVELOPMENT.md), [Testing](docs/TESTING.md), [Threat Model](docs/THREAT_MODEL.md), [Operations Runbook](docs/RUNBOOK.md), [Recovery](docs/RECOVERY.md), [Deployment](docs/DEPLOYMENT.md), [Performance](docs/PERFORMANCE.md), [Service-Level Indicators](docs/SLO.md), [Security](docs/SECURITY.md) and [Demo Script](docs/DEMO.md).
 
 ## License
 

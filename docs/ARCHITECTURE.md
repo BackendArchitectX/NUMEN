@@ -4,6 +4,20 @@
 
 NUMEN is designed around five constraints: traceability, safe collection, repeatability, operational visibility and zero mandatory paid-AI dependency.
 
+## System context
+
+```mermaid
+flowchart LR
+    U[User / Browser] -->|HTTP + SSE| G[Unprivileged Nginx\nReact + TypeScript]
+    G -->|/api/v1/*| A[Spring Boot API]
+    A --> P[(PostgreSQL)]
+    A -->|validated public HTTP(S)| E[Permitted external sources]
+    A --> M[Actuator / Micrometer]
+    A --> W[Bounded workflow executor]
+    W --> C[Source connectors]
+    C --> E
+```
+
 ## Runtime topology
 
 ```text
@@ -41,6 +55,31 @@ Docker Compose is the canonical local runtime. The browser reaches only the fron
 - `entity` — persistence model and state transitions.
 - `exception` — consistent HTTP error mapping.
 - `config` — typed configuration and cross-cutting framework setup.
+
+## Workflow request flow
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant UI as React UI
+    participant API as Spring Boot API
+    participant DB as PostgreSQL
+    participant Worker as Workflow executor
+    participant Source as Source connector
+
+    User->>UI: Submit business requirement
+    UI->>API: POST /api/v1/tasks + Idempotency-Key
+    API->>DB: Persist QUEUED task
+    API-->>UI: 202 Accepted + task id
+    API->>Worker: Dispatch bounded async work
+    UI->>API: Subscribe to SSE progress
+    Worker->>DB: Persist state transitions
+    Worker->>Source: Collect permitted sources
+    Source-->>Worker: Source-backed records
+    Worker->>DB: Atomic dataset replace + COMPLETED
+    API-->>UI: Progress events / polling fallback
+    UI->>API: GET records / export.csv
+```
 
 ## Workflow lifecycle
 
