@@ -70,6 +70,7 @@ NUMEN combines those steps into one managed workflow with explicit source proven
 - Genuine SSE progress updates with reconnect hints and polling fallback.
 - Search, quality filtering and spreadsheet-safe CSV export.
 - Stable API error codes and request correlation IDs.
+- Process-local gateway abuse controls for mutation bursts and excessive concurrent SSE streams, with deterministic HTTP 429 responses.
 - Aggregate health/readiness, Micrometer/Prometheus metrics and executor-saturation metrics.
 - One-step Docker Compose startup on Windows, macOS and Linux.
 - Backend unit/integration tests, deterministic frontend component-state tests and full-stack workflow verification.
@@ -297,7 +298,7 @@ The local Compose runtime is intentionally loopback-bound. Containers run unpriv
 
 Live collection only accepts explicitly supplied public HTTP(S) targets that pass the outbound URL policy. Redirects are disabled and response size/time are bounded. CSV export neutralizes spreadsheet-formula prefixes.
 
-This is not an internet-facing authentication platform. Authentication, tenant authorization, centralized secrets, production TLS, network-enforced egress and distributed rate limits are deployment gates, not silently assumed features.
+This is not an internet-facing authentication platform. The local gateway applies process-local mutation-rate and SSE-connection limits, but authentication, tenant authorization, centralized secrets, production TLS, network-enforced egress and distributed/tenant-aware rate limits remain deployment gates.
 
 See [SECURITY.md](SECURITY.md), [docs/SECURITY.md](docs/SECURITY.md), [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
@@ -312,7 +313,7 @@ Important non-obvious decisions are recorded under [docs/adr](docs/adr/), includ
 
 ## CI and Supply Chain
 
-Every push to `main` runs repository standards, backend verification, frontend tests/typecheck/build and the full-stack one-step smoke test. Pull requests also run dependency review and reject newly introduced high-severity dependency risk.
+Every push to `main` runs repository standards, backend verification, frontend tests/typecheck/build and the full-stack one-step smoke test. Pull requests also run dependency review and reject newly introduced high-severity dependency risk. Third-party GitHub Actions used by these workflows are pinned to reviewed commit SHAs rather than floating major tags.
 
 Frontend versions are exact in `package.json` and installs use `package-lock.json`. Backend dependency versions are controlled by Maven/Spring Boot dependency management plus explicit versions where needed. Dependency bots that create origin branches are intentionally disabled to preserve the repository's single-branch policy.
 
@@ -335,7 +336,7 @@ Typical issues and corrective actions for Docker availability, port conflicts, i
 ## Known Limitations
 
 - No built-in authentication, RBAC or multi-tenant isolation; the supplied runtime is local/loopback-oriented.
-- No distributed rate limiter or tenant quota system; bounded executor admission protects the expensive workflow path locally.
+- No distributed or tenant-aware rate limiter. The local Nginx gateway applies per-process mutation-rate and SSE-connection limits, while bounded executor admission protects the expensive workflow path.
 - HTTP collection requires explicit source URLs. NUMEN does not claim autonomous internet-wide discovery/search.
 - SSRF defenses reject unsafe targets before fetch, but DNS rebinding is a residual risk without production egress enforcement.
 - Compose is the supported local/fresh-clone runtime, not a production orchestrator.

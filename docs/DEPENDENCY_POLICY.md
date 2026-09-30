@@ -10,5 +10,7 @@ Dependencies are updated manually on `main` after reviewing release notes and co
 
 The single-origin-branch policy is enforced by `.github/workflows/branch-policy.yml`; dependency maintenance must not reintroduce bot-generated origin branches.
 
+Third-party GitHub Actions are pinned to reviewed commit SHAs with human-readable version comments. Updating an action means reviewing the release/tag, resolving its immutable commit SHA, changing the pin and rerunning the complete CI pipeline.
+
 
 Container base-image tags are intentionally explicit about major/runtime families while allowing patch-level security refreshes within those families. A production release process may additionally pin image digests after vulnerability review when exact byte-for-byte base-image reproducibility is required.

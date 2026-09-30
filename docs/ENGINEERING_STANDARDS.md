@@ -21,7 +21,7 @@ A fresh checkout must start with one command (`start.bat`, `./start.ps1`, or `./
 
 - React UI composition lives under `components/`; stateful orchestration belongs in hooks; API transport belongs in services; shared models and helpers stay independent of UI code.
 - TypeScript strict mode, unused-code checks, implicit-return checks, fallthrough checks and production builds are CI gates. Browser API calls use bounded timeouts, polling must not overlap, stale responses must not overwrite current state, and rapid repeated workflow submissions are guarded client-side in addition to server idempotency.
-- Production assets are served by an unprivileged Nginx image with CSP and other response hardening. The UI has no runtime font/CDN dependency and includes keyboard/focus/reduced-motion support.
+- Production assets are served by an unprivileged Nginx image with CSP and other response hardening. The gateway bounds request bodies, limits mutation bursts, caps concurrent SSE streams and emits deterministic 429 responses with `Retry-After`. The UI has no runtime font/CDN dependency and includes keyboard/focus/reduced-motion support.
 - The browser talks to the API through the same-origin gateway; no environment-specific API URL is hard-coded into UI components.
 
 ## Containers and operations
@@ -34,7 +34,7 @@ A fresh checkout must start with one command (`start.bat`, `./start.ps1`, or `./
 ## Repository governance
 
 - `main` is the only persistent origin branch; `.github/workflows/branch-policy.yml` prunes accidental non-`main` origin branches on creation, after main pushes, and on a scheduled reconciliation pass.
-- Automated dependency PR generation is disabled because it creates origin branches; dependency upgrades are reviewed and committed manually after CI verification. Pull requests are gated by GitHub dependency review for newly introduced high-severity dependency risk.
+- Automated dependency PR generation is disabled because it creates origin branches; dependency upgrades are reviewed and committed manually after CI verification. Pull requests are gated by GitHub dependency review for newly introduced high-severity dependency risk, and third-party workflow actions are pinned to reviewed commit SHAs.
 - CI validates repository structure, Bash and PowerShell launcher syntax, backend verification, frontend typechecking/build, Compose validity, a complete one-step startup smoke test, a real workflow/persistence/export path, and idempotent startup.
 - Frontend dependency manifests use exact versions; the lockfile is authoritative for reproducible CI/container installs.
 - Generated artifacts, local secrets, `.env`, `node_modules`, `target`, and `dist` must never be tracked.

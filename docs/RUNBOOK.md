@@ -66,4 +66,5 @@ See [`RECOVERY.md`](RECOVERY.md) for logical backup, restore, bad-release rollba
 - **Backend unhealthy** — inspect `docker compose logs backend`.
 - **Database unhealthy** — inspect `docker compose logs db`.
 - **Source rejected** — ensure the supplied URL is public HTTP(S), uses port 80/443, contains no embedded credentials and is directly reachable without redirects. Transient network/408/429/5xx failures receive only a small bounded retry budget.
-- **HTTP 429 when creating a workflow** — the bounded worker queue is full; retry after the response `Retry-After` interval.
+- **HTTP 429 `GATEWAY_RATE_LIMIT`** — the local Nginx gateway observed a mutation burst or too many concurrent SSE streams from one client. Wait for the `Retry-After` interval, reduce request concurrency, and retry.
+- **HTTP 429 `WORKFLOW_CAPACITY_EXHAUSTED`** — the bounded backend worker queue is full; retry after the response `Retry-After` interval.

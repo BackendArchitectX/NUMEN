@@ -56,9 +56,9 @@ Controls: React text rendering escapes values by default, no raw HTML rendering 
 
 Risk: excessive workflow creation can exhaust threads or memory.
 
-Controls: bounded executor pool, bounded queue, explicit rejection with HTTP 429 and `Retry-After`, bounded task/result reads, prompt-size validation and source-count limits.
+Controls: Nginx applies per-client process-local POST burst limiting and concurrent SSE connection caps, requests are body-size bounded at the gateway, the backend uses a bounded executor pool and queue with explicit HTTP 429 admission rejection, and task/result reads plus prompt/source counts are bounded.
 
-Residual risk: there is no distributed rate limiter or tenant quota in the demo deployment.
+Residual risk: gateway limits are process-local and the diagnostic backend port is loopback-accessible. There is no distributed limiter, tenant quota or production edge enforcement in the demo deployment.
 
 ### Concurrent cancellation and result publication
 

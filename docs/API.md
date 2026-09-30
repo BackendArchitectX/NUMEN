@@ -86,6 +86,8 @@ Examples of stable codes currently include:
 
 Unexpected internal failures are logged server-side while the response remains sanitized.
 
+The Nginx gateway may also return `429 GATEWAY_RATE_LIMIT` with `Retry-After: 1` when a client exceeds the local mutation burst or concurrent SSE connection limit. This response is generated before the request reaches Spring Boot.
+
 ## Correlation IDs
 
 Clients may provide `X-Correlation-ID` using the documented safe format. Invalid or missing values are replaced with a server-generated UUID. The effective ID is returned on the response and included in API error bodies and logs.
@@ -95,6 +97,10 @@ Clients may provide `X-Correlation-ID` using the documented safe format. Invalid
 The backend's documented local origins may call the direct API. Allowed request headers are explicit and include `Content-Type`, `X-Correlation-ID` and `Idempotency-Key`. The browser may read `X-Correlation-ID` and `Idempotency-Replayed` from responses.
 
 The normal Docker runtime uses the same-origin Nginx gateway, so browser requests do not require CORS in that path.
+
+## Gateway abuse controls
+
+The local gateway limits POST request bursts per client and caps concurrent SSE streams per client process. These controls are intentionally small, deterministic safeguards for the shipped local runtime rather than a claim of distributed tenant-level rate limiting. The direct loopback backend port is for diagnostics/development and does not provide the gateway's per-client limits.
 
 ## Realtime contract
 
