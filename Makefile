@@ -1,6 +1,6 @@
-.PHONY: start up down restart logs ps test verify smoke clean reset
+.PHONY: start down restart logs ps doctor quality test verify smoke reset
 
-start up:
+start:
 	./start.sh --no-browser
 
 down:
@@ -14,19 +14,26 @@ logs:
 ps:
 	docker compose ps
 
-test:
-	cd backend && mvn -B test
-	cd frontend && npm install --no-audit --no-fund && npm run typecheck && npm run build
-
-verify:
+doctor:
+	docker version
+	docker compose version
 	docker compose config --quiet
-	bash -n start.sh stop.sh scripts/runtime/start.sh scripts/runtime/stop.sh
-	cd backend && mvn -B verify
-	cd frontend && npm install --no-audit --no-fund && npm run typecheck && npm run build
+
+quality:
+	bash scripts/quality/check-structure.sh
+	git diff --check
+
+test:
+	cd backend && mvn -B --no-transfer-progress test
+	cd frontend && npm ci --ignore-scripts && npm run check
+
+verify: quality
+	cd backend && mvn -B --no-transfer-progress verify
+	cd frontend && npm ci --ignore-scripts && npm run check
 
 smoke:
 	./start.sh --no-browser
-	curl --fail http://localhost:$${NUMEN_WEB_PORT:-5173}/api/v1/health
+	curl --fail http://localhost:5173/api/v1/health
 
-clean reset:
+reset:
 	./stop.sh --volumes

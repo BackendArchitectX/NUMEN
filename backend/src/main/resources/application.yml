@@ -5,12 +5,19 @@ spring:
     url: jdbc:h2:mem:numen;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
     username: sa
     password:
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 1
+      connection-timeout: 5000
+      validation-timeout: 2000
   flyway:
     enabled: true
   jpa:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+    properties:
+      hibernate.jdbc.time_zone: UTC
   jackson:
     serialization:
       write-dates-as-timestamps: false
@@ -29,11 +36,25 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       probes:
         enabled: true
+      show-details: never
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+info:
+  app:
+    name: NUMEN
+    description: Source-backed AI data intelligence platform
+    version: 0.1.0
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%X{correlationId:-no-cid}] %logger{36} - %msg%n"
 
 numen:
   http-fetch-enabled: ${NUMEN_HTTP_FETCH_ENABLED:true}

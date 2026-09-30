@@ -56,17 +56,23 @@ port_in_use() {
   fi
 }
 
-command -v docker >/dev/null 2>&1 || fail "Docker is not installed or is not available on PATH."
-docker info >/dev/null 2>&1 || fail "Docker is installed but the Docker engine is not running."
+command -v docker >/dev/null 2>&1 || fail "Docker with Compose v2 is required."
+if ! docker info >/dev/null 2>&1; then
+  if [[ "$(uname -s)" == "Darwin" ]] && command -v open >/dev/null 2>&1; then
+    log "Docker engine is not running. Starting Docker Desktop automatically"
+    open -a Docker >/dev/null 2>&1 || true
+    for _ in $(seq 1 60); do
+      sleep 2
+      docker info >/dev/null 2>&1 && break
+    done
+  fi
+fi
+docker info >/dev/null 2>&1 || fail "Docker is installed but the engine is not running."
 docker compose version >/dev/null 2>&1 || fail "Docker Compose v2 is required."
 
 if [[ ! -f .env ]]; then
   cp .env.example .env
-  if command -v openssl >/dev/null 2>&1; then
-    password="$(openssl rand -hex 24)"
-  else
-    password="$(od -An -N24 -tx1 /dev/urandom | tr -d ' \n')"
-  fi
+  if command -v openssl >/dev/null 2>&1; then password="$(openssl rand -hex 24)"; else password="$(od -An -N24 -tx1 /dev/urandom | tr -d ' \n')"; fi
   awk -v password="$password" 'BEGIN{FS=OFS="="} $1=="POSTGRES_PASSWORD" {$2=password} {print}' .env > .env.tmp
   mv .env.tmp .env
   log "Created .env with a unique local database password"
@@ -88,16 +94,19 @@ if health_ok "$HEALTH_URL"; then
   exit 0
 fi
 
-port_in_use "$WEB_PORT" && fail "Web port $WEB_PORT is already in use. Change NUMEN_WEB_PORT in .env or stop the conflicting process."
-port_in_use "$API_PORT" && fail "API port $API_PORT is already in use. Change NUMEN_API_PORT in .env or stop the conflicting process."
-
-if [[ "$RESET" == true ]]; then
-  log "Reset requested: removing existing containers and local database volume"
-  docker compose down --volumes --remove-orphans
-fi
-
 log "Validating Docker Compose configuration"
 docker compose config --quiet
+
+if [[ "$RESET" == true ]]; then
+  log "Reset requested: removing NUMEN containers and local database volume"
+  docker compose down --volumes --remove-orphans
+else
+  log "Recovering any stale NUMEN containers while preserving database data"
+  docker compose down --remove-orphans
+fi
+
+port_in_use "$WEB_PORT" && fail "Web port $WEB_PORT is already in use. Change NUMEN_WEB_PORT in .env or stop the conflicting process."
+port_in_use "$API_PORT" && fail "API port $API_PORT is already in use. Change NUMEN_API_PORT in .env or stop the conflicting process."
 
 compose=(docker compose up --detach --remove-orphans --wait --wait-timeout 180)
 [[ "$NO_BUILD" == true ]] || compose+=(--build)
@@ -105,7 +114,7 @@ compose=(docker compose up --detach --remove-orphans --wait --wait-timeout 180)
 log "Starting PostgreSQL, Spring Boot API and React gateway"
 if ! "${compose[@]}"; then
   docker compose ps || true
-  docker compose logs --tail 160 || true
+  docker compose logs --tail 200 || true
   fail "NUMEN failed to start. Diagnostics are shown above."
 fi
 
@@ -118,7 +127,7 @@ done
 
 if [[ "$healthy" != true ]]; then
   docker compose ps || true
-  docker compose logs --tail 160 || true
+  docker compose logs --tail 200 || true
   fail "Containers started, but the application health endpoint did not become ready."
 fi
 

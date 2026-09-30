@@ -1,30 +1,18 @@
 # Contributing to NUMEN
 
-NUMEN follows a small-team production discipline: changes should preserve the one-step runtime, architectural boundaries, source traceability and safe-by-default collection model.
+NUMEN keeps **one persistent branch in the origin repository: `main`**. Do not create long-lived feature, release, dependency-bot, or maintenance branches in the origin repository.
 
-## Development contract
+For external contributions, fork the repository, create a short-lived branch in the fork, open a pull request against `main`, and delete the fork branch after the change is complete. Repository maintainers may also commit reviewed changes directly to `main` when appropriate.
 
-1. Keep controllers thin: HTTP parsing, validation and DTO mapping only.
-2. Put business workflows in services; persistence access stays in repositories.
-3. Do not expose JPA entities as public API contracts.
-4. Database changes require a forward-only Flyway migration.
-5. New external collection paths must pass through outbound URL safety controls and preserve source provenance.
-6. Frontend API calls belong in `services/`; stateful orchestration belongs in hooks; presentational UI belongs in components.
-7. New runtime configuration must be documented in `.env.example` and `docs/RUNBOOK.md`.
-8. Never commit credentials, tokens, local `.env` files, generated build output or database data.
-
-## Before opening a change
+Before submitting a change, run:
 
 ```bash
-make verify
-make smoke
+bash scripts/quality/check-structure.sh
+cd backend && mvn -B --no-transfer-progress verify
+cd ../frontend && npm ci --ignore-scripts && npm run check
+cd .. && ./start.sh --no-browser
 ```
 
-On Windows, the equivalent full-stack check is:
+Changes should preserve the one-command startup contract, DTO/entity separation, versioned APIs, Flyway-managed schema, bounded resource usage, provenance, SSRF controls, non-root containers, and CI smoke coverage.
 
-```powershell
-.\start.ps1 -NoBrowser
-.\stop.ps1
-```
-
-Use focused commit messages such as `feat:`, `fix:`, `refactor:`, `test:`, `docs:` and `chore:`. Keep each commit independently understandable and avoid unrelated formatting churn.
+Never commit `.env`, credentials, generated build outputs, IDE metadata, database volumes, or copied production data.

@@ -22,6 +22,27 @@ function Get-EnvValue([string]$Name, [string]$Default) {
     return $value
 }
 
+function Test-DockerEngine {
+    & docker info *> $null
+    return $LASTEXITCODE -eq 0
+}
+
+function Start-DockerDesktopIfAvailable {
+    $candidates = @(
+        (Join-Path $Env:ProgramFiles "Docker\Docker\Docker Desktop.exe"),
+        (Join-Path $Env:LOCALAPPDATA "Docker\Docker Desktop.exe")
+    ) | Where-Object { $_ -and (Test-Path $_) }
+
+    if (-not $candidates) { return $false }
+    Step "Docker engine is not running. Starting Docker Desktop automatically"
+    Start-Process $candidates[0] | Out-Null
+    for ($i = 0; $i -lt 60; $i++) {
+        Start-Sleep -Seconds 2
+        if (Test-DockerEngine) { return $true }
+    }
+    return $false
+}
+
 function Test-AppHealthy([string]$Url) {
     try {
         $response = Invoke-RestMethod -Uri $Url -TimeoutSec 2
@@ -31,17 +52,21 @@ function Test-AppHealthy([string]$Url) {
 
 function Assert-PortAvailable([int]$Port, [string]$Label) {
     $listeners = Get-NetTCPConnection -State Listen -LocalPort $Port -ErrorAction SilentlyContinue
-    if ($listeners) {
-        Fail "$Label port $Port is already in use. Change it in .env or stop the process using that port."
-    }
+    if ($listeners) { Fail "$Label port $Port is already in use. Change it in .env or stop the conflicting process." }
 }
 
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
-    Fail "Docker is not installed or is not available on PATH. Install Docker Desktop and retry."
+    Fail "Docker Desktop is required and docker is not available on PATH."
 }
 
-try { docker info *> $null } catch { Fail "Docker Desktop is installed but the Docker engine is not running." }
-try { docker compose version *> $null } catch { Fail "Docker Compose v2 is required. Update Docker Desktop and retry." }
+if (-not (Test-DockerEngine)) {
+    if (-not (Start-DockerDesktopIfAvailable)) {
+        Fail "Docker is installed but the engine is unavailable. Start Docker Desktop and retry."
+    }
+}
+
+& docker compose version *> $null
+if ($LASTEXITCODE -ne 0) { Fail "Docker Compose v2 is required. Update Docker Desktop and retry." }
 
 if (-not (Test-Path ".env")) {
     Copy-Item ".env.example" ".env"
@@ -63,17 +88,21 @@ if (Test-AppHealthy $HealthUrl) {
     exit 0
 }
 
-Assert-PortAvailable $WebPort "Web"
-Assert-PortAvailable $ApiPort "API"
+Step "Validating Docker Compose configuration"
+& docker compose config --quiet
+if ($LASTEXITCODE -ne 0) { Fail "docker compose configuration is invalid." }
 
 if ($Reset) {
-    Step "Reset requested: removing existing containers and local database volume"
-    docker compose down --volumes --remove-orphans
+    Step "Reset requested: removing NUMEN containers and local database volume"
+    & docker compose down --volumes --remove-orphans
+} else {
+    Step "Recovering any stale NUMEN containers while preserving database data"
+    & docker compose down --remove-orphans
 }
+if ($LASTEXITCODE -ne 0) { Fail "Unable to prepare the existing NUMEN stack." }
 
-Step "Validating Docker Compose configuration"
-docker compose config --quiet
-if ($LASTEXITCODE -ne 0) { Fail "docker compose configuration is invalid." }
+Assert-PortAvailable $WebPort "Web"
+Assert-PortAvailable $ApiPort "API"
 
 $args = @("compose", "up", "--detach", "--remove-orphans", "--wait", "--wait-timeout", "180")
 if (-not $NoBuild) { $args += "--build" }
@@ -82,7 +111,7 @@ Step "Starting PostgreSQL, Spring Boot API and React gateway"
 & docker @args
 if ($LASTEXITCODE -ne 0) {
     docker compose ps
-    docker compose logs --tail 160
+    docker compose logs --tail 200
     Fail "NUMEN failed to start. Diagnostics are shown above."
 }
 
@@ -95,7 +124,7 @@ for ($i = 0; $i -lt 15; $i++) {
 
 if (-not $healthy) {
     docker compose ps
-    docker compose logs --tail 160
+    docker compose logs --tail 200
     Fail "Containers started, but the application health endpoint did not become ready."
 }
 
@@ -110,5 +139,4 @@ Write-Host "  Reset data:  .\stop.ps1 -Volumes"
 Write-Host ""
 
 docker compose ps
-
 if (-not $NoBrowser) { Start-Process $AppUrl }
