@@ -2,11 +2,11 @@
 
 **AI-Powered Data Intelligence Platform** — natural-language intent → managed workflow → permitted-source collection → validated, deduplicated, source-backed dataset.
 
-NUMEN is a full-stack data-intelligence platform built as an industry-style product rather than a single-file demo. It converts plain-English requirements into auditable collection workflows, gathers data from explicitly permitted public HTTP(S) sources, preserves provenance, scores quality, deduplicates records, streams execution progress live, and exposes the resulting dataset through an operations console.
+NUMEN is a full-stack data-intelligence system built as an industry-style modular monolith. It turns a plain-English requirement into an auditable workflow, collects from explicitly supplied and permitted public HTTP(S) sources, preserves provenance, scores and deduplicates records, streams real backend progress to the UI and exposes the resulting dataset through a responsive operations console.
 
-## One-step start
+## Quick Start
 
-A fresh checkout needs **Docker Desktop / Docker Engine with Compose v2 only**. Java, Maven, Node.js, npm and PostgreSQL do not need to be installed locally.
+A fresh checkout requires only **Docker Desktop / Docker Engine with Docker Compose v2**. Java, Maven, Node.js, npm and PostgreSQL do not need to be installed on the host.
 
 ### Windows
 
@@ -16,94 +16,115 @@ Double-click `start.bat`, or run:
 .\start.ps1
 ```
 
-If Docker Desktop is installed but not running, the Windows launcher attempts to start it automatically. The launcher creates or repairs `.env`, replaces the placeholder database password with a unique local secret, validates ports and Compose, recovers stale NUMEN containers, checks port conflicts, builds all images, waits for health probes, verifies the public gateway, prints diagnostics on failure, and opens the UI.
-
 ### macOS / Linux
 
 ```bash
 ./start.sh
 ```
 
-On macOS the launcher also attempts to open Docker Desktop when the engine is stopped.
+The launcher creates/repairs `.env`, generates the local database password, validates configuration and ports, starts PostgreSQL, builds the backend/frontend images, runs Flyway through backend startup, respects dependency readiness, verifies the public gateway, prints diagnostics if startup fails and opens the UI unless browser launch is disabled.
 
-- Web: `http://localhost:5173`
-- API gateway: `http://localhost:5173/api/v1`
-- Direct API: `http://localhost:8080/api/v1`
-- Health: `http://localhost:5173/api/v1/health`
-- Stop: `./stop.sh` or `.\stop.ps1`
-- Reset local data: `./stop.sh --volumes` or `.\stop.ps1 -Volumes`
+Service URLs:
 
-## Technology stack
+| Service | URL |
+| --- | --- |
+| Web application | `http://localhost:5173` |
+| API through gateway | `http://localhost:5173/api/v1` |
+| OpenAPI JSON | `http://localhost:5173/api/v1/openapi` |
+| Public application health | `http://localhost:5173/api/v1/health` |
+| Direct local backend | `http://localhost:8080/api/v1` |
+| Backend readiness | `http://localhost:8080/actuator/health/readiness` |
+| Prometheus metrics | `http://localhost:8080/actuator/prometheus` |
+
+Stop while preserving local data:
+
+```bash
+./stop.sh
+```
+
+Windows:
+
+```powershell
+.\stop.ps1
+```
+
+Delete the local PostgreSQL volume as well with `./stop.sh --volumes` or `.\stop.ps1 -Volumes`.
+
+## Problem Statement
+
+Teams often need a clean, structured dataset from a small set of permitted public sources, but the manual workflow is fragmented: interpret the request, visit sources, normalize fields, deduplicate results, retain evidence and track progress separately.
+
+NUMEN combines those steps into one managed workflow with explicit source provenance and visible execution state. The current implementation intentionally supports explicit public HTTP(S) URLs supplied in the request plus clearly labelled offline demo data; it does **not** pretend to provide unrestricted autonomous web search.
+
+## Key Features
+
+- Natural-language workflow requests with deterministic planning.
+- Explicit permitted-source HTTP(S) collection behind a pluggable connector boundary.
+- SSRF and outbound URL policy, including reserved/private network, credential and non-standard-port rejection.
+- Source-backed records with fingerprints, collection timestamps and quality scores.
+- Database-backed workflow history and dataset persistence.
+- Transactional result publication, optimistic locking and database constraints for domain invariants.
+- Idempotent workflow creation with payload-conflict detection.
+- Bounded asynchronous execution, overload rejection and interrupted-workflow restart recovery.
+- Bounded transient source retries with backoff and jitter.
+- Genuine SSE progress updates with reconnect hints and polling fallback.
+- Search, quality filtering and spreadsheet-safe CSV export.
+- Stable API error codes and request correlation IDs.
+- Aggregate health/readiness, Micrometer/Prometheus metrics and executor-saturation metrics.
+- One-step Docker Compose startup on Windows, macOS and Linux.
+- Backend unit/integration tests, deterministic frontend component-state tests and full-stack workflow verification.
+
+## Technology Stack
 
 | Area | Technology |
 | --- | --- |
-| Frontend | React 19, TypeScript 7, Vite 8, Lucide, unprivileged Nginx |
+| Frontend | React 19, TypeScript 7, Vite 8, Lucide |
+| Gateway | unprivileged Nginx |
 | Backend | Java 17, Spring Boot 3.3, Spring MVC, Bean Validation, JPA/Hibernate |
-| Data | PostgreSQL 16, Flyway migrations, H2 PostgreSQL-mode integration tests |
-| Collection | Jsoup behind an explicit source-connector boundary |
-| Realtime | Server-Sent Events with reconnect hints plus polling fallback |
-| Observability | Spring Boot Actuator, Micrometer, Prometheus metrics, correlation IDs |
-| Runtime | Docker Compose v2 with health/readiness dependency ordering |
-| CI | GitHub Actions, locked frontend installs, deterministic component-state tests, Maven verification, full-stack smoke tests |
-
-## Environment configuration
-
-The root launcher creates `.env` from `.env.example` automatically. Defaults are safe for local use and host ports bind only to loopback.
-
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `POSTGRES_DB` | `numen` | Local database name |
-| `POSTGRES_USER` | `numen` | Local database user |
-| `POSTGRES_PASSWORD` | generated | Unique local password created on first start |
-| `NUMEN_WEB_PORT` | `5173` | Browser/gateway port |
-| `NUMEN_API_PORT` | `8080` | Direct loopback API port |
-| `NUMEN_HTTP_FETCH_ENABLED` | `true` | Enables explicit public HTTP(S) collection |
-| `NUMEN_MAX_FETCH_URLS` | `8` | Maximum explicit source URLs per workflow |
-| `NUMEN_MAX_FETCH_ATTEMPTS` | `2` | Bounded attempts for transient source failures |
-| `NUMEN_RETRY_BASE_DELAY_MS` | `250` | Base backoff before retry jitter |
-| `NUMEN_ALLOWED_ORIGINS` | local web origins | Backend CORS allowlist |
+| Persistence | PostgreSQL 16, Flyway |
+| Fast integration tests | H2 in PostgreSQL compatibility mode |
+| Collection | Jsoup behind `SourceConnector` |
+| Realtime | Server-Sent Events + polling recovery |
+| Observability | Actuator, Micrometer, Prometheus, correlation IDs |
+| Runtime | Docker Compose v2 |
+| CI | GitHub Actions |
 
 ## Architecture
 
 ```text
 Browser
   │
+  │  HTTP + SSE
   ▼
 Unprivileged Nginx / React + TypeScript
-  │  REST + SSE + correlation IDs
+  │
+  │  /api/v1/*
   ▼
-Spring Boot API (non-root)
-  ├── controller    versioned HTTP boundary
-  ├── dto           public API contracts
-  ├── service       workflow/use-case orchestration
-  ├── security      outbound URL/SSRF policy
-  ├── repository    persistence boundary
-  ├── entity        JPA persistence model
-  ├── exception     consistent error contracts
-  └── config        typed runtime + request infrastructure
+Spring Boot modular monolith
+  ├── controller   versioned HTTP boundary
+  ├── dto          API contracts
+  ├── domain       workflow/domain contracts
+  ├── service      use-case orchestration
+  ├── connector    source adapters
+  ├── security     outbound URL / SSRF policy
+  ├── repository   persistence boundary
+  ├── entity       JPA persistence model
+  ├── exception    stable error model
+  └── config       typed runtime / request infrastructure
         │
-        ▼
- PostgreSQL + Flyway
-        │
-        └── Actuator / Micrometer / Prometheus instrumentation
+        ├── PostgreSQL + Flyway
+        ├── bounded workflow executor
+        └── Actuator / Micrometer / Prometheus
 ```
 
-## API contract
+Detailed system and request-flow diagrams are in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-The HTTP API is versioned under `/api/v1`. Machine-readable OpenAPI is available at:
-
-```text
-http://localhost:5173/api/v1/openapi
-```
-
-Workflow creation accepts an optional `Idempotency-Key`. Replaying the same key and payload returns the same workflow; reusing the key with a different payload returns `409 IDEMPOTENCY_CONFLICT`. API failures use stable error codes and include the request correlation ID.
-
-## Repository structure
+## Repository Structure
 
 ```text
 NUMEN/
 ├── .github/
-│   ├── workflows/{ci.yml,branch-policy.yml}
+│   ├── workflows/{ci.yml,branch-policy.yml,dependency-review.yml}
 │   ├── ISSUE_TEMPLATE/
 │   ├── CODEOWNERS
 │   └── pull_request_template.md
@@ -125,6 +146,7 @@ NUMEN/
 │   └── pom.xml
 ├── frontend/
 │   ├── src/{app,components,hooks,model,services,shared,styles}/
+│   ├── tests/
 │   ├── Dockerfile
 │   └── nginx.conf
 ├── scripts/
@@ -132,69 +154,175 @@ NUMEN/
 │   └── quality/
 ├── docs/
 │   ├── adr/
+│   ├── API.md
 │   ├── ARCHITECTURE.md
 │   ├── DEVELOPMENT.md
+│   ├── DEPLOYMENT.md
 │   ├── ENGINEERING_STANDARDS.md
-│   ├── DEPENDENCY_POLICY.md
-│   ├── RUNBOOK.md
+│   ├── PERFORMANCE.md
 │   ├── RECOVERY.md
-│   ├── SLO.md
+│   ├── RUNBOOK.md
 │   ├── SECURITY.md
-│   ├── THREAT_MODEL.md
+│   ├── SLO.md
 │   ├── TESTING.md
-│   └── DEMO.md
+│   └── THREAT_MODEL.md
 ├── docker-compose.yml
+├── .env.example
 ├── start.bat / start.ps1 / start.sh
 ├── stop.ps1 / stop.sh
-├── SECURITY.md
-├── CONTRIBUTING.md
 ├── Makefile
 └── README.md
 ```
 
-## Engineering baseline
+## Prerequisites
 
-- Canonical one-command runtime tested by CI using the same launcher humans run, including an idempotent second start
-- Java 17 / Spring Boot with DTO/entity separation, explicit workflow state transitions, stable error codes, idempotent workflow creation with payload-conflict detection and versioned `/api/v1` contracts
-- Flyway migrations with Hibernate schema validation, database/domain invariants, optimistic locking and transactional workflow-result publication
-- Bounded async execution with explicit overload rejection, restart recovery for interrupted workflows, graceful shutdown, HikariCP limits and health probes
-- Correlation IDs in requests, logs and API errors plus machine-readable OpenAPI at `/api/v1/openapi`
-- Actuator metrics and Prometheus registry including workflow executor activity, pool size and queue depth
-- Pluggable source-connector boundary plus SSRF controls, reserved-range/credential/non-standard-port blocking, redirect restrictions, response-size/time limits, bounded transient retries with backoff/jitter and provenance
-- React/TypeScript feature separation with strict typecheck, deterministic component-state tests, production build gates, resilient request timeouts, accessible interaction states and exact manifest versions backed by `package-lock.json`
-- Non-root containers, read-only filesystems where practical, dropped capabilities and `no-new-privileges`
-- Loopback-only host ports, CSP/security headers, immutable asset caching, bounded logs and no runtime font/CDN dependency
-- Bounded task/result reads, spreadsheet-safe CSV export and forward-only database hardening migrations
-- Aggregate readiness/health checks and full-stack CI that creates a workflow, waits for completion, validates persisted provenance, exports CSV and re-runs the one-step launcher idempotently
-- Source-policy checks reject runtime TODO/FIXME/HACK debt, unsafe raw HTML rendering and backend stdout/stack-trace logging
-- Repository structure enforcement and full-stack one-step smoke testing in CI
+Canonical one-step runtime:
 
-## Single-branch policy
+- Docker Engine or Docker Desktop.
+- Docker Compose v2.
+- Git for cloning the repository.
 
-The origin repository is intentionally maintained with **exactly one persistent branch: `main`**. A dedicated branch-policy workflow removes accidental non-`main` origin branches on branch creation, after pushes to `main`, and through a scheduled reconciliation pass. Dependency bots that create origin branches are disabled. External contributions use branches in forks and target `main`. See [`CONTRIBUTING.md`](CONTRIBUTING.md), [`docs/DEPENDENCY_POLICY.md`](docs/DEPENDENCY_POLICY.md), and ADR 0002.
+Direct non-container backend/frontend development additionally requires the runtime versions documented in the Maven and npm manifests.
 
-## Verification model
+## Environment Variables
 
-A green `main` run requires repository policy checks, Bash/PowerShell launcher parsing, backend unit/integration verification, strict TypeScript checks, deterministic frontend component-state tests, production frontend build, Docker Compose validation and a full-stack test that starts NUMEN through the real one-step launcher. The full-stack test also creates a workflow, verifies idempotent replay, waits for completion, validates persisted provenance, exports CSV and verifies a second idempotent startup.
+The root launcher creates `.env` automatically from `.env.example`. The generated file is ignored by Git.
 
-No throughput, latency, concurrency or uptime claims are published without measurement.
+| Variable | Required from user? | Default | Purpose |
+| --- | --- | --- | --- |
+| `POSTGRES_DB` | No | `numen` | Local database name |
+| `POSTGRES_USER` | No | `numen` | Local database user |
+| `POSTGRES_PASSWORD` | No | generated on first start | Local database password |
+| `NUMEN_WEB_PORT` | No | `5173` | Loopback web/gateway port |
+| `NUMEN_API_PORT` | No | `8080` | Loopback direct API port |
+| `NUMEN_HTTP_FETCH_ENABLED` | No | `true` | Enable explicit public HTTP(S) collection |
+| `NUMEN_MAX_FETCH_URLS` | No | `8` | Maximum explicit source URLs per workflow |
+| `NUMEN_MAX_FETCH_ATTEMPTS` | No | `2` | Attempts for transient source failures |
+| `NUMEN_RETRY_BASE_DELAY_MS` | No | `250` | Base retry-backoff delay |
+| `NUMEN_ALLOWED_ORIGINS` | No | local browser origins | Direct-backend CORS allowlist |
 
-## Developer commands
+## Running the Project
+
+The one-step launchers are the supported fresh-clone path. They validate Docker/Compose, configuration, port ranges and conflicts before starting the stack. Docker Compose health checks enforce PostgreSQL → backend → frontend ordering.
+
+Running the start command again against an already healthy stack succeeds without rebuilding by default. See [docs/RUNBOOK.md](docs/RUNBOOK.md) for failure diagnostics and [docs/RECOVERY.md](docs/RECOVERY.md) for persisted-data recovery.
+
+## Development Workflow
+
+Useful root commands:
 
 ```bash
-make start    # one-step full stack
-make down     # stop and preserve local DB data
-make logs     # follow service logs
-make quality  # repository structure + Bash/PowerShell launcher syntax + whitespace checks
-make test     # backend tests + frontend checks
-make verify   # complete static/backend/frontend verification
-make smoke    # start stack through canonical launcher and verify health
-make reset    # stop and delete the local DB volume
+make start
+make down
+make logs
+make ps
+make doctor
+make quality
+make test
+make verify
+make smoke
+make reset
 ```
+
+`make quality` validates repository structure, source policy, launcher syntax and whitespace. `make test` runs backend tests plus the frontend check pipeline. `make verify` performs the complete static/backend/frontend verification path.
+
+For direct service development and debugging, see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+
+## API Documentation
+
+The API is versioned under `/api/v1`.
+
+- Contract guide: [docs/API.md](docs/API.md)
+- OpenAPI JSON: `http://localhost:5173/api/v1/openapi`
+- Stable API errors include status, code, message, path and correlation ID.
+- Workflow creation accepts `Idempotency-Key`; same key + same request replays the original task, while same key + different request returns `409 IDEMPOTENCY_CONFLICT`.
+- Direct local CORS explicitly permits the idempotency and correlation headers needed by documented clients.
+
+## Database
+
+PostgreSQL is the persistent runtime store. Flyway owns schema evolution and Hibernate runs with schema validation rather than automatic production mutation.
+
+Current migrations establish:
+
+- workflow and dataset tables;
+- foreign keys and per-task fingerprint uniqueness;
+- workflow/query indexes;
+- status, progress, quality, record-count and fingerprint constraints;
+- optional idempotency-key uniqueness.
+
+The normal startup path applies migrations automatically as the backend starts. Demo records are generated by the explicitly labelled demo connector; they are not hidden seed rows inserted directly into the database.
+
+## Realtime Behavior
+
+Workflow progress uses **Server-Sent Events** because communication is server → browser only.
+
+A new subscriber receives the current persisted task state immediately. Subsequent backend state changes emit progress events. Streams have a bounded lifetime and reconnect hints; disconnect, timeout and shutdown all clean up emitters. The frontend also performs low-frequency polling as a convergence path when a proxy/browser misses events or the network briefly disconnects.
+
+See ADR 0004 in [docs/adr](docs/adr/).
+
+## Testing
+
+The repository uses layered verification rather than one coverage percentage:
+
+- Backend unit tests for planning, URL safety, correlation behavior, CSV safety and retry policy.
+- Backend domain tests for workflow-state invariants.
+- Spring integration tests for aggregate health, transactional publication, idempotency, CORS and API/error contracts.
+- Deterministic React component-state tests for loading/disabled/empty/result/terminal workflow states and accessibility-relevant semantics.
+- Strict TypeScript checks and production frontend build.
+- Full-stack Docker test using PostgreSQL and the same one-step launcher a user runs.
+- Full-stack workflow creation, idempotent replay, async completion, persisted provenance and CSV export.
+- Idempotent second startup and clean CI shutdown.
+
+Details: [docs/TESTING.md](docs/TESTING.md).
+
+## Observability
+
+Local backend endpoints:
+
+```text
+GET http://localhost:8080/actuator/health
+GET http://localhost:8080/actuator/health/liveness
+GET http://localhost:8080/actuator/health/readiness
+GET http://localhost:8080/actuator/metrics
+GET http://localhost:8080/actuator/prometheus
+```
+
+The application exposes standard JVM/process/database-pool HTTP metrics plus NUMEN workflow executor active-thread, pool-size and queue-depth gauges. Incoming requests receive a correlation ID propagated into logs and error responses.
+
+Numeric SLO or benchmark claims are intentionally absent until measured in a representative environment. See [docs/SLO.md](docs/SLO.md) and [docs/PERFORMANCE.md](docs/PERFORMANCE.md).
+
+## Security Notes
+
+The local Compose runtime is intentionally loopback-bound. Containers run unprivileged where practical, use read-only filesystems/capability reduction, and the gateway applies CSP and other browser security headers.
+
+Live collection only accepts explicitly supplied public HTTP(S) targets that pass the outbound URL policy. Redirects are disabled and response size/time are bounded. CSV export neutralizes spreadsheet-formula prefixes.
+
+This is not an internet-facing authentication platform. Authentication, tenant authorization, centralized secrets, production TLS, network-enforced egress and distributed rate limits are deployment gates, not silently assumed features.
+
+See [SECURITY.md](SECURITY.md), [docs/SECURITY.md](docs/SECURITY.md), [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) and [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+## Architecture Decisions
+
+Important non-obvious decisions are recorded under [docs/adr](docs/adr/), including:
+
+- one-command runtime;
+- main-only origin branch policy;
+- explicit source-connector boundary;
+- SSE progress with polling fallback.
+
+## CI and Supply Chain
+
+Every push to `main` runs repository standards, backend verification, frontend tests/typecheck/build and the full-stack one-step smoke test. Pull requests also run dependency review and reject newly introduced high-severity dependency risk.
+
+Frontend versions are exact in `package.json` and installs use `package-lock.json`. Backend dependency versions are controlled by Maven/Spring Boot dependency management plus explicit versions where needed. Dependency bots that create origin branches are intentionally disabled to preserve the repository's single-branch policy.
+
+## Release and Versioning
+
+The current application version is `0.1.0`. The repository does not publish automated production releases yet. When a release is intentionally created, use a reviewed `main` revision after green CI and tag it with a conventional `vMAJOR.MINOR.PATCH` version. Do not create release tags merely to simulate release maturity.
 
 ## Troubleshooting
 
-The launcher fails fast and prints Compose diagnostics when startup does not become healthy. For manual diagnosis:
+The launcher prints the failing stage and Compose diagnostics when readiness is not reached. Common commands:
 
 ```bash
 docker compose ps
@@ -202,12 +330,30 @@ docker compose logs --tail 200
 docker compose logs -f backend
 ```
 
-See the runbook for port conflicts, database failures, rejected sources, capacity errors and recovery procedures.
+Typical issues and corrective actions for Docker availability, port conflicts, invalid environment values, database/migration failures, unhealthy services, rejected sources, SSE connectivity and capacity rejection are documented in [docs/RUNBOOK.md](docs/RUNBOOK.md).
 
-## Documentation
+## Known Limitations
 
-See [Engineering Standards](docs/ENGINEERING_STANDARDS.md), [Architecture](docs/ARCHITECTURE.md), [Development](docs/DEVELOPMENT.md), [Testing](docs/TESTING.md), [Threat Model](docs/THREAT_MODEL.md), [Operations Runbook](docs/RUNBOOK.md), [Recovery](docs/RECOVERY.md), [Deployment](docs/DEPLOYMENT.md), [Performance](docs/PERFORMANCE.md), [Service-Level Indicators](docs/SLO.md), [Security](docs/SECURITY.md) and [Demo Script](docs/DEMO.md).
+- No built-in authentication, RBAC or multi-tenant isolation; the supplied runtime is local/loopback-oriented.
+- No distributed rate limiter or tenant quota system; bounded executor admission protects the expensive workflow path locally.
+- HTTP collection requires explicit source URLs. NUMEN does not claim autonomous internet-wide discovery/search.
+- SSRF defenses reject unsafe targets before fetch, but DNS rebinding is a residual risk without production egress enforcement.
+- Compose is the supported local/fresh-clone runtime, not a production orchestrator.
+- Live-source correctness depends on the external source and does not establish truth merely because provenance exists.
+- No measured production throughput, uptime, latency or user-capacity claims are published.
+
+## Single-Branch and Contribution Policy
+
+The origin is maintained with exactly one persistent branch: `main`. A branch-policy workflow deletes accidental non-`main` origin branches on creation, after pushes to `main` and through scheduled reconciliation. External contributors use fork branches and target `main`.
+
+New project work in this repository is intended to be attributed to **BackendArchitectX** without fabricated/co-authored attribution. Historical legitimate attribution must not be rewritten for statistics.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/DEPENDENCY_POLICY.md](docs/DEPENDENCY_POLICY.md).
+
+## Contributor
+
+**BackendArchitectX**
 
 ## License
 
-MIT
+MIT. See [LICENSE](LICENSE).
