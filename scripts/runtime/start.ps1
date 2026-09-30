@@ -22,6 +22,35 @@ function Get-EnvValue([string]$Name, [string]$Default) {
     return $value
 }
 
+function Set-EnvValue([string]$Name, [string]$Value) {
+    $pattern = "^\s*$([Regex]::Escape($Name))="
+    $lines = @(Get-Content ".env")
+    $found = $false
+    $updated = foreach ($line in $lines) {
+        if ($line -match $pattern) {
+            $found = $true
+            "$Name=$Value"
+        } else {
+            $line
+        }
+    }
+    if (-not $found) { $updated += "$Name=$Value" }
+    $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+    [System.IO.File]::WriteAllLines((Join-Path $Root ".env"), [string[]]$updated, $utf8NoBom)
+}
+
+function New-LocalDatabasePassword {
+    return (([guid]::NewGuid().ToString("N") + [guid]::NewGuid().ToString("N")).Substring(0, 48))
+}
+
+function Ensure-LocalDatabasePassword {
+    $current = Get-EnvValue "POSTGRES_PASSWORD" ""
+    if ([string]::IsNullOrWhiteSpace($current) -or $current -eq "GENERATED_ON_FIRST_START") {
+        Set-EnvValue "POSTGRES_PASSWORD" (New-LocalDatabasePassword)
+        Step "Generated a unique local database password"
+    }
+}
+
 function Test-DockerEngine {
     & docker info *> $null
     return $LASTEXITCODE -eq 0
@@ -67,22 +96,19 @@ function Assert-PortAvailable([int]$Port, [string]$Label) {
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
     Fail "Docker Desktop is required and docker is not available on PATH."
 }
-
 if (-not (Test-DockerEngine)) {
     if (-not (Start-DockerDesktopIfAvailable)) {
         Fail "Docker is installed but the engine is unavailable. Start Docker Desktop and retry."
     }
 }
-
 & docker compose version *> $null
 if ($LASTEXITCODE -ne 0) { Fail "Docker Compose v2 is required. Update Docker Desktop and retry." }
 
 if (-not (Test-Path ".env")) {
     Copy-Item ".env.example" ".env"
-    $password = ([guid]::NewGuid().ToString("N") + [guid]::NewGuid().ToString("N")).Substring(0, 48)
-    (Get-Content ".env") -replace '^POSTGRES_PASSWORD=.*$', "POSTGRES_PASSWORD=$password" | Set-Content ".env"
-    Step "Created .env with a unique local database password"
+    Step "Created .env from .env.example"
 }
+Ensure-LocalDatabasePassword
 
 $WebPort = Get-ValidatedPort "NUMEN_WEB_PORT" "5173"
 $ApiPort = Get-ValidatedPort "NUMEN_API_PORT" "8080"
@@ -131,7 +157,6 @@ for ($i = 0; $i -lt 15; $i++) {
     if (Test-AppHealthy $HealthUrl) { $healthy = $true; break }
     Start-Sleep -Seconds 2
 }
-
 if (-not $healthy) {
     docker compose ps
     docker compose logs --tail 200
@@ -147,6 +172,5 @@ Write-Host "  Health:      $HealthUrl"
 Write-Host "  Stop:        .\stop.ps1"
 Write-Host "  Reset data:  .\stop.ps1 -Volumes"
 Write-Host ""
-
 docker compose ps
 if (-not $NoBrowser) { Start-Process $AppUrl }

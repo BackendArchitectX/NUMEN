@@ -17,10 +17,11 @@ ps:
 doctor:
 	docker version
 	docker compose version
-	docker compose config --quiet
+	POSTGRES_PASSWORD=doctor-compose-validation-only docker compose config --quiet
 
 quality:
 	bash scripts/quality/check-structure.sh
+	bash scripts/quality/check-runtime.sh
 	git diff --check
 
 test:
@@ -28,12 +29,16 @@ test:
 	cd frontend && npm ci --ignore-scripts && npm run check
 
 verify: quality
+	POSTGRES_PASSWORD=verify-compose-validation-only docker compose config --quiet
 	cd backend && mvn -B --no-transfer-progress verify
 	cd frontend && npm ci --ignore-scripts && npm run check
 
 smoke:
 	./start.sh --no-browser
-	curl --fail http://localhost:5173/api/v1/health
+	@WEB_PORT="$$(awk -F= '/^NUMEN_WEB_PORT=/{print $$2; exit}' .env | tr -d '[:space:]')"; \
+	WEB_PORT="$$${WEB_PORT:-5173}"; \
+	curl --fail "http://localhost:$$${WEB_PORT}/api/v1/health"
+	./start.sh --no-browser --no-build
 
 reset:
 	./stop.sh --volumes

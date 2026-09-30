@@ -3,6 +3,9 @@ name: Branch Policy
 on:
   push:
     branches: [main]
+  create:
+  schedule:
+    - cron: '17 3 * * *'
   workflow_dispatch:
 
 permissions:
@@ -15,7 +18,7 @@ concurrency:
 jobs:
   enforce-main-only:
     name: Enforce main-only origin
-    if: github.repository == 'BackendArchitectX/NUMEN' && github.ref == 'refs/heads/main'
+    if: github.repository == 'BackendArchitectX/NUMEN'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -25,25 +28,22 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-
           mapfile -t branches < <(
             gh api --paginate "repos/${GITHUB_REPOSITORY}/branches?per_page=100" --jq '.[].name'
           )
-
           for branch in "${branches[@]}"; do
             [[ "$branch" == "main" ]] && continue
             echo "Deleting non-main origin branch: $branch"
-            gh api --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/${branch}"
+            encoded_branch="$(jq -rn --arg value "$branch" '$value|@uri')"
+            gh api --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/${encoded_branch}"
           done
-
           remaining="$(
-            gh api --paginate "repos/${GITHUB_REPOSITORY}/branches?per_page=100"               --jq '.[] | select(.name != "main") | .name'
+            gh api --paginate "repos/${GITHUB_REPOSITORY}/branches?per_page=100" \
+              --jq '.[] | select(.name != "main") | .name'
           )"
-
           if [[ -n "$remaining" ]]; then
             echo "Non-main branches still exist:"
             printf '%s\n' "$remaining"
             exit 1
           fi
-
           echo "Branch policy satisfied: main is the only origin branch."

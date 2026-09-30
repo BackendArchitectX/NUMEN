@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+umask 077
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
@@ -32,6 +33,33 @@ get_env() {
   local name="$1" default="$2" value
   value="$(awk -F= -v key="$name" '$1 == key {sub(/^[^=]*=/, ""); gsub(/^[ \t\"\047]+|[ \t\"\047]+$/, ""); print; exit}' .env 2>/dev/null || true)"
   printf '%s' "${value:-$default}"
+}
+
+new_password() {
+  if command -v openssl >/dev/null 2>&1; then
+    openssl rand -hex 24
+  else
+    od -An -N24 -tx1 /dev/urandom | tr -d ' \n'
+  fi
+}
+
+ensure_database_password() {
+  local current password
+  current="$(get_env POSTGRES_PASSWORD "")"
+  if [[ -n "$current" && "$current" != "GENERATED_ON_FIRST_START" ]]; then
+    chmod 600 .env 2>/dev/null || true
+    return
+  fi
+  password="$(new_password)"
+  awk -v password="$password" '
+    BEGIN { updated=0 }
+    /^[[:space:]]*POSTGRES_PASSWORD=/ { print "POSTGRES_PASSWORD=" password; updated=1; next }
+    { print }
+    END { if (!updated) print "POSTGRES_PASSWORD=" password }
+  ' .env > .env.tmp
+  mv .env.tmp .env
+  chmod 600 .env 2>/dev/null || true
+  log "Generated a unique local database password"
 }
 
 health_ok() {
@@ -80,11 +108,9 @@ docker compose version >/dev/null 2>&1 || fail "Docker Compose v2 is required."
 
 if [[ ! -f .env ]]; then
   cp .env.example .env
-  if command -v openssl >/dev/null 2>&1; then password="$(openssl rand -hex 24)"; else password="$(od -An -N24 -tx1 /dev/urandom | tr -d ' \n')"; fi
-  awk -v password="$password" 'BEGIN{FS=OFS="="} $1=="POSTGRES_PASSWORD" {$2=password} {print}' .env > .env.tmp
-  mv .env.tmp .env
-  log "Created .env with a unique local database password"
+  log "Created .env from .env.example"
 fi
+ensure_database_password
 
 WEB_PORT="$(get_env NUMEN_WEB_PORT 5173)"
 API_PORT="$(get_env NUMEN_API_PORT 8080)"
@@ -135,7 +161,6 @@ for _ in $(seq 1 15); do
   if health_ok "$HEALTH_URL"; then healthy=true; break; fi
   sleep 2
 done
-
 if [[ "$healthy" != true ]]; then
   docker compose ps || true
   docker compose logs --tail 200 || true

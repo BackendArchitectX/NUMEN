@@ -26,6 +26,8 @@ jobs:
           fetch-depth: 2
       - name: Validate repository structure
         run: bash scripts/quality/check-structure.sh
+      - name: Validate launcher syntax
+        run: bash scripts/quality/check-runtime.sh
       - name: Validate whitespace in latest change
         run: git diff --check HEAD^ HEAD
       - name: Validate Compose model
@@ -89,6 +91,8 @@ jobs:
         run: |
           curl --fail --retry 10 --retry-delay 2 http://localhost:5173/healthz
           curl --fail --retry 10 --retry-delay 2 http://localhost:5173/api/v1/health
+      - name: Verify idempotent one-step start
+        run: ./start.sh --no-browser --no-build
       - name: Show diagnostics on failure
         if: failure()
         run: docker compose logs --tail 250
