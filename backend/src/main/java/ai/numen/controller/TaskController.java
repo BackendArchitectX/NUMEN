@@ -2,10 +2,12 @@ package ai.numen.controller;
 
 import ai.numen.dto.CreateTaskRequest;
 import ai.numen.dto.DatasetRecordResponse;
+import ai.numen.dto.TaskEventResponse;
 import ai.numen.dto.TaskResponse;
 import ai.numen.service.DatasetExportService;
 import ai.numen.service.TaskEventHub;
 import ai.numen.service.TaskService;
+import ai.numen.entity.CollectionTask;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
@@ -86,8 +88,8 @@ public class TaskController {
 
     @GetMapping(path = "/{id}/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter events(@PathVariable UUID id) {
-        service.get(id);
-        return events.subscribe(id);
+        CollectionTask task = service.get(id);
+        return events.subscribe(id, TaskEventResponse.from(task));
     }
 
     @GetMapping(value = "/{id}/export.csv", produces = "text/csv;charset=UTF-8")

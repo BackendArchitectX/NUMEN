@@ -18,6 +18,8 @@ macOS/Linux: `./stop.sh`
 
 - Public: `http://localhost:5173/api/v1/health`
 - Backend actuator: `http://localhost:8080/actuator/health`
+- Backend readiness: `http://localhost:8080/actuator/health/readiness`
+- OpenAPI contract: `http://localhost:5173/api/v1/openapi`
 - Frontend container: `http://localhost:5173/healthz`
 
 ## Diagnostics
@@ -49,6 +51,10 @@ NUMEN_API_PORT=8080
 ## Idempotent restart
 
 Running the same start command again against an already-healthy NUMEN stack exits successfully without rebuilding or replacing containers. CI verifies this behavior.
+
+## Backup and recovery
+
+See [`RECOVERY.md`](RECOVERY.md) for logical backup, restore, bad-release rollback and corruption recovery guidance.
 
 ## Failure modes
 

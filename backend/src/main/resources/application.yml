@@ -46,6 +46,12 @@ management:
     tags:
       application: ${spring.application.name}
 
+springdoc:
+  api-docs:
+    path: /api/v1/openapi
+  swagger-ui:
+    enabled: false
+
 info:
   app:
     name: NUMEN

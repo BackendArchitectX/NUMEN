@@ -14,17 +14,34 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class TaskEventHub {
+    private static final long STREAM_TIMEOUT_MS = 300_000L;
+    private static final long RECONNECT_MS = 2_000L;
+
     private final Map<UUID, List<SseEmitter>> emitters = new ConcurrentHashMap<>();
 
-    public SseEmitter subscribe(UUID taskId) {
-        SseEmitter emitter = new SseEmitter(0L);
-        emitters.computeIfAbsent(taskId, ignored -> Collections.synchronizedList(new ArrayList<>()))
-                .add(emitter);
+    public SseEmitter subscribe(UUID taskId, TaskEventResponse initialState) {
+        SseEmitter emitter = new SseEmitter(STREAM_TIMEOUT_MS);
+        List<SseEmitter> listeners = emitters.computeIfAbsent(
+                taskId,
+                ignored -> Collections.synchronizedList(new ArrayList<>())
+        );
+        listeners.add(emitter);
 
         Runnable cleanup = () -> remove(taskId, emitter);
         emitter.onCompletion(cleanup);
         emitter.onTimeout(cleanup);
         emitter.onError(ignored -> cleanup.run());
+
+        try {
+            emitter.send(SseEmitter.event()
+                    .name("progress")
+                    .reconnectTime(RECONNECT_MS)
+                    .data(initialState));
+        } catch (IOException ex) {
+            cleanup.run();
+            emitter.completeWithError(ex);
+        }
+
         return emitter;
     }
 
@@ -35,7 +52,10 @@ public class TaskEventHub {
         synchronized (listeners) {
             listeners.removeIf(emitter -> {
                 try {
-                    emitter.send(SseEmitter.event().name("progress").data(payload));
+                    emitter.send(SseEmitter.event()
+                            .name("progress")
+                            .reconnectTime(RECONNECT_MS)
+                            .data(payload));
                     return false;
                 } catch (IOException ex) {
                     emitter.complete();

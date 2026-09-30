@@ -9,18 +9,18 @@ A fresh checkout must start with one command (`start.bat`, `./start.ps1`, or `./
 ## Backend
 
 - Java 17 is the supported language/runtime baseline.
-- Controllers expose versioned API contracts and never return JPA entities directly.
+- Controllers expose versioned API contracts and never return JPA entities directly. Retryable workflow creation supports client idempotency keys enforced by a database uniqueness constraint.
 - DTOs, domain contracts, source connectors, persistence entities, repositories, service orchestration, outbound security, configuration, and exception mapping remain separated.
 - Database changes are forward-only Flyway migrations; Hibernate validates rather than mutates production schemas. Dataset replacement and terminal workflow state publication must remain transactional.
 - Long-running work uses bounded executors, graceful shutdown semantics and explicit overload rejection rather than silently dropping work.
-- Every HTTP request has a correlation ID and errors return that ID for supportability.
-- Health, readiness, metrics and Prometheus instrumentation are available through Actuator. The public health endpoint reflects aggregate Actuator status rather than an unconditional constant.
+- Every HTTP request has a correlation ID and errors return that ID plus a stable machine-readable error code for supportability.
+- Health, readiness, metrics and Prometheus instrumentation are available through Actuator. The public health endpoint reflects aggregate Actuator status rather than an unconditional constant. The versioned API contract is published as OpenAPI JSON.
 - Outbound collection must pass SSRF controls, reserved-range/default-port policy and explicit resource limits. Per-source failures are logged without leaking URL query content.
 
 ## Frontend
 
 - React UI composition lives under `components/`; stateful orchestration belongs in hooks; API transport belongs in services; shared models and helpers stay independent of UI code.
-- TypeScript strict mode and production builds are CI gates. Browser API calls use bounded timeouts, polling must not overlap, and stale responses must not overwrite current state.
+- TypeScript strict mode and production builds are CI gates. Browser API calls use bounded timeouts, polling must not overlap, stale responses must not overwrite current state, and rapid repeated workflow submissions are guarded client-side in addition to server idempotency.
 - Production assets are served by an unprivileged Nginx image with CSP and other response hardening. The UI has no runtime font/CDN dependency and includes keyboard/focus/reduced-motion support.
 - The browser talks to the API through the same-origin gateway; no environment-specific API URL is hard-coded into UI components.
 

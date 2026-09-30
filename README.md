@@ -97,6 +97,7 @@ NUMEN/
 │   ├── ENGINEERING_STANDARDS.md
 │   ├── DEPENDENCY_POLICY.md
 │   ├── RUNBOOK.md
+│   ├── RECOVERY.md
 │   ├── SECURITY.md
 │   ├── THREAT_MODEL.md
 │   ├── TESTING.md
@@ -113,10 +114,10 @@ NUMEN/
 ## Engineering baseline
 
 - Canonical one-command runtime tested by CI using the same launcher humans run, including an idempotent second start
-- Java 17 / Spring Boot with DTO/entity separation and versioned `/api/v1` contracts
+- Java 17 / Spring Boot with DTO/entity separation, stable error codes, idempotent workflow creation and versioned `/api/v1` contracts
 - Flyway migrations with Hibernate schema validation, optimistic locking and transactional workflow-result publication
 - Bounded async execution with explicit overload rejection, graceful shutdown, HikariCP limits and health probes
-- Correlation IDs in requests, logs and API errors
+- Correlation IDs in requests, logs and API errors plus machine-readable OpenAPI at `/api/v1/openapi`
 - Actuator metrics and Prometheus registry
 - Pluggable source-connector boundary plus SSRF controls, reserved-range/credential/non-standard-port blocking, redirect restrictions, response-size/time limits and provenance
 - React/TypeScript feature separation with production typecheck/build gates, resilient request timeouts, accessible interaction states and exact manifest versions backed by `package-lock.json`
@@ -145,7 +146,7 @@ make reset    # stop and delete the local DB volume
 
 ## Documentation
 
-See [Engineering Standards](docs/ENGINEERING_STANDARDS.md), [Architecture](docs/ARCHITECTURE.md), [Development](docs/DEVELOPMENT.md), [Testing](docs/TESTING.md), [Threat Model](docs/THREAT_MODEL.md), [Operations Runbook](docs/RUNBOOK.md), [Security](docs/SECURITY.md) and [Demo Script](docs/DEMO.md).
+See [Engineering Standards](docs/ENGINEERING_STANDARDS.md), [Architecture](docs/ARCHITECTURE.md), [Development](docs/DEVELOPMENT.md), [Testing](docs/TESTING.md), [Threat Model](docs/THREAT_MODEL.md), [Operations Runbook](docs/RUNBOOK.md), [Recovery](docs/RECOVERY.md), [Security](docs/SECURITY.md) and [Demo Script](docs/DEMO.md).
 
 ## License
 

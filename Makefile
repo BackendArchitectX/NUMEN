@@ -36,8 +36,8 @@ verify: quality
 smoke:
 	./start.sh --no-browser
 	@WEB_PORT="$$(awk -F= '/^NUMEN_WEB_PORT=/{print $$2; exit}' .env | tr -d '[:space:]')"; \
-	WEB_PORT="$$${WEB_PORT:-5173}"; \
-	curl --fail "http://localhost:$$${WEB_PORT}/api/v1/health"
+	WEB_PORT="$${WEB_PORT:-5173}"; \
+	curl --fail "http://localhost:$${WEB_PORT}/api/v1/health"
 	./start.sh --no-browser --no-build
 
 reset:

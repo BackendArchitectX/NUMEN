@@ -32,12 +32,15 @@ required_files=(
   docs/DEVELOPMENT.md
   docs/ENGINEERING_STANDARDS.md
   docs/RUNBOOK.md
+  docs/RECOVERY.md
   docs/SECURITY.md
   docs/THREAT_MODEL.md
   docs/TESTING.md
   docs/adr/0003-source-connector-boundary.md
   .github/workflows/branch-policy.yml
   backend/src/main/resources/db/migration/V2__runtime_hardening.sql
+  backend/src/main/resources/db/migration/V3__task_idempotency.sql
+  backend/src/main/java/ai/numen/config/OpenApiConfig.java
   backend/src/main/java/ai/numen/service/DatasetExportService.java
   backend/src/main/java/ai/numen/exception/WorkflowCapacityException.java
   frontend/src/app/AppErrorBoundary.tsx
