@@ -7,7 +7,7 @@ export function useIntelligenceWorkspace() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [selectedId, setSelectedId] = useState<string>()
   const [records, setRecords] = useState<DatasetRecord[]>([])
-  const [prompt, setPrompt] = useState(examplePrompts[0])
+  const [prompt, setPrompt] = useState<string>(examplePrompts[0])
   const [query, setQuery] = useState('')
   const [minQuality, setMinQuality] = useState(0)
   const [busy, setBusy] = useState(false)
