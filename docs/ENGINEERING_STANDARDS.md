@@ -33,7 +33,7 @@ A fresh checkout must start with one command (`start.bat`, `./start.ps1`, or `./
 
 ## Repository governance
 
-- `main` is the only persistent origin branch; `.github/workflows/branch-policy.yml` prunes accidental non-`main` origin branches on creation, after main pushes, and on a scheduled reconciliation pass.
+- `main` is the only persistent origin branch; `.github/workflows/branch-policy.yml` prunes accidental non-`main` origin branches on creation, after main pushes, and on a scheduled reconciliation pass. It also audits the current `main` head for the required BackendArchitectX GitHub account and unintended co-author trailers without rewriting legitimate historical attribution.
 - Automated dependency PR generation is disabled because it creates origin branches; dependency upgrades are reviewed and committed manually after CI verification. Pull requests are gated by GitHub dependency review for newly introduced high-severity dependency risk, and third-party workflow actions are pinned to reviewed commit SHAs.
 - CI validates repository structure, Bash and PowerShell launcher syntax, backend verification, frontend typechecking/build, Compose validity, a complete one-step startup smoke test, a real workflow/persistence/export path, and idempotent startup.
 - Frontend dependency manifests use exact versions; the lockfile is authoritative for reproducible CI/container installs.

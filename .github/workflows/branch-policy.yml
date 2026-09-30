@@ -37,13 +37,43 @@ jobs:
             encoded_branch="$(jq -rn --arg value "$branch" '$value|@uri')"
             gh api --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/${encoded_branch}"
           done
+
           remaining="$(
-            gh api --paginate "repos/${GITHUB_REPOSITORY}/branches?per_page=100" \
-              --jq '.[] | select(.name != "main") | .name'
+            gh api --paginate "repos/${GITHUB_REPOSITORY}/branches?per_page=100"               --jq '.[] | select(.name != "main") | .name'
           )"
           if [[ -n "$remaining" ]]; then
             echo "Non-main branches still exist:"
             printf '%s\n' "$remaining"
             exit 1
           fi
+
           echo "Branch policy satisfied: main is the only origin branch."
+
+      - name: Audit current main contribution identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          main_sha="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq '.object.sha')"
+          commit_json="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${main_sha}")"
+          author_login="$(jq -r '.author.login // ""' <<<"$commit_json")"
+          author_name="$(jq -r '.commit.author.name // ""' <<<"$commit_json")"
+          author_email="$(jq -r '.commit.author.email // ""' <<<"$commit_json")"
+          message="$(jq -r '.commit.message // ""' <<<"$commit_json")"
+
+          if [[ "$author_login" != "BackendArchitectX" ]]; then
+            echo "Current main head is not associated with the required GitHub account."
+            echo "Resolved login: ${author_login:-<none>}"
+            exit 1
+          fi
+
+          if grep -Eiq '^[[:space:]]*Co-authored-by:' <<<"$message"; then
+            echo "Current main head contains an unintended Co-authored-by trailer."
+            exit 1
+          fi
+
+          echo "Contribution identity satisfied for main head."
+          echo "GitHub login: $author_login"
+          echo "Git author metadata: $author_name <$author_email>"

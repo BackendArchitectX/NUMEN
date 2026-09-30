@@ -347,7 +347,7 @@ Typical issues and corrective actions for Docker availability, port conflicts, i
 
 The origin is maintained with exactly one persistent branch: `main`. A branch-policy workflow deletes accidental non-`main` origin branches on creation, after pushes to `main` and through scheduled reconciliation. External contributors use fork branches and target `main`.
 
-New project work in this repository is intended to be attributed to **BackendArchitectX** without fabricated/co-authored attribution. Historical legitimate attribution must not be rewritten for statistics.
+New canonical project work on `main` is required to resolve to the GitHub account **BackendArchitectX** and must not contain unintended `Co-authored-by` trailers. The branch-policy workflow audits the current `main` head in addition to enforcing the single-branch rule. Historical legitimate attribution must not be rewritten or falsely re-authored for statistics.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/DEPENDENCY_POLICY.md](docs/DEPENDENCY_POLICY.md).
 
