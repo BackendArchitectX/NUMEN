@@ -1,5 +1,4 @@
-$ErrorActionPreference = "Stop"
-$Root = Split-Path -Parent $MyInvocation.MyCommand.Path
-Set-Location $Root
-Write-Host "[NUMEN] Stopping application..." -ForegroundColor Cyan
-docker compose down --remove-orphans
+param([switch]$Volumes)
+$runner = Join-Path $PSScriptRoot "scripts\runtime\stop.ps1"
+& $runner -Volumes:$Volumes
+exit $LASTEXITCODE

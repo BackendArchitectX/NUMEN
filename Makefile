@@ -1,12 +1,12 @@
-.PHONY: up down restart logs ps test verify clean
+.PHONY: start up down restart logs ps test verify smoke clean reset
 
-up:
-	docker compose up --build --detach --remove-orphans
+start up:
+	./start.sh --no-browser
 
 down:
-	docker compose down --remove-orphans
+	./stop.sh
 
-restart: down up
+restart: down start
 
 logs:
 	docker compose logs --follow --tail 200
@@ -16,12 +16,17 @@ ps:
 
 test:
 	cd backend && mvn -B test
-	cd frontend && npm install && npm run build
+	cd frontend && npm install --no-audit --no-fund && npm run typecheck && npm run build
 
 verify:
 	docker compose config --quiet
+	bash -n start.sh stop.sh scripts/runtime/start.sh scripts/runtime/stop.sh
 	cd backend && mvn -B verify
-	cd frontend && npm install && npm run build
+	cd frontend && npm install --no-audit --no-fund && npm run typecheck && npm run build
 
-clean:
-	docker compose down --volumes --remove-orphans
+smoke:
+	./start.sh --no-browser
+	curl --fail http://localhost:$${NUMEN_WEB_PORT:-5173}/api/v1/health
+
+clean reset:
+	./stop.sh --volumes

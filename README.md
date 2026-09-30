@@ -6,9 +6,11 @@ NUMEN is a full-stack implementation of the AI-Powered Data Intelligence Platfor
 
 ## One-step start
 
+A fresh checkout needs **Docker Desktop / Docker Engine with Compose v2 only**. You do not need to install Java, Maven, Node.js, npm or PostgreSQL locally.
+
 ### Windows
 
-Double-click `start.bat` **or** run exactly one command:
+Double-click `start.bat`, or run exactly one command:
 
 ```powershell
 .\start.ps1
@@ -20,12 +22,14 @@ Double-click `start.bat` **or** run exactly one command:
 ./start.sh
 ```
 
-That single command validates Docker, creates `.env` when needed, builds the frontend/backend images, starts PostgreSQL + Spring Boot + React, waits for health checks, and opens the application.
+The launcher validates Docker, creates `.env` with a unique local database password, checks port conflicts, validates Compose, builds the complete stack, waits for health probes, verifies the public API through Nginx, and opens the application. Re-running the command is idempotent: an already-healthy NUMEN stack is detected and reused.
 
 - Web: `http://localhost:5173`
-- API: `http://localhost:8080/api/v1`
+- API gateway: `http://localhost:5173/api/v1`
+- Direct API: `http://localhost:8080/api/v1`
 - Health: `http://localhost:5173/api/v1/health`
 - Stop: `./stop.sh` or `.\stop.ps1`
+- Reset data: `./stop.sh --volumes` or `.\stop.ps1 -Volumes`
 
 ## Architecture
 
@@ -33,15 +37,15 @@ That single command validates Docker, creates `.env` when needed, builds the fro
 Browser
   │
   ▼
-Nginx / React + TypeScript
+Nginx (unprivileged) / React + TypeScript
   │  REST + SSE
   ▼
-Spring Boot API
+Spring Boot API (non-root)
   ├── controller    API boundary + DTO mapping
   ├── service       use cases / workflow orchestration
   ├── security      outbound URL validation
   ├── repository    persistence boundary
-  ├── entity        JPA domain persistence model
+  ├── entity        JPA persistence model
   ├── dto           public API contracts
   ├── exception     consistent error mapping
   └── config        typed runtime configuration
@@ -55,8 +59,10 @@ Spring Boot API
 ```text
 NUMEN/
 ├── .github/
+│   ├── workflows/ci.yml
 │   ├── CODEOWNERS
-│   └── workflows/ci.yml
+│   ├── dependabot.yml
+│   └── pull_request_template.md
 ├── backend/
 │   ├── src/main/java/ai/numen/
 │   │   ├── config/
@@ -82,13 +88,17 @@ NUMEN/
 │   │   └── styles/
 │   ├── Dockerfile
 │   └── nginx.conf
+├── scripts/
+│   └── runtime/             # canonical cross-platform startup/stop logic
 ├── docs/
+│   ├── adr/
 │   ├── ARCHITECTURE.md
-│   ├── DEMO.md
+│   ├── DEVELOPMENT.md
 │   ├── RUNBOOK.md
-│   └── SECURITY.md
+│   ├── SECURITY.md
+│   └── DEMO.md
 ├── docker-compose.yml
-├── start.ps1 / start.sh / start.bat
+├── start.bat / start.ps1 / start.sh
 ├── stop.ps1 / stop.sh
 ├── Makefile
 └── README.md
@@ -107,20 +117,19 @@ NUMEN/
 | Search/filter/export | dataset explorer, quality filters, CSV export |
 | Workflow and dataset history | PostgreSQL persistence with Flyway migrations |
 
-## Engineering standards built in
+## Engineering standards
 
-- **One-command reproducible runtime** with Docker Compose
-- **Layered backend architecture** with DTO/API separation
-- **Feature-oriented frontend structure** instead of a monolithic component
-- **Flyway database migrations** with Hibernate schema validation
-- **Optimistic locking** for workflow state
-- **Typed configuration** through `@ConfigurationProperties`
-- **Graceful shutdown**, bounded async workers and health probes
-- **SSRF controls**, redirect blocking and response-size/time limits
-- **Container hardening** with a non-root backend user
-- **Versioned REST API** under `/api/v1`
-- **CI gates** for backend verification, frontend production build and complete Docker smoke test
-- **CODEOWNERS**, `.editorconfig`, `.gitattributes`, `.dockerignore` and environment template
+- **Canonical one-command runtime** tested in CI using the same launcher humans use
+- **Layered backend architecture** with DTO/entity separation and versioned REST APIs
+- **Feature-oriented frontend structure** with services, hooks and components separated
+- **Flyway migrations** + Hibernate schema validation + optimistic locking
+- **Typed configuration**, bounded workers, graceful shutdown and health probes
+- **Outbound SSRF controls**, redirect blocking and response-size/time limits
+- **Non-root containers**, read-only filesystems where practical, dropped Linux capabilities and `no-new-privileges`
+- **Loopback-only host ports**, Nginx security headers and bounded container logs
+- **CI gates** for static validation, backend verification, frontend typecheck/build and full one-step smoke test
+- **CODEOWNERS**, Dependabot policy, PR template, `.editorconfig`, `.gitattributes`, `.dockerignore`, `.gitignore` and environment template
+- **Operational docs + ADRs** so runtime and architecture decisions are explicit rather than tribal knowledge
 
 ## Demo prompts
 
@@ -137,25 +146,21 @@ Collect structured intelligence from this permitted source: https://example.com
 Return title, organization, source and a concise excerpt.
 ```
 
-If a prompt contains no source URL, NUMEN intentionally uses its clearly-labelled offline demo catalog. Synthetic rows are never represented as live web results.
+If a prompt contains no source URL, NUMEN intentionally uses its clearly labelled offline demo catalog. Synthetic rows are never represented as live web results.
 
 ## Developer commands
 
 ```bash
-make up       # start full stack
-make down     # stop full stack
-make logs     # follow logs
-make test     # backend tests + frontend build
-make verify   # validation + full local verification
-make clean    # remove containers and local database volume
+make start    # one-step full stack
+make down     # preserve local database data
+make logs     # follow service logs
+make test     # backend tests + frontend typecheck/build
+make verify   # repository + backend + frontend checks
+make smoke    # start stack through the canonical launcher and verify health
+make reset    # stop and delete local database volume
 ```
 
-## Documentation
-
-- [Architecture](docs/ARCHITECTURE.md)
-- [Operations runbook](docs/RUNBOOK.md)
-- [Security model](docs/SECURITY.md)
-- [Demo script](docs/DEMO.md)
+See [Development Guide](docs/DEVELOPMENT.md), [Architecture](docs/ARCHITECTURE.md), [Operations Runbook](docs/RUNBOOK.md), [Security Model](docs/SECURITY.md) and [Demo Script](docs/DEMO.md).
 
 ## License
 

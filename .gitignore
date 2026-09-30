@@ -2,19 +2,33 @@
 .idea/
 .vscode/
 *.iml
+*.ipr
+*.iws
 
-# Java
+# Java / Maven
 backend/target/
+.mvn/timing.properties
 *.log
+hs_err_pid*
 
-# Node
+# Node / Vite
 frontend/node_modules/
 frontend/dist/
+frontend/coverage/
+*.tsbuildinfo
 
-# Env
+# Runtime / secrets
 .env
+.env.*
+!.env.example
 *.local
 
-# OS
+# Test / reports
+coverage/
+reports/
+
+# OS / tooling
 .DS_Store
 Thumbs.db
+*.swp
+*.swo

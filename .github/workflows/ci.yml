@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -14,13 +15,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  static:
+    name: Repository · static validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate shell entry points
+        run: bash -n start.sh stop.sh scripts/runtime/start.sh scripts/runtime/stop.sh
+      - name: Validate Compose model
+        env:
+          POSTGRES_PASSWORD: ci-only-password
+        run: docker compose config --quiet
+
   backend:
     name: Backend · verify
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -28,15 +39,14 @@ jobs:
           distribution: temurin
           java-version: '17'
           cache: maven
-      - run: mvn -B verify
+      - name: Verify backend
+        working-directory: backend
+        run: mvn -B verify
 
   frontend:
-    name: Frontend · build
+    name: Frontend · typecheck + build
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -44,20 +54,25 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: npm install
-      - run: npm run build
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm install --no-audit --no-fund
+      - name: Typecheck
+        working-directory: frontend
+        run: npm run typecheck
+      - name: Production build
+        working-directory: frontend
+        run: npm run build
 
   smoke:
     name: Full stack · one-step smoke test
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [backend, frontend]
+    needs: [static, backend, frontend]
     steps:
       - uses: actions/checkout@v4
-      - name: Validate compose
-        run: docker compose config --quiet
-      - name: Start complete stack
-        run: docker compose up --build --detach --wait --wait-timeout 180
+      - name: Start exactly as a user does
+        run: ./start.sh --no-browser
       - name: Verify public entry point
         run: |
           curl --fail --retry 10 --retry-delay 2 http://localhost:5173/api/v1/health
@@ -65,6 +80,6 @@ jobs:
       - name: Show diagnostics on failure
         if: failure()
         run: docker compose logs --tail 200
-      - name: Stop stack
+      - name: Stop and remove ephemeral CI data
         if: always()
-        run: docker compose down --volumes --remove-orphans
+        run: ./stop.sh --volumes
