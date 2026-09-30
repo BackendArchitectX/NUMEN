@@ -1,0 +1,49 @@
+name: Branch Policy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: main-only-origin-branch
+  cancel-in-progress: false
+
+jobs:
+  enforce-main-only:
+    name: Enforce main-only origin
+    if: github.repository == 'BackendArchitectX/NUMEN' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Delete non-main origin branches
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          mapfile -t branches < <(
+            gh api --paginate "repos/${GITHUB_REPOSITORY}/branches?per_page=100" --jq '.[].name'
+          )
+
+          for branch in "${branches[@]}"; do
+            [[ "$branch" == "main" ]] && continue
+            echo "Deleting non-main origin branch: $branch"
+            gh api --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/heads/${branch}"
+          done
+
+          remaining="$(
+            gh api --paginate "repos/${GITHUB_REPOSITORY}/branches?per_page=100"               --jq '.[] | select(.name != "main") | .name'
+          )"
+
+          if [[ -n "$remaining" ]]; then
+            echo "Non-main branches still exist:"
+            printf '%s\n' "$remaining"
+            exit 1
+          fi
+
+          echo "Branch policy satisfied: main is the only origin branch."

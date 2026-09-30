@@ -31,6 +31,7 @@ required_files=(
   docs/ENGINEERING_STANDARDS.md
   docs/RUNBOOK.md
   docs/SECURITY.md
+  .github/workflows/branch-policy.yml
 )
 
 required_dirs=(
@@ -61,5 +62,9 @@ tracked_bad="$(git ls-files | grep -E '(^|/)(node_modules|target|dist)(/|$)|(^|/
 [[ -z "$tracked_bad" ]] || fail "generated/private files are tracked: $tracked_bad"
 
 [[ ! -e .github/dependabot.yml ]] || fail "Dependabot branch generation is disabled by the main-only branch policy"
+
+if grep -Eq '"[^"]+": "(latest|\\*)"' frontend/package.json; then
+  fail "frontend/package.json must pin dependency versions; latest and wildcard versions are not allowed"
+fi
 
 printf '[NUMEN] repository structure OK\n'

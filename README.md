@@ -63,7 +63,7 @@ Spring Boot API (non-root)
 ```text
 NUMEN/
 ├── .github/
-│   ├── workflows/ci.yml
+│   ├── workflows/{ci.yml,branch-policy.yml}
 │   ├── ISSUE_TEMPLATE/
 │   ├── CODEOWNERS
 │   └── pull_request_template.md
@@ -115,14 +115,14 @@ NUMEN/
 - Correlation IDs in requests, logs and API errors
 - Actuator metrics and Prometheus registry
 - SSRF controls, redirect restrictions, response-size/time limits and provenance
-- React/TypeScript feature separation with production typecheck/build gates
+- React/TypeScript feature separation with production typecheck/build gates and exact manifest versions backed by `package-lock.json`
 - Non-root containers, read-only filesystems where practical, dropped capabilities and `no-new-privileges`
 - Loopback-only host ports, CSP/security headers, immutable asset caching and bounded logs
 - Repository structure enforcement and full-stack one-step smoke testing in CI
 
 ## Single-branch policy
 
-The origin repository is intentionally maintained with **one persistent branch: `main`**. Dependency bots that create origin branches are disabled. External contributions should use branches in forks and target `main`. See [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`docs/DEPENDENCY_POLICY.md`](docs/DEPENDENCY_POLICY.md).
+The origin repository is intentionally maintained with **exactly one persistent branch: `main`**. A dedicated branch-policy workflow removes accidental non-`main` origin branches after pushes to `main`. Dependency bots that create origin branches are disabled. External contributions use branches in forks and target `main`. See [`CONTRIBUTING.md`](CONTRIBUTING.md), [`docs/DEPENDENCY_POLICY.md`](docs/DEPENDENCY_POLICY.md), and ADR 0002.
 
 ## Developer commands
 

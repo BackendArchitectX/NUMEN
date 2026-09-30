@@ -33,7 +33,8 @@ A fresh checkout must start with one command (`start.bat`, `./start.ps1`, or `./
 
 ## Repository governance
 
-- `main` is the only persistent origin branch.
+- `main` is the only persistent origin branch; `.github/workflows/branch-policy.yml` automatically prunes accidental non-`main` origin branches.
 - Automated dependency PR generation is disabled because it creates origin branches; dependency upgrades are reviewed and committed manually after CI verification.
 - CI validates repository structure, backend verification, frontend typechecking/build, Compose validity, and a complete one-step startup smoke test.
+- Frontend dependency manifests use exact versions; the lockfile is authoritative for reproducible CI/container installs.
 - Generated artifacts, local secrets, `.env`, `node_modules`, `target`, and `dist` must never be tracked.
