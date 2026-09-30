@@ -39,6 +39,8 @@ public class WorkflowRecoveryService {
 
         for (CollectionTask task : interrupted) {
             try {
+                task.recoverForRestart();
+                tasks.saveAndFlush(task);
                 runner.run(task.getId());
             } catch (TaskRejectedException ex) {
                 task.fail("Workflow could not be recovered because execution capacity was exhausted. Submit it again.");

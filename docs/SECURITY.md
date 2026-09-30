@@ -9,7 +9,7 @@
 - Backend runs as a non-root container user.
 - PostgreSQL is not published to the host.
 - CORS allowlist comes from typed validated runtime configuration and allowed request headers are explicit rather than wildcarded.
-- API returns DTOs rather than persistence entities.
+- API returns DTOs rather than persistence entities; unexpected async failures are logged server-side while public workflow state receives a sanitized error message.
 - Nginx adds CSP, framing, referrer, permissions and cross-origin opener hardening headers.
 - CSV export neutralizes spreadsheet-formula prefixes and emits UTF-8 safely.
 - Secrets, local `.env` files and backup dumps are excluded from Git.

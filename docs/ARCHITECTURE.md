@@ -46,7 +46,7 @@ Docker Compose is the canonical local runtime. The browser reaches only the fron
 
 `QUEUED → PLANNING → COLLECTING → PROCESSING → COMPLETED`
 
-Terminal alternatives are `FAILED` and `CANCELLED`. Progress events are published through Server-Sent Events with bounded stream lifetimes and browser reconnect hints. Empty listener groups are removed and all emitters are completed during application shutdown. Optimistic locking protects concurrent workflow updates.
+Terminal alternatives are `FAILED` and `CANCELLED`. The entity enforces valid transitions and monotonic non-terminal progress rather than allowing arbitrary state mutation. Progress events are published through Server-Sent Events with bounded stream lifetimes and browser reconnect hints. Empty listener groups are removed and all emitters are completed during application shutdown. Optimistic locking protects concurrent workflow updates.
 
 ## Persistence
 
@@ -63,4 +63,4 @@ The current worker pool is intentionally bounded for a single-node challenge dep
 
 ## Restart recovery
 
-At application readiness, workflows left in `QUEUED`, `PLANNING`, `COLLECTING` or `PROCESSING` by a previous process interruption are redispatched through the normal bounded executor. Publication remains atomic, so a recovered workflow cannot expose a partially replaced dataset. If admission capacity is exhausted, recovery failure is persisted visibly instead of leaving the task indefinitely stuck.
+At application readiness, workflows left in `QUEUED`, `PLANNING`, `COLLECTING` or `PROCESSING` by a previous process interruption move through an explicit recovery transition and are redispatched through the normal bounded executor. Publication remains atomic, so a recovered workflow cannot expose a partially replaced dataset. If admission capacity is exhausted, recovery failure is persisted visibly instead of leaving the task indefinitely stuck.

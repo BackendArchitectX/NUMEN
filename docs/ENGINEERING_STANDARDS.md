@@ -9,9 +9,9 @@ A fresh checkout must start with one command (`start.bat`, `./start.ps1`, or `./
 ## Backend
 
 - Java 17 is the supported language/runtime baseline.
-- Controllers expose versioned API contracts and never return JPA entities directly. Retryable workflow creation supports client idempotency keys enforced by a database uniqueness constraint.
+- Controllers expose versioned API contracts and never return JPA entities directly. Retryable workflow creation supports client idempotency keys enforced by a database uniqueness constraint, and key reuse with a different payload returns a conflict rather than silently replaying unrelated work.
 - DTOs, domain contracts, source connectors, persistence entities, repositories, service orchestration, outbound security, configuration, and exception mapping remain separated.
-- Database changes are forward-only Flyway migrations; Hibernate validates rather than mutates production schemas. Dataset replacement and terminal workflow state publication must remain transactional.
+- Database changes are forward-only Flyway migrations; Hibernate validates rather than mutates production schemas. Critical progress, terminal-state, quality, record-count and fingerprint invariants are enforced in domain logic and database constraints. Dataset replacement and terminal workflow state publication must remain transactional.
 - Long-running work uses bounded executors, restart recovery for interrupted non-terminal workflows, graceful shutdown semantics and explicit overload rejection rather than silently dropping work.
 - Every HTTP request has a correlation ID and errors return that ID plus a stable machine-readable error code for supportability.
 - Health, readiness, metrics and Prometheus instrumentation are available through Actuator. The public health endpoint reflects aggregate Actuator status rather than an unconditional constant. Workflow executor active threads, pool size and queue depth are explicit saturation metrics. The versioned API contract is published as OpenAPI JSON.

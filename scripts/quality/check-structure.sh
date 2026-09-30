@@ -43,10 +43,13 @@ required_files=(
   .github/workflows/dependency-review.yml
   backend/src/main/resources/db/migration/V2__runtime_hardening.sql
   backend/src/main/resources/db/migration/V3__task_idempotency.sql
+  backend/src/main/resources/db/migration/V4__domain_integrity.sql
   backend/src/main/java/ai/numen/config/OpenApiConfig.java
   backend/src/main/java/ai/numen/service/DatasetExportService.java
   backend/src/main/java/ai/numen/service/WorkflowRecoveryService.java
   backend/src/main/java/ai/numen/exception/WorkflowCapacityException.java
+  backend/src/main/java/ai/numen/exception/IdempotencyConflictException.java
+  backend/src/main/java/ai/numen/exception/UserVisibleWorkflowException.java
   frontend/src/app/AppErrorBoundary.tsx
 )
 

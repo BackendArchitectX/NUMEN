@@ -59,6 +59,23 @@ class TaskIdempotencyIntegrationTest {
         assertThat(tasks.count()).isEqualTo(1);
     }
 
+    @Test
+    void rejectsReuseOfIdempotencyKeyForDifferentRequest() throws Exception {
+        String key = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+
+        mvc.perform(post("/api/v1/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Idempotency-Key", key)
+                        .content("{\"prompt\":\"Collect traceable public market intelligence\"}"))
+                .andExpect(status().isAccepted());
+
+        mvc.perform(post("/api/v1/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Idempotency-Key", key)
+                        .content("{\"prompt\":\"Collect a different traceable dataset\"}"))
+                .andExpect(status().isConflict());
+    }
+
     private static String extractId(String json) {
         int start = json.indexOf("\"id\":\"") + 6;
         int end = json.indexOf('"', start);

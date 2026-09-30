@@ -2,6 +2,7 @@ package ai.numen.connector;
 
 import ai.numen.config.NumenProperties;
 import ai.numen.entity.DatasetRecord;
+import ai.numen.exception.UserVisibleWorkflowException;
 import ai.numen.security.UrlSafetyGuard;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
@@ -44,7 +45,7 @@ public class HttpPageConnector implements SourceConnector {
     @Override
     public List<DatasetRecord> collect(SourceCollectionRequest request) {
         if (!properties.isHttpFetchEnabled()) {
-            throw new IllegalStateException("Web collection is disabled for this deployment");
+            throw new UserVisibleWorkflowException("Web collection is disabled for this deployment");
         }
 
         List<DatasetRecord> records = new ArrayList<>();
@@ -58,7 +59,7 @@ public class HttpPageConnector implements SourceConnector {
         }
 
         if (records.isEmpty()) {
-            throw new IllegalStateException(
+            throw new UserVisibleWorkflowException(
                     "No supplied source could be collected safely. Verify that each URL is public, reachable and permits direct HTTP access.");
         }
         return records;

@@ -115,8 +115,8 @@ NUMEN/
 ## Engineering baseline
 
 - Canonical one-command runtime tested by CI using the same launcher humans run, including an idempotent second start
-- Java 17 / Spring Boot with DTO/entity separation, stable error codes, idempotent workflow creation and versioned `/api/v1` contracts
-- Flyway migrations with Hibernate schema validation, optimistic locking and transactional workflow-result publication
+- Java 17 / Spring Boot with DTO/entity separation, explicit workflow state transitions, stable error codes, idempotent workflow creation with payload-conflict detection and versioned `/api/v1` contracts
+- Flyway migrations with Hibernate schema validation, database/domain invariants, optimistic locking and transactional workflow-result publication
 - Bounded async execution with explicit overload rejection, restart recovery for interrupted workflows, graceful shutdown, HikariCP limits and health probes
 - Correlation IDs in requests, logs and API errors plus machine-readable OpenAPI at `/api/v1/openapi`
 - Actuator metrics and Prometheus registry including workflow executor activity, pool size and queue depth

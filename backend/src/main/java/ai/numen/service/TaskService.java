@@ -4,6 +4,7 @@ import ai.numen.dto.TaskEventResponse;
 import ai.numen.entity.CollectionTask;
 import ai.numen.entity.DatasetRecord;
 import ai.numen.entity.TaskStatus;
+import ai.numen.exception.IdempotencyConflictException;
 import ai.numen.exception.ResourceNotFoundException;
 import ai.numen.exception.WorkflowCapacityException;
 import ai.numen.repository.CollectionTaskRepository;
@@ -33,20 +34,21 @@ public class TaskService {
     }
 
     public TaskCreation create(String prompt, String idempotencyKey) {
+        String normalizedPrompt = prompt.trim();
         String normalizedKey = normalizeIdempotencyKey(idempotencyKey);
 
         if (normalizedKey != null) {
             var existing = tasks.findByIdempotencyKey(normalizedKey);
-            if (existing.isPresent()) return new TaskCreation(existing.get(), true);
+            if (existing.isPresent()) return replay(existing.get(), normalizedPrompt);
         }
 
         CollectionTask task;
         try {
-            task = tasks.saveAndFlush(new CollectionTask(UUID.randomUUID(), prompt.trim(), normalizedKey));
+            task = tasks.saveAndFlush(new CollectionTask(UUID.randomUUID(), normalizedPrompt, normalizedKey));
         } catch (DataIntegrityViolationException ex) {
             if (normalizedKey != null) {
                 var raced = tasks.findByIdempotencyKey(normalizedKey);
-                if (raced.isPresent()) return new TaskCreation(raced.get(), true);
+                if (raced.isPresent()) return replay(raced.get(), normalizedPrompt);
             }
             throw ex;
         }
@@ -93,6 +95,14 @@ public class TaskService {
             events.publish(id, TaskEventResponse.from(task));
         }
         return task;
+    }
+
+    private static TaskCreation replay(CollectionTask existing, String prompt) {
+        if (!existing.getPrompt().equals(prompt)) {
+            throw new IdempotencyConflictException(
+                    "The Idempotency-Key was already used with a different workflow request");
+        }
+        return new TaskCreation(existing, true);
     }
 
     private static String normalizeIdempotencyKey(String key) {

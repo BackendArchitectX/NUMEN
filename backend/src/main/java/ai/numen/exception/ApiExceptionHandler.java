@@ -49,6 +49,11 @@ public class ApiExceptionHandler {
         return response(HttpStatus.BAD_REQUEST, "MALFORMED_REQUEST", "Malformed request", request);
     }
 
+    @ExceptionHandler(IdempotencyConflictException.class)
+    public ResponseEntity<ApiError> idempotencyConflict(IdempotencyConflictException ex, HttpServletRequest request) {
+        return response(HttpStatus.CONFLICT, "IDEMPOTENCY_CONFLICT", ex.getMessage(), request);
+    }
+
     @ExceptionHandler(WorkflowCapacityException.class)
     public ResponseEntity<ApiError> capacity(WorkflowCapacityException ex, HttpServletRequest request) {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
