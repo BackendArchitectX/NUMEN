@@ -23,6 +23,7 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
     public static final String MDC_KEY = "correlationId";
     private static final Pattern SAFE_ID = Pattern.compile("[A-Za-z0-9._-]{1,64}");
     private static final Logger log = LoggerFactory.getLogger(CorrelationIdFilter.class);
+    private static final long SLOW_REQUEST_MS = 2_000L;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -35,7 +36,17 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
         } finally {
             long durationMs = (System.nanoTime() - started) / 1_000_000;
-            log.debug("http_request method={} uri={} status={} durationMs={}", request.getMethod(), request.getRequestURI(), response.getStatus(), durationMs);
+            int status = response.getStatus();
+            if (status >= 500 || durationMs >= SLOW_REQUEST_MS) {
+                log.warn("http_request method={} uri={} status={} durationMs={}",
+                        request.getMethod(), request.getRequestURI(), status, durationMs);
+            } else if (status >= 400) {
+                log.info("http_request method={} uri={} status={} durationMs={}",
+                        request.getMethod(), request.getRequestURI(), status, durationMs);
+            } else {
+                log.debug("http_request method={} uri={} status={} durationMs={}",
+                        request.getMethod(), request.getRequestURI(), status, durationMs);
+            }
             MDC.remove(MDC_KEY);
         }
     }

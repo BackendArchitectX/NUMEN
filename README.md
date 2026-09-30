@@ -98,6 +98,7 @@ NUMEN/
 │   ├── DEPENDENCY_POLICY.md
 │   ├── RUNBOOK.md
 │   ├── RECOVERY.md
+│   ├── SLO.md
 │   ├── SECURITY.md
 │   ├── THREAT_MODEL.md
 │   ├── TESTING.md
@@ -118,7 +119,7 @@ NUMEN/
 - Flyway migrations with Hibernate schema validation, optimistic locking and transactional workflow-result publication
 - Bounded async execution with explicit overload rejection, graceful shutdown, HikariCP limits and health probes
 - Correlation IDs in requests, logs and API errors plus machine-readable OpenAPI at `/api/v1/openapi`
-- Actuator metrics and Prometheus registry
+- Actuator metrics and Prometheus registry including workflow executor activity, pool size and queue depth
 - Pluggable source-connector boundary plus SSRF controls, reserved-range/credential/non-standard-port blocking, redirect restrictions, response-size/time limits and provenance
 - React/TypeScript feature separation with production typecheck/build gates, resilient request timeouts, accessible interaction states and exact manifest versions backed by `package-lock.json`
 - Non-root containers, read-only filesystems where practical, dropped capabilities and `no-new-privileges`
@@ -146,7 +147,7 @@ make reset    # stop and delete the local DB volume
 
 ## Documentation
 
-See [Engineering Standards](docs/ENGINEERING_STANDARDS.md), [Architecture](docs/ARCHITECTURE.md), [Development](docs/DEVELOPMENT.md), [Testing](docs/TESTING.md), [Threat Model](docs/THREAT_MODEL.md), [Operations Runbook](docs/RUNBOOK.md), [Recovery](docs/RECOVERY.md), [Security](docs/SECURITY.md) and [Demo Script](docs/DEMO.md).
+See [Engineering Standards](docs/ENGINEERING_STANDARDS.md), [Architecture](docs/ARCHITECTURE.md), [Development](docs/DEVELOPMENT.md), [Testing](docs/TESTING.md), [Threat Model](docs/THREAT_MODEL.md), [Operations Runbook](docs/RUNBOOK.md), [Recovery](docs/RECOVERY.md), [Service-Level Indicators](docs/SLO.md), [Security](docs/SECURITY.md) and [Demo Script](docs/DEMO.md).
 
 ## License
 

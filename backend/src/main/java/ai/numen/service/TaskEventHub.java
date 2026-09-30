@@ -1,6 +1,7 @@
 package ai.numen.service;
 
 import ai.numen.dto.TaskEventResponse;
+import jakarta.annotation.PreDestroy;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -67,6 +68,17 @@ public class TaskEventHub {
                 emitters.remove(taskId, listeners);
             }
         }
+    }
+
+    @PreDestroy
+    void shutdown() {
+        emitters.values().forEach(listeners -> {
+            synchronized (listeners) {
+                listeners.forEach(SseEmitter::complete);
+                listeners.clear();
+            }
+        });
+        emitters.clear();
     }
 
     private void remove(UUID taskId, SseEmitter emitter) {

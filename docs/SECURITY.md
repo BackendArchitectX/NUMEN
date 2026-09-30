@@ -12,7 +12,8 @@
 - API returns DTOs rather than persistence entities.
 - Nginx adds CSP, framing, referrer, permissions and cross-origin opener hardening headers.
 - CSV export neutralizes spreadsheet-formula prefixes and emits UTF-8 safely.
-- Secrets and local `.env` files are excluded from Git.
+- Secrets, local `.env` files and backup dumps are excluded from Git.
+- Pull requests run dependency review and reject newly introduced high-severity dependency findings.
 
 See [`THREAT_MODEL.md`](THREAT_MODEL.md) for the repository-level threat analysis, trust boundaries and residual risks.
 

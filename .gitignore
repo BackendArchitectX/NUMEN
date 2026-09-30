@@ -26,6 +26,7 @@ frontend/coverage/
 # Test / reports
 coverage/
 reports/
+backups/
 
 # OS / tooling
 .DS_Store

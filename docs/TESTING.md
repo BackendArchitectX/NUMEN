@@ -16,6 +16,8 @@ Spring Boot integration tests boot the actual application context with Flyway an
 
 - `HealthControllerIntegrationTest` verifies that the public health API reflects aggregate Actuator health rather than returning an unconditional constant.
 - `WorkflowResultPublisherIntegrationTest` verifies transactional dataset replacement and terminal workflow publication through the persistence layer.
+- `TaskIdempotencyIntegrationTest` proves repeated submissions with the same idempotency key create one workflow.
+- `ApiContractIntegrationTest` protects the OpenAPI endpoint plus the stable error-code/correlation-ID contract.
 
 The default test datasource is H2 in PostgreSQL compatibility mode for fast deterministic CI. The full-stack stage below provides the PostgreSQL runtime check.
 

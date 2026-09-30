@@ -1,18 +1,19 @@
 package ai.numen.config;
 
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.MDC;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.Map;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 
 @Configuration
 public class AsyncConfig {
     @Bean(name = "taskExecutor")
-    public Executor taskExecutor() {
+    public ThreadPoolTaskExecutor taskExecutor(MeterRegistry registry) {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(4);
         executor.setMaxPoolSize(8);
@@ -36,6 +37,18 @@ public class AsyncConfig {
             };
         });
         executor.initialize();
+
+        Gauge.builder("numen.workflow.executor.active", executor, ThreadPoolTaskExecutor::getActiveCount)
+                .description("Active NUMEN workflow executor threads")
+                .register(registry);
+        Gauge.builder("numen.workflow.executor.pool.size", executor, ThreadPoolTaskExecutor::getPoolSize)
+                .description("Current NUMEN workflow executor pool size")
+                .register(registry);
+        Gauge.builder("numen.workflow.executor.queue.depth", executor,
+                        value -> value.getThreadPoolExecutor().getQueue().size())
+                .description("Queued NUMEN workflow executions")
+                .register(registry);
+
         return executor;
     }
 }

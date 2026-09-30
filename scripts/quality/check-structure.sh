@@ -33,11 +33,13 @@ required_files=(
   docs/ENGINEERING_STANDARDS.md
   docs/RUNBOOK.md
   docs/RECOVERY.md
+  docs/SLO.md
   docs/SECURITY.md
   docs/THREAT_MODEL.md
   docs/TESTING.md
   docs/adr/0003-source-connector-boundary.md
   .github/workflows/branch-policy.yml
+  .github/workflows/dependency-review.yml
   backend/src/main/resources/db/migration/V2__runtime_hardening.sql
   backend/src/main/resources/db/migration/V3__task_idempotency.sql
   backend/src/main/java/ai/numen/config/OpenApiConfig.java
