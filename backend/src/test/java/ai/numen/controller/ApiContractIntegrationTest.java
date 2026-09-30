@@ -39,7 +39,7 @@ class ApiContractIntegrationTest {
                         .header("Access-Control-Request-Method", "POST")
                         .header("Access-Control-Request-Headers", "content-type,idempotency-key"))
                 .andExpect(status().isOk())
-                .andExpect(header().string(ACCESS_CONTROL_ALLOW_HEADERS, containsString("Idempotency-Key")))
+                .andExpect(header().string(ACCESS_CONTROL_ALLOW_HEADERS, containsString("idempotency-key")))
                 .andExpect(header().string(ACCESS_CONTROL_EXPOSE_HEADERS, containsString("Idempotency-Replayed")));
     }
 
