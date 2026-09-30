@@ -18,7 +18,9 @@ Spring Boot :8080
   ├─ WorkflowPlanner
   ├─ TaskRunner
   ├─ CollectionEngine
-  ├─ UrlSafetyGuard
+  │    ├─ HttpPageConnector ── UrlSafetyGuard ── public HTTP(S)
+  │    └─ DemoCatalogConnector
+  ├─ WorkflowResultPublisher
   └─ JPA repositories
         │
         ▼
@@ -29,7 +31,9 @@ Docker Compose is the canonical local runtime. The browser reaches only the fron
 
 ## Backend package responsibilities
 
+- `connector` — source-adapter contracts and concrete collection adapters.
 - `controller` — HTTP boundary, versioned routes, validation and response DTOs.
+- `domain` — framework-light domain contracts shared across application boundaries.
 - `dto` — stable external API contracts. JPA entities are not exposed directly.
 - `service` — application use cases and workflow orchestration.
 - `security` — outbound source validation and SSRF guardrails.
@@ -42,15 +46,15 @@ Docker Compose is the canonical local runtime. The browser reaches only the fron
 
 `QUEUED → PLANNING → COLLECTING → PROCESSING → COMPLETED`
 
-Terminal alternatives are `FAILED` and `CANCELLED`. Progress events are published through Server-Sent Events. Optimistic locking protects concurrent workflow updates.
+Terminal alternatives are `FAILED` and `CANCELLED`. Progress events are published through Server-Sent Events. Empty SSE listener groups are removed to avoid per-task emitter-map growth. Optimistic locking protects concurrent workflow updates.
 
 ## Persistence
 
-Flyway owns schema evolution. Hibernate runs with `ddl-auto=validate`, so accidental schema drift fails fast instead of mutating production tables.
+Flyway owns schema evolution. Hibernate runs with `ddl-auto=validate`, so accidental schema drift fails fast instead of mutating production tables. Dataset replacement and terminal workflow completion are committed by `WorkflowResultPublisher` in one transaction so a failed/cancelled publication cannot expose a partially replaced result set.
 
 ## Collection boundary
 
-Only explicit absolute HTTP(S) URLs are accepted for live fetching. NUMEN resolves the target host, rejects private/local/link-local/multicast addresses, disables redirects and applies timeout/body-size limits. Prompts without URLs use the labelled demo adapter.
+Only explicit absolute HTTP(S) URLs are accepted for live fetching. `CollectionEngine` chooses exactly one compatible `SourceConnector`. The HTTP connector resolves the target host, rejects private/local/link-local/multicast/reserved addresses, embedded credentials and non-standard ports, disables redirects and applies timeout/body-size limits. Prompts without URLs use the explicitly labelled demo connector.
 
 ## Scaling path
 

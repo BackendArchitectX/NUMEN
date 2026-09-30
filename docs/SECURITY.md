@@ -8,11 +8,13 @@
 - Response size and connection timeout limits.
 - Backend runs as a non-root container user.
 - PostgreSQL is not published to the host.
-- CORS allowlist comes from typed runtime configuration.
+- CORS allowlist comes from typed validated runtime configuration and allowed request headers are explicit rather than wildcarded.
 - API returns DTOs rather than persistence entities.
 - Nginx adds CSP, framing, referrer, permissions and cross-origin opener hardening headers.
 - CSV export neutralizes spreadsheet-formula prefixes and emits UTF-8 safely.
 - Secrets and local `.env` files are excluded from Git.
+
+See [`THREAT_MODEL.md`](THREAT_MODEL.md) for the repository-level threat analysis, trust boundaries and residual risks.
 
 ## Known boundary
 

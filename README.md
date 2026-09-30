@@ -70,7 +70,9 @@ NUMEN/
 ├── backend/
 │   ├── src/main/java/ai/numen/
 │   │   ├── config/
+│   │   ├── connector/
 │   │   ├── controller/
+│   │   ├── domain/
 │   │   ├── dto/
 │   │   ├── entity/
 │   │   ├── exception/
@@ -96,6 +98,8 @@ NUMEN/
 │   ├── DEPENDENCY_POLICY.md
 │   ├── RUNBOOK.md
 │   ├── SECURITY.md
+│   ├── THREAT_MODEL.md
+│   ├── TESTING.md
 │   └── DEMO.md
 ├── docker-compose.yml
 ├── start.bat / start.ps1 / start.sh
@@ -110,15 +114,16 @@ NUMEN/
 
 - Canonical one-command runtime tested by CI using the same launcher humans run, including an idempotent second start
 - Java 17 / Spring Boot with DTO/entity separation and versioned `/api/v1` contracts
-- Flyway migrations with Hibernate schema validation and optimistic locking
+- Flyway migrations with Hibernate schema validation, optimistic locking and transactional workflow-result publication
 - Bounded async execution with explicit overload rejection, graceful shutdown, HikariCP limits and health probes
 - Correlation IDs in requests, logs and API errors
 - Actuator metrics and Prometheus registry
-- SSRF controls, reserved-range/credential/non-standard-port blocking, redirect restrictions, response-size/time limits and provenance
+- Pluggable source-connector boundary plus SSRF controls, reserved-range/credential/non-standard-port blocking, redirect restrictions, response-size/time limits and provenance
 - React/TypeScript feature separation with production typecheck/build gates, resilient request timeouts, accessible interaction states and exact manifest versions backed by `package-lock.json`
 - Non-root containers, read-only filesystems where practical, dropped capabilities and `no-new-privileges`
 - Loopback-only host ports, CSP/security headers, immutable asset caching, bounded logs and no runtime font/CDN dependency
 - Bounded task/result reads, spreadsheet-safe CSV export and forward-only database hardening migrations
+- Aggregate readiness/health checks and full-stack CI that creates a workflow, waits for completion, validates persisted provenance, exports CSV and re-runs the one-step launcher idempotently
 - Repository structure enforcement and full-stack one-step smoke testing in CI
 
 ## Single-branch policy
@@ -140,7 +145,7 @@ make reset    # stop and delete the local DB volume
 
 ## Documentation
 
-See [Engineering Standards](docs/ENGINEERING_STANDARDS.md), [Architecture](docs/ARCHITECTURE.md), [Development](docs/DEVELOPMENT.md), [Operations Runbook](docs/RUNBOOK.md), [Security](docs/SECURITY.md) and [Demo Script](docs/DEMO.md).
+See [Engineering Standards](docs/ENGINEERING_STANDARDS.md), [Architecture](docs/ARCHITECTURE.md), [Development](docs/DEVELOPMENT.md), [Testing](docs/TESTING.md), [Threat Model](docs/THREAT_MODEL.md), [Operations Runbook](docs/RUNBOOK.md), [Security](docs/SECURITY.md) and [Demo Script](docs/DEMO.md).
 
 ## License
 

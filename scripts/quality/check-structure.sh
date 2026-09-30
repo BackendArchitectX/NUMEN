@@ -33,6 +33,9 @@ required_files=(
   docs/ENGINEERING_STANDARDS.md
   docs/RUNBOOK.md
   docs/SECURITY.md
+  docs/THREAT_MODEL.md
+  docs/TESTING.md
+  docs/adr/0003-source-connector-boundary.md
   .github/workflows/branch-policy.yml
   backend/src/main/resources/db/migration/V2__runtime_hardening.sql
   backend/src/main/java/ai/numen/service/DatasetExportService.java
@@ -42,6 +45,8 @@ required_files=(
 
 required_dirs=(
   backend/src/main/java/ai/numen/config
+  backend/src/main/java/ai/numen/connector
+  backend/src/main/java/ai/numen/domain
   backend/src/main/java/ai/numen/controller
   backend/src/main/java/ai/numen/dto
   backend/src/main/java/ai/numen/entity

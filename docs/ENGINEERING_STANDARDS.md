@@ -10,11 +10,11 @@ A fresh checkout must start with one command (`start.bat`, `./start.ps1`, or `./
 
 - Java 17 is the supported language/runtime baseline.
 - Controllers expose versioned API contracts and never return JPA entities directly.
-- DTOs, persistence entities, repositories, service orchestration, outbound security, configuration, and exception mapping remain separated.
-- Database changes are forward-only Flyway migrations; Hibernate validates rather than mutates production schemas.
+- DTOs, domain contracts, source connectors, persistence entities, repositories, service orchestration, outbound security, configuration, and exception mapping remain separated.
+- Database changes are forward-only Flyway migrations; Hibernate validates rather than mutates production schemas. Dataset replacement and terminal workflow state publication must remain transactional.
 - Long-running work uses bounded executors, graceful shutdown semantics and explicit overload rejection rather than silently dropping work.
 - Every HTTP request has a correlation ID and errors return that ID for supportability.
-- Health, metrics, and Prometheus instrumentation are available through Actuator.
+- Health, readiness, metrics and Prometheus instrumentation are available through Actuator. The public health endpoint reflects aggregate Actuator status rather than an unconditional constant.
 - Outbound collection must pass SSRF controls, reserved-range/default-port policy and explicit resource limits. Per-source failures are logged without leaking URL query content.
 
 ## Frontend
@@ -35,6 +35,6 @@ A fresh checkout must start with one command (`start.bat`, `./start.ps1`, or `./
 
 - `main` is the only persistent origin branch; `.github/workflows/branch-policy.yml` prunes accidental non-`main` origin branches on creation, after main pushes, and on a scheduled reconciliation pass.
 - Automated dependency PR generation is disabled because it creates origin branches; dependency upgrades are reviewed and committed manually after CI verification.
-- CI validates repository structure, Bash and PowerShell launcher syntax, backend verification, frontend typechecking/build, Compose validity, a complete one-step startup smoke test, and idempotent startup.
+- CI validates repository structure, Bash and PowerShell launcher syntax, backend verification, frontend typechecking/build, Compose validity, a complete one-step startup smoke test, a real workflow/persistence/export path, and idempotent startup.
 - Frontend dependency manifests use exact versions; the lockfile is authoritative for reproducible CI/container installs.
 - Generated artifacts, local secrets, `.env`, `node_modules`, `target`, and `dist` must never be tracked.

@@ -91,6 +91,37 @@ jobs:
         run: |
           curl --fail --retry 10 --retry-delay 2 http://localhost:5173/healthz
           curl --fail --retry 10 --retry-delay 2 http://localhost:5173/api/v1/health
+      - name: Exercise end-to-end workflow
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          created="$(curl --fail --silent \
+            -H 'Content-Type: application/json' \
+            -d '{"prompt":"Find backend job openings from permitted public sources and return traceable records"}' \
+            http://localhost:5173/api/v1/tasks)"
+
+          task_id="$(printf '%s' "$created" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
+          [[ -n "$task_id" ]]
+
+          completed=false
+          for _ in $(seq 1 30); do
+            state="$(curl --fail --silent "http://localhost:5173/api/v1/tasks/$task_id")"
+            status="$(printf '%s' "$state" | python3 -c 'import json,sys; print(json.load(sys.stdin)["status"])')"
+            case "$status" in
+              COMPLETED) completed=true; break ;;
+              FAILED|CANCELLED) printf '%s\n' "$state"; exit 1 ;;
+            esac
+            sleep 1
+          done
+          [[ "$completed" == true ]]
+
+          curl --fail --silent "http://localhost:5173/api/v1/tasks/$task_id/records?limit=10" \
+            | python3 -c 'import json,sys; rows=json.load(sys.stdin); assert rows; assert all(r["sourceType"]=="DEMO" for r in rows); assert all(r["sourceUrl"].startswith("urn:numen:demo:") for r in rows)'
+
+          curl --fail --silent "http://localhost:5173/api/v1/tasks/$task_id/export.csv" -o /tmp/numen-export.csv
+          grep -q 'source_url' /tmp/numen-export.csv
+
       - name: Verify idempotent one-step start
         run: ./start.sh --no-browser --no-build
       - name: Show diagnostics on failure
