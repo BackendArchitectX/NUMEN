@@ -22,6 +22,7 @@ doctor:
 quality:
 	bash scripts/quality/check-structure.sh
 	bash scripts/quality/check-runtime.sh
+	bash scripts/quality/check-source-policy.sh
 	git diff --check
 
 test:

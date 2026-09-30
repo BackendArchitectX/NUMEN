@@ -19,6 +19,14 @@ public class NumenProperties {
     @Max(32)
     private int maxFetchUrls = 8;
 
+    @Min(1)
+    @Max(4)
+    private int maxFetchAttempts = 2;
+
+    @Min(50)
+    @Max(2000)
+    private int retryBaseDelayMs = 250;
+
     @NotEmpty
     private List<@NotBlank String> allowedOrigins = new ArrayList<>(List.of(
             "http://localhost:5173",
@@ -29,6 +37,10 @@ public class NumenProperties {
     public void setHttpFetchEnabled(boolean httpFetchEnabled) { this.httpFetchEnabled = httpFetchEnabled; }
     public int getMaxFetchUrls() { return maxFetchUrls; }
     public void setMaxFetchUrls(int maxFetchUrls) { this.maxFetchUrls = maxFetchUrls; }
+    public int getMaxFetchAttempts() { return maxFetchAttempts; }
+    public void setMaxFetchAttempts(int maxFetchAttempts) { this.maxFetchAttempts = maxFetchAttempts; }
+    public int getRetryBaseDelayMs() { return retryBaseDelayMs; }
+    public void setRetryBaseDelayMs(int retryBaseDelayMs) { this.retryBaseDelayMs = retryBaseDelayMs; }
     public List<String> getAllowedOrigins() { return allowedOrigins; }
     public void setAllowedOrigins(List<String> allowedOrigins) { this.allowedOrigins = allowedOrigins; }
 }

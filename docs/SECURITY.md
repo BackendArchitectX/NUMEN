@@ -5,7 +5,7 @@
 - Absolute HTTP(S)-only source URLs.
 - DNS resolution before fetch with loopback/private/link-local/multicast, CGNAT, documentation, benchmarking and IPv6 unique-local rejection.
 - Embedded URL credentials and non-standard HTTP(S) ports are rejected; redirects are disabled in the collection adapter.
-- Response size and connection timeout limits.
+- Response size and connection timeout limits, with bounded retry/backoff only for transient failures.
 - Backend runs as a non-root container user.
 - PostgreSQL is not published to the host.
 - CORS allowlist comes from typed validated runtime configuration and allowed request headers are explicit rather than wildcarded.

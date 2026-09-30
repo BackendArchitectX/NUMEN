@@ -28,6 +28,8 @@ jobs:
         run: bash scripts/quality/check-structure.sh
       - name: Validate launcher syntax
         run: bash scripts/quality/check-runtime.sh
+      - name: Validate source policy
+        run: bash scripts/quality/check-source-policy.sh
       - name: Validate whitespace in latest change
         run: git diff --check HEAD^ HEAD
       - name: Validate Compose model
@@ -96,13 +98,26 @@ jobs:
         run: |
           set -Eeuo pipefail
 
+          idempotency_key="ci-${GITHUB_RUN_ID}-workflow"
+          payload='{"prompt":"Find backend job openings from permitted public sources and return traceable records"}'
+
           created="$(curl --fail --silent \
             -H 'Content-Type: application/json' \
-            -d '{"prompt":"Find backend job openings from permitted public sources and return traceable records"}' \
+            -H "Idempotency-Key: ${idempotency_key}" \
+            -d "$payload" \
+            http://localhost:5173/api/v1/tasks)"
+
+          replayed="$(curl --fail --silent \
+            -D /tmp/numen-replay.headers \
+            -H 'Content-Type: application/json' \
+            -H "Idempotency-Key: ${idempotency_key}" \
+            -d "$payload" \
             http://localhost:5173/api/v1/tasks)"
 
           task_id="$(printf '%s' "$created" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
-          [[ -n "$task_id" ]]
+          replayed_id="$(printf '%s' "$replayed" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
+          [[ -n "$task_id" && "$task_id" == "$replayed_id" ]]
+          grep -qi '^Idempotency-Replayed: true' /tmp/numen-replay.headers
 
           completed=false
           for _ in $(seq 1 30); do

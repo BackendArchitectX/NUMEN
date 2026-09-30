@@ -117,15 +117,16 @@ NUMEN/
 - Canonical one-command runtime tested by CI using the same launcher humans run, including an idempotent second start
 - Java 17 / Spring Boot with DTO/entity separation, stable error codes, idempotent workflow creation and versioned `/api/v1` contracts
 - Flyway migrations with Hibernate schema validation, optimistic locking and transactional workflow-result publication
-- Bounded async execution with explicit overload rejection, graceful shutdown, HikariCP limits and health probes
+- Bounded async execution with explicit overload rejection, restart recovery for interrupted workflows, graceful shutdown, HikariCP limits and health probes
 - Correlation IDs in requests, logs and API errors plus machine-readable OpenAPI at `/api/v1/openapi`
 - Actuator metrics and Prometheus registry including workflow executor activity, pool size and queue depth
-- Pluggable source-connector boundary plus SSRF controls, reserved-range/credential/non-standard-port blocking, redirect restrictions, response-size/time limits and provenance
+- Pluggable source-connector boundary plus SSRF controls, reserved-range/credential/non-standard-port blocking, redirect restrictions, response-size/time limits, bounded transient retries with backoff/jitter and provenance
 - React/TypeScript feature separation with production typecheck/build gates, resilient request timeouts, accessible interaction states and exact manifest versions backed by `package-lock.json`
 - Non-root containers, read-only filesystems where practical, dropped capabilities and `no-new-privileges`
 - Loopback-only host ports, CSP/security headers, immutable asset caching, bounded logs and no runtime font/CDN dependency
 - Bounded task/result reads, spreadsheet-safe CSV export and forward-only database hardening migrations
 - Aggregate readiness/health checks and full-stack CI that creates a workflow, waits for completion, validates persisted provenance, exports CSV and re-runs the one-step launcher idempotently
+- Source-policy checks reject runtime TODO/FIXME/HACK debt, unsafe raw HTML rendering and backend stdout/stack-trace logging
 - Repository structure enforcement and full-stack one-step smoke testing in CI
 
 ## Single-branch policy

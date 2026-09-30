@@ -46,7 +46,7 @@ Docker Compose is the canonical local runtime. The browser reaches only the fron
 
 `QUEUED → PLANNING → COLLECTING → PROCESSING → COMPLETED`
 
-Terminal alternatives are `FAILED` and `CANCELLED`. Progress events are published through Server-Sent Events. Empty SSE listener groups are removed to avoid per-task emitter-map growth. Optimistic locking protects concurrent workflow updates.
+Terminal alternatives are `FAILED` and `CANCELLED`. Progress events are published through Server-Sent Events with bounded stream lifetimes and browser reconnect hints. Empty listener groups are removed and all emitters are completed during application shutdown. Optimistic locking protects concurrent workflow updates.
 
 ## Persistence
 
@@ -54,8 +54,13 @@ Flyway owns schema evolution. Hibernate runs with `ddl-auto=validate`, so accide
 
 ## Collection boundary
 
-Only explicit absolute HTTP(S) URLs are accepted for live fetching. `CollectionEngine` chooses exactly one compatible `SourceConnector`. The HTTP connector resolves the target host, rejects private/local/link-local/multicast/reserved addresses, embedded credentials and non-standard ports, disables redirects and applies timeout/body-size limits. Prompts without URLs use the explicitly labelled demo connector.
+Only explicit absolute HTTP(S) URLs are accepted for live fetching. `CollectionEngine` chooses exactly one compatible `SourceConnector`. The HTTP connector resolves the target host, rejects private/local/link-local/multicast/reserved addresses, embedded credentials and non-standard ports, disables redirects and applies timeout/body-size limits. Transient network errors, HTTP 408, HTTP 429 and 5xx responses use a small bounded retry budget with exponential backoff plus jitter; permanent HTTP failures are not retried. Prompts without URLs use the explicitly labelled demo connector.
 
 ## Scaling path
 
 The current worker pool is intentionally bounded for a single-node challenge deployment. At higher scale, replace in-process dispatch with Kafka/SQS, move raw evidence to object storage, use distributed rate limiting, persist event streams, and add per-tenant quotas.
+
+
+## Restart recovery
+
+At application readiness, workflows left in `QUEUED`, `PLANNING`, `COLLECTING` or `PROCESSING` by a previous process interruption are redispatched through the normal bounded executor. Publication remains atomic, so a recovered workflow cannot expose a partially replaced dataset. If admission capacity is exhausted, recovery failure is persisted visibly instead of leaving the task indefinitely stuck.

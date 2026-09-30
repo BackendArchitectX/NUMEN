@@ -3,18 +3,21 @@ package ai.numen.connector;
 import ai.numen.config.NumenProperties;
 import ai.numen.entity.DatasetRecord;
 import ai.numen.security.UrlSafetyGuard;
+import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Component
 public class HttpPageConnector implements SourceConnector {
@@ -47,7 +50,7 @@ public class HttpPageConnector implements SourceConnector {
         List<DatasetRecord> records = new ArrayList<>();
         for (String raw : request.urls()) {
             try {
-                records.add(fetch(request.taskId(), raw));
+                records.add(fetchWithRetry(request.taskId(), raw));
             } catch (Exception ex) {
                 log.warn("source_collection_failed taskId={} sourceHost={} error={}",
                         request.taskId(), safeHost(raw), ex.getClass().getSimpleName());
@@ -61,7 +64,29 @@ public class HttpPageConnector implements SourceConnector {
         return records;
     }
 
-    private DatasetRecord fetch(java.util.UUID taskId, String raw) throws Exception {
+    private DatasetRecord fetchWithRetry(java.util.UUID taskId, String raw) throws IOException {
+        int maxAttempts = properties.getMaxFetchAttempts();
+
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                return fetch(taskId, raw);
+            } catch (HttpStatusException ex) {
+                if (!isRetryableStatus(ex.getStatusCode()) || attempt == maxAttempts) throw ex;
+                log.info("source_collection_retry taskId={} sourceHost={} attempt={} status={}",
+                        taskId, safeHost(raw), attempt, ex.getStatusCode());
+            } catch (IOException ex) {
+                if (attempt == maxAttempts) throw ex;
+                log.info("source_collection_retry taskId={} sourceHost={} attempt={} error={}",
+                        taskId, safeHost(raw), attempt, ex.getClass().getSimpleName());
+            }
+
+            backoff(attempt);
+        }
+
+        throw new IOException("Source collection attempts exhausted");
+    }
+
+    private DatasetRecord fetch(java.util.UUID taskId, String raw) throws IOException {
         URI uri = safetyGuard.requirePublicHttpUrl(raw);
         Document document = Jsoup.connect(uri.toString())
                 .userAgent("NUMEN/1.0 (+data-intelligence-demo)")
@@ -93,6 +118,22 @@ public class HttpPageConnector implements SourceConnector {
                 quality,
                 sha256(title + "|" + uri)
         );
+    }
+
+    static boolean isRetryableStatus(int statusCode) {
+        return statusCode == 408 || statusCode == 429 || statusCode >= 500;
+    }
+
+    private void backoff(int attempt) throws IOException {
+        long base = properties.getRetryBaseDelayMs();
+        long exponential = Math.min(5_000L, base * (1L << Math.max(0, attempt - 1)));
+        long jitter = ThreadLocalRandom.current().nextLong(Math.max(1L, base));
+        try {
+            Thread.sleep(exponential + jitter);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Source retry interrupted", ex);
+        }
     }
 
     private static String safeHost(String raw) {

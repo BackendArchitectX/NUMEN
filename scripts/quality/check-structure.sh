@@ -27,6 +27,7 @@ required_files=(
   scripts/runtime/start.sh
   scripts/quality/check-structure.sh
   scripts/quality/check-runtime.sh
+  scripts/quality/check-source-policy.sh
   scripts/quality/check-powershell.ps1
   docs/ARCHITECTURE.md
   docs/DEVELOPMENT.md
@@ -44,6 +45,7 @@ required_files=(
   backend/src/main/resources/db/migration/V3__task_idempotency.sql
   backend/src/main/java/ai/numen/config/OpenApiConfig.java
   backend/src/main/java/ai/numen/service/DatasetExportService.java
+  backend/src/main/java/ai/numen/service/WorkflowRecoveryService.java
   backend/src/main/java/ai/numen/exception/WorkflowCapacityException.java
   frontend/src/app/AppErrorBoundary.tsx
 )

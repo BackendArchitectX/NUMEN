@@ -65,6 +65,8 @@ logging:
 numen:
   http-fetch-enabled: ${NUMEN_HTTP_FETCH_ENABLED:true}
   max-fetch-urls: ${NUMEN_MAX_FETCH_URLS:8}
+  max-fetch-attempts: ${NUMEN_MAX_FETCH_ATTEMPTS:2}
+  retry-base-delay-ms: ${NUMEN_RETRY_BASE_DELAY_MS:250}
   allowed-origins: ${NUMEN_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
 
 ---

@@ -52,6 +52,8 @@ NUMEN_API_PORT=8080
 
 Running the same start command again against an already-healthy NUMEN stack exits successfully without rebuilding or replacing containers. CI verifies this behavior.
 
+If the backend process was interrupted while workflows were active, NUMEN redispatches non-terminal workflows after the application becomes ready. Recovered work still goes through the bounded executor and transactional publication path.
+
 ## Backup and recovery
 
 See [`RECOVERY.md`](RECOVERY.md) for logical backup, restore, bad-release rollback and corruption recovery guidance.
@@ -63,5 +65,5 @@ See [`RECOVERY.md`](RECOVERY.md) for logical backup, restore, bad-release rollba
 - **Port already in use** — change the matching port in `.env`.
 - **Backend unhealthy** — inspect `docker compose logs backend`.
 - **Database unhealthy** — inspect `docker compose logs db`.
-- **Source rejected** — ensure the supplied URL is public HTTP(S), uses port 80/443, contains no embedded credentials and is directly reachable without redirects.
+- **Source rejected** — ensure the supplied URL is public HTTP(S), uses port 80/443, contains no embedded credentials and is directly reachable without redirects. Transient network/408/429/5xx failures receive only a small bounded retry budget.
 - **HTTP 429 when creating a workflow** — the bounded worker queue is full; retry after the response `Retry-After` interval.
