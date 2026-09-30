@@ -15,7 +15,7 @@ export interface Task {
   completedAt?: string
 }
 
-export interface RecordRow {
+export interface DatasetRecord {
   id: string
   taskId: string
   title: string
@@ -29,4 +29,11 @@ export interface RecordRow {
   qualityScore: number
   fingerprint: string
   collectedAt: string
+}
+
+export interface HealthResponse {
+  status: string
+  service: string
+  version: string
+  time: string
 }

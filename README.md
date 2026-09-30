@@ -1,150 +1,161 @@
 # NUMEN
 
-> **AI-Powered Data Intelligence Platform** — natural-language intent → managed workflow → permitted-source collection → validated, deduplicated, source-backed dataset.
+**AI-Powered Data Intelligence Platform** — natural-language intent → managed workflow → permitted-source collection → validated, deduplicated, source-backed dataset.
 
-NUMEN is an end-to-end implementation of the **AI-Powered Data Intelligence Platform** challenge. The challenge asks for a product that understands data requirements from natural-language prompts, dynamically creates and executes data-collection workflows, collects from multiple permitted sources, validates and deduplicates results, keeps source provenance, provides task monitoring/history, and supports search/filter/export. NUMEN implements that complete path with a premium live operations dashboard.
+NUMEN is a full-stack implementation of the AI-Powered Data Intelligence Platform challenge. It converts plain-English requirements into auditable collection workflows, gathers data from explicitly permitted public HTTP(S) sources, preserves provenance, scores quality, deduplicates records, streams progress live and exposes the resulting dataset through a premium operations console.
 
-## Why NUMEN is different
-
-- **Works with zero paid AI credits.** The default planner is deterministic and local, so the full demo is repeatable and offline-capable.
-- **Real collection when a permitted URL is supplied.** Public HTTP(S) pages can be fetched, parsed and converted to structured records.
-- **Safe-by-default URL handling.** Local/private/link-local/multicast network targets are blocked and redirects are not blindly followed.
-- **Traceable evidence.** Every row carries source URL, source name/type, collection time, quality score and a SHA-256 deduplication fingerprint.
-- **Live workflow observability.** Seven pipeline stages stream to the React UI using Server-Sent Events.
-- **Persistent history.** Workflows and datasets are stored in PostgreSQL in Docker mode.
-- **One-command launch.** Backend, frontend and database start together with Docker Compose.
-
-## Challenge coverage
-
-| Challenge requirement | NUMEN implementation |
-|---|---|
-| Understand natural-language requirements | `WorkflowPlanner` classifies intent and constructs a deterministic workflow |
-| Dynamically design/execute workflows | Async `TaskRunner` executes the seven-stage plan |
-| Multiple permitted sources | Explicit public HTTP(S) sources + isolated offline demo adapter |
-| Clean/structure/validate/deduplicate | Normalization, completeness quality score, SHA-256 fingerprint dedupe |
-| Source-backed traceable data | Provenance fields on every record |
-| Monitor/manage tasks | Live SSE progress, status, stage, cancellation |
-| Search/filter/export | Dataset explorer, quality filters, text search, CSV export |
-| Workflow/dataset history | Persisted task and record entities |
-
-## Architecture
-
-```text
-┌───────────────────────────┐
-│ React + TypeScript + Vite │
-│ premium intelligence UI   │
-└─────────────┬─────────────┘
-              │ REST + SSE
-              ▼
-┌───────────────────────────┐
-│      Spring Boot API      │
-│                           │
-│  WorkflowPlanner          │
-│  TaskRunner / EventHub    │
-│  UrlSafetyGuard           │
-│  CollectionEngine         │
-│  Validation + Dedup       │
-└─────────────┬─────────────┘
-              │ JPA
-              ▼
-        ┌────────────┐
-        │ PostgreSQL │
-        └────────────┘
-```
-
-## Quick start
-
-### Prerequisites
-
-- Docker Desktop with Docker Compose
+## One-step start
 
 ### Windows
 
+Double-click `start.bat` **or** run exactly one command:
+
 ```powershell
-.\run.ps1
+.\start.ps1
 ```
 
 ### macOS / Linux
 
 ```bash
-chmod +x run.sh
-./run.sh
+./start.sh
 ```
 
-Then open **http://localhost:5173**. The API is available at **http://localhost:8080** and health at **http://localhost:8080/actuator/health**.
+That single command validates Docker, creates `.env` when needed, builds the frontend/backend images, starts PostgreSQL + Spring Boot + React, waits for health checks, and opens the application.
+
+- Web: `http://localhost:5173`
+- API: `http://localhost:8080/api/v1`
+- Health: `http://localhost:5173/api/v1/health`
+- Stop: `./stop.sh` or `.\stop.ps1`
+
+## Architecture
+
+```text
+Browser
+  │
+  ▼
+Nginx / React + TypeScript
+  │  REST + SSE
+  ▼
+Spring Boot API
+  ├── controller    API boundary + DTO mapping
+  ├── service       use cases / workflow orchestration
+  ├── security      outbound URL validation
+  ├── repository    persistence boundary
+  ├── entity        JPA domain persistence model
+  ├── dto           public API contracts
+  ├── exception     consistent error mapping
+  └── config        typed runtime configuration
+        │
+        ▼
+   PostgreSQL + Flyway
+```
+
+## Repository structure
+
+```text
+NUMEN/
+├── .github/
+│   ├── CODEOWNERS
+│   └── workflows/ci.yml
+├── backend/
+│   ├── src/main/java/ai/numen/
+│   │   ├── config/
+│   │   ├── controller/
+│   │   ├── dto/
+│   │   ├── entity/
+│   │   ├── exception/
+│   │   ├── repository/
+│   │   ├── security/
+│   │   └── service/
+│   ├── src/main/resources/db/migration/
+│   ├── src/test/
+│   ├── Dockerfile
+│   └── pom.xml
+├── frontend/
+│   ├── src/
+│   │   ├── app/
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── model/
+│   │   ├── services/
+│   │   ├── shared/
+│   │   └── styles/
+│   ├── Dockerfile
+│   └── nginx.conf
+├── docs/
+│   ├── ARCHITECTURE.md
+│   ├── DEMO.md
+│   ├── RUNBOOK.md
+│   └── SECURITY.md
+├── docker-compose.yml
+├── start.ps1 / start.sh / start.bat
+├── stop.ps1 / stop.sh
+├── Makefile
+└── README.md
+```
+
+## Challenge coverage
+
+| Requirement | Implementation |
+|---|---|
+| Understand natural-language requirements | deterministic local `WorkflowPlanner` |
+| Dynamically design/execute workflows | bounded async worker pool + `TaskRunner` |
+| Collect from permitted sources | public HTTP(S) adapter with SSRF guardrails |
+| Clean/structure/validate/deduplicate | normalization, quality scoring, SHA-256 fingerprints |
+| Source-backed traceable data | provenance fields on every dataset row |
+| Monitor/manage collection tasks | live SSE stages + cancellation + persistent status |
+| Search/filter/export | dataset explorer, quality filters, CSV export |
+| Workflow and dataset history | PostgreSQL persistence with Flyway migrations |
+
+## Engineering standards built in
+
+- **One-command reproducible runtime** with Docker Compose
+- **Layered backend architecture** with DTO/API separation
+- **Feature-oriented frontend structure** instead of a monolithic component
+- **Flyway database migrations** with Hibernate schema validation
+- **Optimistic locking** for workflow state
+- **Typed configuration** through `@ConfigurationProperties`
+- **Graceful shutdown**, bounded async workers and health probes
+- **SSRF controls**, redirect blocking and response-size/time limits
+- **Container hardening** with a non-root backend user
+- **Versioned REST API** under `/api/v1`
+- **CI gates** for backend verification, frontend production build and complete Docker smoke test
+- **CODEOWNERS**, `.editorconfig`, `.gitattributes`, `.dockerignore` and environment template
 
 ## Demo prompts
 
-Use a zero-credit demo prompt:
+Zero-credit deterministic demo:
 
 ```text
 Find Java backend engineering roles in India and structure title, company, location, URL and source.
 ```
 
-Or test real permitted-source collection by including an explicit public URL:
+Real permitted-source collection:
 
 ```text
 Collect structured intelligence from this permitted source: https://example.com
 Return title, organization, source and a concise excerpt.
 ```
 
-If no fetchable public URL is present, NUMEN deliberately switches to **offline demo mode** and labels those rows `NUMEN Demo Catalog`; it never pretends synthetic rows came from the live web.
+If a prompt contains no source URL, NUMEN intentionally uses its clearly-labelled offline demo catalog. Synthetic rows are never represented as live web results.
 
-## Local development
-
-Backend:
+## Developer commands
 
 ```bash
-cd backend
-mvn spring-boot:run
+make up       # start full stack
+make down     # stop full stack
+make logs     # follow logs
+make test     # backend tests + frontend build
+make verify   # validation + full local verification
+make clean    # remove containers and local database volume
 ```
 
-Frontend:
+## Documentation
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The default backend profile uses an in-memory H2 database for fast local development. Docker mode uses PostgreSQL.
-
-## API surface
-
-| Method | Endpoint | Purpose |
-|---|---|---|
-| `POST` | `/api/tasks` | Create a workflow from a prompt |
-| `GET` | `/api/tasks` | Workflow history |
-| `GET` | `/api/tasks/{id}` | Workflow details |
-| `GET` | `/api/tasks/{id}/events` | Live SSE progress |
-| `POST` | `/api/tasks/{id}/cancel` | Cancel active workflow |
-| `GET` | `/api/tasks/{id}/records` | Search/filter result rows |
-| `GET` | `/api/tasks/{id}/export.csv` | Export dataset |
-
-## Security model
-
-NUMEN does **not** act as an unrestricted scraper. Its web adapter accepts only absolute HTTP(S) URLs, resolves the host before fetching, blocks private/local/link-local/multicast destinations, uses body/timeout limits and does not blindly follow redirects. A production deployment should additionally add source-specific policies, robots/terms enforcement, DNS pinning, authentication, tenant isolation and rate limits. See [`docs/architecture.md`](docs/architecture.md).
-
-## Repository layout
-
-```text
-NUMEN/
-├── backend/                 # Java 17 / Spring Boot
-├── frontend/                # React / TypeScript / Vite
-├── docs/                    # architecture + demo script
-├── .github/workflows/       # CI
-├── docker-compose.yml
-├── run.ps1
-└── run.sh
-```
-
-## Tech stack
-
-Java 17 · Spring Boot 3 · Spring Data JPA · PostgreSQL · H2 · Jsoup · React · TypeScript · Vite · Nginx · Docker Compose · GitHub Actions
-
-## Roadmap
-
-The architecture intentionally separates planning from collection. The next premium extensions are a local Ollama planner with constrained JSON output, connector-specific workers, source-policy/robots enforcement, raw evidence snapshots in object storage, Kafka/SQS task dispatch, OpenTelemetry, authentication/RBAC and headless-browser workers for permitted JavaScript-heavy sources.
+- [Architecture](docs/ARCHITECTURE.md)
+- [Operations runbook](docs/RUNBOOK.md)
+- [Security model](docs/SECURITY.md)
+- [Demo script](docs/DEMO.md)
 
 ## License
 
