@@ -9,6 +9,7 @@ import ai.numen.exception.WorkflowCapacityException;
 import ai.numen.repository.CollectionTaskRepository;
 import ai.numen.repository.DatasetRecordRepository;
 import org.springframework.core.task.TaskRejectedException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,11 +32,28 @@ public class TaskService {
         this.events = events;
     }
 
-    public CollectionTask create(String prompt) {
-        CollectionTask task = tasks.save(new CollectionTask(UUID.randomUUID(), prompt.trim()));
+    public TaskCreation create(String prompt, String idempotencyKey) {
+        String normalizedKey = normalizeIdempotencyKey(idempotencyKey);
+
+        if (normalizedKey != null) {
+            var existing = tasks.findByIdempotencyKey(normalizedKey);
+            if (existing.isPresent()) return new TaskCreation(existing.get(), true);
+        }
+
+        CollectionTask task;
+        try {
+            task = tasks.saveAndFlush(new CollectionTask(UUID.randomUUID(), prompt.trim(), normalizedKey));
+        } catch (DataIntegrityViolationException ex) {
+            if (normalizedKey != null) {
+                var raced = tasks.findByIdempotencyKey(normalizedKey);
+                if (raced.isPresent()) return new TaskCreation(raced.get(), true);
+            }
+            throw ex;
+        }
+
         try {
             runner.run(task.getId());
-            return task;
+            return new TaskCreation(task, false);
         } catch (TaskRejectedException ex) {
             task.fail("Workflow capacity is temporarily exhausted. Retry shortly.");
             tasks.save(task);
@@ -76,4 +94,12 @@ public class TaskService {
         }
         return task;
     }
+
+    private static String normalizeIdempotencyKey(String key) {
+        if (key == null) return null;
+        String normalized = key.trim();
+        return normalized.isEmpty() ? null : normalized;
+    }
+
+    public record TaskCreation(CollectionTask task, boolean replayed) { }
 }

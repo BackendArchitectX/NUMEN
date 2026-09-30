@@ -3,7 +3,6 @@ package ai.numen.controller;
 import ai.numen.dto.CreateTaskRequest;
 import ai.numen.dto.DatasetRecordResponse;
 import ai.numen.dto.TaskResponse;
-import ai.numen.entity.CollectionTask;
 import ai.numen.service.DatasetExportService;
 import ai.numen.service.TaskEventHub;
 import ai.numen.service.TaskService;
@@ -12,6 +11,7 @@ import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -41,15 +41,21 @@ public class TaskController {
     }
 
     @PostMapping
-    public ResponseEntity<TaskResponse> create(@Valid @RequestBody CreateTaskRequest request) {
-        CollectionTask task = service.create(request.prompt());
+    public ResponseEntity<TaskResponse> create(
+            @Valid @RequestBody CreateTaskRequest request,
+            @RequestHeader(name = "Idempotency-Key", required = false)
+            @Pattern(regexp = "[A-Za-z0-9._:-]{8,128}", message = "must contain 8-128 safe characters")
+            String idempotencyKey) {
+        TaskService.TaskCreation creation = service.create(request.prompt(), idempotencyKey);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
-                .buildAndExpand(task.getId())
+                .buildAndExpand(creation.task().getId())
                 .toUri();
+
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .location(location)
-                .body(TaskResponse.from(task));
+                .header("Idempotency-Replayed", Boolean.toString(creation.replayed()))
+                .body(TaskResponse.from(creation.task()));
     }
 
     @GetMapping

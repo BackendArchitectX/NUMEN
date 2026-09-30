@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { examplePrompts } from '../model/prompts'
 import type { DatasetRecord, Task } from '../model/types'
 import { intelligenceApi } from '../services/intelligenceApi'
@@ -14,6 +14,7 @@ export function useIntelligenceWorkspace() {
   const [busy, setBusy] = useState(false)
   const [online, setOnline] = useState(false)
   const [error, setError] = useState('')
+  const submitting = useRef(false)
 
   const selected = useMemo(() => tasks.find(task => task.id === selectedId), [tasks, selectedId])
 
@@ -45,7 +46,7 @@ export function useIntelligenceWorkspace() {
       try {
         await Promise.all([refresh(), ping()])
       } catch {
-        // SSE remains the primary progress path; polling is best-effort resilience.
+        // SSE remains primary; polling is the recovery path when the stream or network is interrupted.
       } finally {
         if (!cancelled) timer = window.setTimeout(poll, 2500)
       }
@@ -86,17 +87,21 @@ export function useIntelligenceWorkspace() {
 
   const createTask = async () => {
     const normalized = prompt.trim()
-    if (normalized.length < 10 || normalized.length > 4000) return
+    if (normalized.length < 10 || normalized.length > 4000 || submitting.current) return
 
+    submitting.current = true
     setBusy(true)
     setError('')
+    const idempotencyKey = crypto.randomUUID()
+
     try {
-      const task = await intelligenceApi.createTask(normalized)
+      const task = await intelligenceApi.createTask(normalized, idempotencyKey)
       setSelectedId(task.id)
       await refresh()
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Failed to create workflow')
     } finally {
+      submitting.current = false
       setBusy(false)
     }
   }

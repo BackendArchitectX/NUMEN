@@ -3,6 +3,13 @@ import type { DatasetRecord, HealthResponse, Task } from '../model/types'
 const API = '/api/v1'
 const DEFAULT_TIMEOUT_MS = 10_000
 
+interface ApiErrorPayload {
+  message?: string
+  error?: string
+  code?: string
+  correlationId?: string
+}
+
 async function request<T>(url: string, init: RequestInit = {}, timeoutMs = DEFAULT_TIMEOUT_MS): Promise<T> {
   const controller = new AbortController()
   const timeout = window.setTimeout(() => controller.abort(), timeoutMs)
@@ -18,9 +25,10 @@ async function request<T>(url: string, init: RequestInit = {}, timeoutMs = DEFAU
     })
 
     if (!response.ok) {
-      const payload = await response.json().catch(() => ({})) as { message?: string; error?: string; correlationId?: string }
+      const payload = await response.json().catch(() => ({})) as ApiErrorPayload
+      const code = payload.code ? `[${payload.code}] ` : ''
       const suffix = payload.correlationId ? ` (ref: ${payload.correlationId})` : ''
-      throw new Error((payload.message || payload.error || `Request failed: ${response.status}`) + suffix)
+      throw new Error(code + (payload.message || payload.error || `Request failed: ${response.status}`) + suffix)
     }
 
     return response.json() as Promise<T>
@@ -36,9 +44,12 @@ export const intelligenceApi = {
   health: () => request<HealthResponse>(`${API}/health`, {}, 4_000),
   listTasks: () => request<Task[]>(`${API}/tasks?limit=50`),
   getTask: (id: string) => request<Task>(`${API}/tasks/${id}`),
-  createTask: (prompt: string) => request<Task>(`${API}/tasks`, {
+  createTask: (prompt: string, idempotencyKey: string) => request<Task>(`${API}/tasks`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Idempotency-Key': idempotencyKey
+    },
     body: JSON.stringify({ prompt })
   }),
   cancelTask: (id: string) => request<Task>(`${API}/tasks/${id}/cancel`, { method: 'POST' }),
