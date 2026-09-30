@@ -35,14 +35,22 @@ get_env() {
 }
 
 health_ok() {
-  local url="$1"
+  local url="$1" body
   if command -v curl >/dev/null 2>&1; then
-    curl --fail --silent --max-time 2 "$url" 2>/dev/null | grep -q '"status":"UP"'
+    body="$(curl --fail --silent --max-time 2 "$url" 2>/dev/null)" || return 1
   elif command -v wget >/dev/null 2>&1; then
-    wget -qO- --timeout=2 "$url" 2>/dev/null | grep -q '"status":"UP"'
+    body="$(wget -qO- --timeout=2 "$url" 2>/dev/null)" || return 1
   else
     return 1
   fi
+  grep -q '"status":"UP"' <<<"$body" && grep -q '"service":"NUMEN"' <<<"$body"
+}
+
+validate_port() {
+  local name="$1" value="$2" numeric
+  [[ "$value" =~ ^[0-9]+$ ]] || fail "$name must be an integer between 1 and 65535. Current value: $value"
+  numeric=$((10#$value))
+  (( numeric >= 1 && numeric <= 65535 )) || fail "$name must be between 1 and 65535. Current value: $value"
 }
 
 port_in_use() {
@@ -80,6 +88,9 @@ fi
 
 WEB_PORT="$(get_env NUMEN_WEB_PORT 5173)"
 API_PORT="$(get_env NUMEN_API_PORT 8080)"
+validate_port NUMEN_WEB_PORT "$WEB_PORT"
+validate_port NUMEN_API_PORT "$API_PORT"
+[[ "$WEB_PORT" != "$API_PORT" ]] || fail "NUMEN_WEB_PORT and NUMEN_API_PORT must be different."
 APP_URL="http://localhost:${WEB_PORT}"
 HEALTH_URL="${APP_URL}/api/v1/health"
 

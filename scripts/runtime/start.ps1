@@ -46,8 +46,17 @@ function Start-DockerDesktopIfAvailable {
 function Test-AppHealthy([string]$Url) {
     try {
         $response = Invoke-RestMethod -Uri $Url -TimeoutSec 2
-        return $response.status -eq "UP"
+        return $response.status -eq "UP" -and $response.service -eq "NUMEN"
     } catch { return $false }
+}
+
+function Get-ValidatedPort([string]$Name, [string]$Default) {
+    $raw = Get-EnvValue $Name $Default
+    $port = 0
+    if (-not [int]::TryParse($raw, [ref]$port) -or $port -lt 1 -or $port -gt 65535) {
+        Fail "$Name must be an integer between 1 and 65535. Current value: $raw"
+    }
+    return $port
 }
 
 function Assert-PortAvailable([int]$Port, [string]$Label) {
@@ -75,8 +84,9 @@ if (-not (Test-Path ".env")) {
     Step "Created .env with a unique local database password"
 }
 
-$WebPort = [int](Get-EnvValue "NUMEN_WEB_PORT" "5173")
-$ApiPort = [int](Get-EnvValue "NUMEN_API_PORT" "8080")
+$WebPort = Get-ValidatedPort "NUMEN_WEB_PORT" "5173"
+$ApiPort = Get-ValidatedPort "NUMEN_API_PORT" "8080"
+if ($WebPort -eq $ApiPort) { Fail "NUMEN_WEB_PORT and NUMEN_API_PORT must be different." }
 $AppUrl = "http://localhost:$WebPort"
 $HealthUrl = "$AppUrl/api/v1/health"
 

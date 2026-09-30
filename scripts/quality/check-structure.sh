@@ -32,6 +32,10 @@ required_files=(
   docs/RUNBOOK.md
   docs/SECURITY.md
   .github/workflows/branch-policy.yml
+  backend/src/main/resources/db/migration/V2__runtime_hardening.sql
+  backend/src/main/java/ai/numen/service/DatasetExportService.java
+  backend/src/main/java/ai/numen/exception/WorkflowCapacityException.java
+  frontend/src/app/AppErrorBoundary.tsx
 )
 
 required_dirs=(
@@ -65,6 +69,10 @@ tracked_bad="$(git ls-files | grep -E '(^|/)(node_modules|target|dist)(/|$)|(^|/
 
 if grep -Eq '"[^"]+": "(latest|\\*)"' frontend/package.json; then
   fail "frontend/package.json must pin dependency versions; latest and wildcard versions are not allowed"
+fi
+
+if grep -R -Eq 'fonts\.googleapis\.com|fonts\.gstatic\.com' frontend/src frontend/nginx.conf; then
+  fail "frontend must not depend on runtime Google Font/CDN requests"
 fi
 
 printf '[NUMEN] repository structure OK\n'

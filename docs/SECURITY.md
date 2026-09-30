@@ -3,14 +3,15 @@
 ## Implemented controls
 
 - Absolute HTTP(S)-only source URLs.
-- DNS resolution before fetch with loopback/private/link-local/multicast rejection.
-- Redirects disabled in the collection adapter.
+- DNS resolution before fetch with loopback/private/link-local/multicast, CGNAT, documentation, benchmarking and IPv6 unique-local rejection.
+- Embedded URL credentials and non-standard HTTP(S) ports are rejected; redirects are disabled in the collection adapter.
 - Response size and connection timeout limits.
 - Backend runs as a non-root container user.
 - PostgreSQL is not published to the host.
 - CORS allowlist comes from typed runtime configuration.
 - API returns DTOs rather than persistence entities.
-- Nginx adds basic browser hardening headers.
+- Nginx adds CSP, framing, referrer, permissions and cross-origin opener hardening headers.
+- CSV export neutralizes spreadsheet-formula prefixes and emits UTF-8 safely.
 - Secrets and local `.env` files are excluded from Git.
 
 ## Known boundary

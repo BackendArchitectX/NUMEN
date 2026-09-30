@@ -13,19 +13,24 @@ interface WorkflowPanelProps {
 
 export function WorkflowPanel({ task, exportUrl, onCancel }: WorkflowPanelProps) {
   const active = !['COMPLETED', 'FAILED', 'CANCELLED'].includes(task.status)
-  return <section className="runPanel panel">
+  return <section className="runPanel panel" aria-labelledby={`workflow-${task.id}`}>
     <div className="runHeader">
-      <div><span className={`status ${task.status.toLowerCase()}`}>{task.status}</span><h2>{clip(task.prompt, 90)}</h2></div>
+      <div>
+        <span className={`status ${task.status.toLowerCase()}`} aria-live="polite">{task.status}</span>
+        <h2 id={`workflow-${task.id}`}>{clip(task.prompt, 90)}</h2>
+      </div>
       <div className="runActions">
-        {active && <button onClick={() => onCancel(task.id)}>Cancel</button>}
-        <a className="export" href={exportUrl}><Download size={15}/> Export CSV</a>
+        {active && <button type="button" onClick={() => onCancel(task.id)}>Cancel</button>}
+        {task.recordCount > 0 && <a className="export" href={exportUrl}><Download size={15} aria-hidden="true"/> Export CSV</a>}
       </div>
     </div>
-    <div className="progressTrack"><div style={{ width: `${task.progress}%` }}/></div>
+    <div className="progressTrack" role="progressbar" aria-label="Workflow progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={task.progress}>
+      <div style={{ width: `${task.progress}%` }}/>
+    </div>
     <div className="progressMeta"><span>{task.errorMessage || task.stage}</span><b>{task.progress}%</b></div>
-    <div className="pipeline">
+    <div className="pipeline" aria-label="Workflow stages">
       {stages.map((stage, index) => <div className={task.progress >= thresholds[index] ? 'done' : ''} key={stage}>
-        <CheckCircle2 size={15}/><span>{stage}</span>
+        <CheckCircle2 size={15} aria-hidden="true"/><span>{stage}</span>
       </div>)}
     </div>
   </section>

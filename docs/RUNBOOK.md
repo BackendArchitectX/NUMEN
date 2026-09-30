@@ -6,7 +6,7 @@ Windows: `start.bat` or `.\start.ps1`
 
 macOS/Linux: `./start.sh`
 
-The launcher performs Docker preflight checks, creates `.env`, validates Compose, builds all images, starts the stack, polls the public health endpoint and opens the UI.
+The launcher performs Docker preflight checks, creates `.env`, validates port values and port separation, validates Compose, builds all images, starts the stack, verifies that the public health response identifies NUMEN, and opens the UI.
 
 ## Stop
 
@@ -49,7 +49,9 @@ NUMEN_API_PORT=8080
 ## Failure modes
 
 - **Docker not running** — launcher exits before doing any work.
+- **Invalid or duplicate port configuration** — use distinct integer ports from 1–65535 in `.env`.
 - **Port already in use** — change the matching port in `.env`.
 - **Backend unhealthy** — inspect `docker compose logs backend`.
 - **Database unhealthy** — inspect `docker compose logs db`.
-- **Source rejected** — ensure the supplied URL is public HTTP(S) and directly reachable without redirects.
+- **Source rejected** — ensure the supplied URL is public HTTP(S), uses port 80/443, contains no embedded credentials and is directly reachable without redirects.
+- **HTTP 429 when creating a workflow** — the bounded worker queue is full; retry after the response `Retry-After` interval.

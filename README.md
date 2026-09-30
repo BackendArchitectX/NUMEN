@@ -111,13 +111,14 @@ NUMEN/
 - Canonical one-command runtime tested by CI using the same launcher humans run
 - Java 17 / Spring Boot with DTO/entity separation and versioned `/api/v1` contracts
 - Flyway migrations with Hibernate schema validation and optimistic locking
-- Bounded async execution, graceful shutdown, HikariCP limits and health probes
+- Bounded async execution with explicit overload rejection, graceful shutdown, HikariCP limits and health probes
 - Correlation IDs in requests, logs and API errors
 - Actuator metrics and Prometheus registry
-- SSRF controls, redirect restrictions, response-size/time limits and provenance
-- React/TypeScript feature separation with production typecheck/build gates and exact manifest versions backed by `package-lock.json`
+- SSRF controls, reserved-range/credential/non-standard-port blocking, redirect restrictions, response-size/time limits and provenance
+- React/TypeScript feature separation with production typecheck/build gates, resilient request timeouts, accessible interaction states and exact manifest versions backed by `package-lock.json`
 - Non-root containers, read-only filesystems where practical, dropped capabilities and `no-new-privileges`
-- Loopback-only host ports, CSP/security headers, immutable asset caching and bounded logs
+- Loopback-only host ports, CSP/security headers, immutable asset caching, bounded logs and no runtime font/CDN dependency
+- Bounded task/result reads, spreadsheet-safe CSV export and forward-only database hardening migrations
 - Repository structure enforcement and full-stack one-step smoke testing in CI
 
 ## Single-branch policy

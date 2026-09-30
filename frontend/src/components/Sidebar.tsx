@@ -10,19 +10,25 @@ interface SidebarProps {
 }
 
 export function Sidebar({ tasks, selectedId, totalRecords, onSelect }: SidebarProps) {
-  return <aside className="sidebar">
-    <div className="brand"><div className="brandMark">N</div><div><b>NUMEN</b><span>DATA INTELLIGENCE</span></div></div>
+  return <aside className="sidebar" aria-label="NUMEN workspace">
+    <div className="brand"><div className="brandMark" aria-hidden="true">N</div><div><b>NUMEN</b><span>DATA INTELLIGENCE</span></div></div>
     <div className="navLabel">WORKSPACE</div>
-    <button className="nav active"><Activity size={16}/> Intelligence Console</button>
-    <button className="nav"><Database size={16}/> Datasets <span>{totalRecords}</span></button>
-    <button className="nav"><Layers3 size={16}/> Workflow History <span>{tasks.length}</span></button>
+    <div className="nav active"><Activity size={16} aria-hidden="true"/> Intelligence Console</div>
+    <div className="nav"><Database size={16} aria-hidden="true"/> Datasets <span>{totalRecords}</span></div>
+    <div className="nav"><Layers3 size={16} aria-hidden="true"/> Workflow History <span>{tasks.length}</span></div>
     <div className="navLabel">RECENT RUNS</div>
     <div className="recentList">
-      {tasks.slice(0, 7).map(task => <button key={task.id} className={`recent ${task.id === selectedId ? 'selected' : ''}`} onClick={() => onSelect(task.id)}>
-        <span className={`dot ${task.status.toLowerCase()}`}/>
+      {tasks.slice(0, 7).map(task => <button
+        type="button"
+        key={task.id}
+        className={`recent ${task.id === selectedId ? 'selected' : ''}`}
+        aria-pressed={task.id === selectedId}
+        onClick={() => onSelect(task.id)}
+      >
+        <span className={`dot ${task.status.toLowerCase()}`} aria-hidden="true"/>
         <div><strong>{clip(task.prompt, 34)}</strong><small>{task.stage}</small></div>
       </button>)}
     </div>
-    <div className="trust"><ShieldCheck size={18}/><div><b>Guarded collection</b><span>Public HTTP(S) only · SSRF protection · provenance</span></div></div>
+    <div className="trust"><ShieldCheck size={18} aria-hidden="true"/><div><b>Guarded collection</b><span>Public HTTP(S) only · SSRF protection · provenance</span></div></div>
   </aside>
 }

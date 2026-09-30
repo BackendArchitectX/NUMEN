@@ -5,6 +5,8 @@ import ai.numen.entity.DatasetRecord;
 import ai.numen.security.UrlSafetyGuard;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.net.URI;
@@ -22,6 +24,7 @@ import java.util.regex.Pattern;
 
 @Service
 public class CollectionEngine {
+    private static final Logger log = LoggerFactory.getLogger(CollectionEngine.class);
     private static final Pattern URL_PATTERN = Pattern.compile("https?://[^\\s,;]+", Pattern.CASE_INSENSITIVE);
     private final UrlSafetyGuard safetyGuard;
     private final NumenProperties properties;
@@ -40,7 +43,9 @@ public class CollectionEngine {
         for (String raw : urls) {
             try {
                 records.add(fetch(taskId, raw));
-            } catch (Exception ignored) {
+            } catch (Exception ex) {
+                log.warn("source_collection_failed taskId={} sourceHost={} error={}",
+                        taskId, safeHost(raw), ex.getClass().getSimpleName());
                 // Multi-source workflows continue when one permitted source is unavailable.
             }
         }
@@ -68,6 +73,15 @@ public class CollectionEngine {
         double quality = score(title, uri.getHost(), excerpt, uri.toString());
         return new DatasetRecord(taskId, title, uri.getHost(), "Web", uri.toString(), uri.toString(), uri.getHost(),
                 "WEB", excerpt, quality, sha256(title + "|" + uri));
+    }
+
+    private static String safeHost(String raw) {
+        try {
+            String host = URI.create(raw).getHost();
+            return host == null ? "invalid" : host;
+        } catch (IllegalArgumentException ex) {
+            return "invalid";
+        }
     }
 
     private List<String> extractUrls(String prompt) {

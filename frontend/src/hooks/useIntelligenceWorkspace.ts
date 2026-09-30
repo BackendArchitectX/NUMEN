@@ -9,6 +9,7 @@ export function useIntelligenceWorkspace() {
   const [records, setRecords] = useState<DatasetRecord[]>([])
   const [prompt, setPrompt] = useState<string>(examplePrompts[0])
   const [query, setQuery] = useState('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
   const [minQuality, setMinQuality] = useState(0)
   const [busy, setBusy] = useState(false)
   const [online, setOnline] = useState(false)
@@ -19,13 +20,13 @@ export function useIntelligenceWorkspace() {
   const refresh = async () => {
     const next = await intelligenceApi.listTasks()
     setTasks(next)
-    setSelectedId(current => current || next[0]?.id)
+    setSelectedId(current => current && next.some(task => task.id === current) ? current : next[0]?.id)
   }
 
   const ping = async () => {
     try {
       const health = await intelligenceApi.health()
-      setOnline(health.status === 'UP')
+      setOnline(health.status === 'UP' && health.service === 'NUMEN')
     } catch {
       setOnline(false)
     }
@@ -37,22 +38,44 @@ export function useIntelligenceWorkspace() {
   }, [])
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      void refresh().catch(() => undefined)
-      void ping()
-    }, 2500)
-    return () => window.clearInterval(timer)
+    let cancelled = false
+    let timer: number | undefined
+
+    const poll = async () => {
+      try {
+        await Promise.all([refresh(), ping()])
+      } catch {
+        // SSE remains the primary progress path; polling is best-effort resilience.
+      } finally {
+        if (!cancelled) timer = window.setTimeout(poll, 2500)
+      }
+    }
+
+    timer = window.setTimeout(poll, 2500)
+    return () => {
+      cancelled = true
+      if (timer !== undefined) window.clearTimeout(timer)
+    }
   }, [])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedQuery(query), 250)
+    return () => window.clearTimeout(timer)
+  }, [query])
 
   useEffect(() => {
     if (!selectedId) {
       setRecords([])
       return
     }
-    void intelligenceApi.getRecords(selectedId, query, minQuality)
-      .then(setRecords)
-      .catch(() => setRecords([]))
-  }, [selectedId, query, minQuality, selected?.status])
+
+    let active = true
+    void intelligenceApi.getRecords(selectedId, debouncedQuery, minQuality)
+      .then(rows => { if (active) setRecords(rows) })
+      .catch(() => { if (active) setRecords([]) })
+
+    return () => { active = false }
+  }, [selectedId, debouncedQuery, minQuality, selected?.status])
 
   useEffect(() => {
     if (!selectedId) return
@@ -62,11 +85,13 @@ export function useIntelligenceWorkspace() {
   }, [selectedId])
 
   const createTask = async () => {
-    if (prompt.trim().length < 10) return
+    const normalized = prompt.trim()
+    if (normalized.length < 10 || normalized.length > 4000) return
+
     setBusy(true)
     setError('')
     try {
-      const task = await intelligenceApi.createTask(prompt.trim())
+      const task = await intelligenceApi.createTask(normalized)
       setSelectedId(task.id)
       await refresh()
     } catch (cause) {
@@ -77,8 +102,13 @@ export function useIntelligenceWorkspace() {
   }
 
   const cancelTask = async (id: string) => {
-    await intelligenceApi.cancelTask(id)
-    await refresh()
+    setError('')
+    try {
+      await intelligenceApi.cancelTask(id)
+      await refresh()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Failed to cancel workflow')
+    }
   }
 
   const completed = tasks.filter(task => task.status === 'COMPLETED').length
