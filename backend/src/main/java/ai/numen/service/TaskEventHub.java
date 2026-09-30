@@ -18,8 +18,10 @@ public class TaskEventHub {
 
     public SseEmitter subscribe(UUID taskId) {
         SseEmitter emitter = new SseEmitter(0L);
-        emitters.computeIfAbsent(taskId, ignored -> Collections.synchronizedList(new ArrayList<>())).add(emitter);
-        Runnable cleanup = () -> emitters.getOrDefault(taskId, List.of()).remove(emitter);
+        emitters.computeIfAbsent(taskId, ignored -> Collections.synchronizedList(new ArrayList<>()))
+                .add(emitter);
+
+        Runnable cleanup = () -> remove(taskId, emitter);
         emitter.onCompletion(cleanup);
         emitter.onTimeout(cleanup);
         emitter.onError(ignored -> cleanup.run());
@@ -29,6 +31,7 @@ public class TaskEventHub {
     public void publish(UUID taskId, TaskEventResponse payload) {
         List<SseEmitter> listeners = emitters.get(taskId);
         if (listeners == null) return;
+
         synchronized (listeners) {
             listeners.removeIf(emitter -> {
                 try {
@@ -39,6 +42,22 @@ public class TaskEventHub {
                     return true;
                 }
             });
+
+            if (listeners.isEmpty()) {
+                emitters.remove(taskId, listeners);
+            }
+        }
+    }
+
+    private void remove(UUID taskId, SseEmitter emitter) {
+        List<SseEmitter> listeners = emitters.get(taskId);
+        if (listeners == null) return;
+
+        synchronized (listeners) {
+            listeners.remove(emitter);
+            if (listeners.isEmpty()) {
+                emitters.remove(taskId, listeners);
+            }
         }
     }
 }

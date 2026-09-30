@@ -1,11 +1,11 @@
 package ai.numen.service;
 
+import ai.numen.domain.WorkflowPlan;
 import ai.numen.dto.TaskEventResponse;
 import ai.numen.entity.CollectionTask;
 import ai.numen.entity.DatasetRecord;
 import ai.numen.entity.TaskStatus;
 import ai.numen.repository.CollectionTaskRepository;
-import ai.numen.repository.DatasetRecordRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -16,18 +16,22 @@ import java.util.UUID;
 @Service
 public class TaskRunner {
     private final CollectionTaskRepository tasks;
-    private final DatasetRecordRepository records;
     private final WorkflowPlanner planner;
     private final CollectionEngine engine;
+    private final WorkflowResultPublisher publisher;
     private final TaskEventHub events;
     private final ObjectMapper objectMapper;
 
-    public TaskRunner(CollectionTaskRepository tasks, DatasetRecordRepository records, WorkflowPlanner planner,
-                      CollectionEngine engine, TaskEventHub events, ObjectMapper objectMapper) {
+    public TaskRunner(CollectionTaskRepository tasks,
+                      WorkflowPlanner planner,
+                      CollectionEngine engine,
+                      WorkflowResultPublisher publisher,
+                      TaskEventHub events,
+                      ObjectMapper objectMapper) {
         this.tasks = tasks;
-        this.records = records;
         this.planner = planner;
         this.engine = engine;
+        this.publisher = publisher;
         this.events = events;
         this.objectMapper = objectMapper;
     }
@@ -39,10 +43,9 @@ public class TaskRunner {
             task.begin();
             task = advance(task, TaskStatus.PLANNING, "Interpreting requirement", 10);
 
-            WorkflowPlanner.Plan plan = planner.plan(task.getPrompt());
+            WorkflowPlan plan = planner.plan(task.getPrompt());
             task.setPlanJson(objectMapper.writeValueAsString(plan));
             task = advance(task, TaskStatus.PLANNING, "Designing collection workflow", 25);
-            sleep(250);
             if (isCancelled(taskId)) return;
 
             task = advance(task, TaskStatus.COLLECTING, "Collecting permitted sources", 45);
@@ -50,16 +53,12 @@ public class TaskRunner {
             if (isCancelled(taskId)) return;
 
             task = advance(task, TaskStatus.PROCESSING, "Validating and deduplicating", 72);
-            records.deleteByTaskId(taskId);
-            records.saveAll(collected);
             if (isCancelled(taskId)) return;
 
-            task = advance(task, TaskStatus.PROCESSING, "Building provenance index", 90);
-            double average = collected.stream().mapToDouble(DatasetRecord::getQualityScore).average().orElse(0);
+            task = advance(task, TaskStatus.PROCESSING, "Publishing verified dataset", 90);
             if (isCancelled(taskId)) return;
 
-            task.complete(collected.size(), Math.round(average * 10.0) / 10.0);
-            task = tasks.save(task);
+            task = publisher.publish(taskId, collected);
             events.publish(taskId, TaskEventResponse.from(task));
         } catch (Exception ex) {
             CollectionTask latest = tasks.findById(taskId).orElse(task);
@@ -78,11 +77,8 @@ public class TaskRunner {
     }
 
     private boolean isCancelled(UUID taskId) {
-        return tasks.findById(taskId).map(value -> value.getStatus() == TaskStatus.CANCELLED).orElse(true);
-    }
-
-    private static void sleep(long milliseconds) {
-        try { Thread.sleep(milliseconds); }
-        catch (InterruptedException ex) { Thread.currentThread().interrupt(); }
+        return tasks.findById(taskId)
+                .map(value -> value.getStatus() == TaskStatus.CANCELLED)
+                .orElse(true);
     }
 }
