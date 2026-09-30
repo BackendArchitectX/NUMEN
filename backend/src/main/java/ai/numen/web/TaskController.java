@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.*;
 
 @RestController
@@ -22,6 +23,9 @@ public class TaskController {
     public TaskController(TaskService service, TaskEventHub events) { this.service = service; this.events = events; }
 
     public record CreateTaskRequest(@NotBlank @Size(min = 10, max = 4000) String prompt) {}
+
+    @GetMapping("/health")
+    public Map<String, Object> health() { return Map.of("status", "UP", "service", "NUMEN", "time", Instant.now()); }
 
     @PostMapping("/tasks")
     @ResponseStatus(HttpStatus.ACCEPTED)

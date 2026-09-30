@@ -6,6 +6,7 @@ const json = async <T>(res: Response): Promise<T> => {
 }
 
 export const api = {
+  health: () => fetch('/api/health').then(json<{status:string}>),
   listTasks: () => fetch('/api/tasks').then(json<Task[]>),
   getTask: (id: string) => fetch(`/api/tasks/${id}`).then(json<Task>),
   createTask: (prompt: string) => fetch('/api/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt }) }).then(json<Task>),

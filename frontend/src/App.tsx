@@ -18,6 +18,7 @@ export default function App() {
   const [query, setQuery] = useState('')
   const [minQuality, setMinQuality] = useState(0)
   const [busy, setBusy] = useState(false)
+  const [online, setOnline] = useState(false)
   const [error, setError] = useState('')
 
   const selected = useMemo(() => tasks.find(t => t.id === selectedId), [tasks, selectedId])
@@ -28,9 +29,11 @@ export default function App() {
     setSelectedId(current => current || next[0]?.id)
   }
 
-  useEffect(() => { refresh().catch(e => setError(e.message)) }, [])
+  const ping = () => api.health().then(() => setOnline(true)).catch(() => setOnline(false))
+
+  useEffect(() => { refresh().catch(e => setError(e.message)); ping() }, [])
   useEffect(() => {
-    const timer = window.setInterval(() => refresh().catch(() => {}), 2500)
+    const timer = window.setInterval(() => { refresh().catch(() => {}); ping() }, 2500)
     return () => window.clearInterval(timer)
   }, [])
 
@@ -78,14 +81,14 @@ export default function App() {
     </aside>
 
     <main>
-      <header><div><span className="eyebrow">AI-POWERED DATA INTELLIGENCE PLATFORM</span><h1>From intent to <em>traceable data.</em></h1><p>Describe what you need. NUMEN designs the workflow, collects permitted sources, validates evidence and returns a clean dataset.</p></div><div className="livePill"><span/> ENGINE ONLINE</div></header>
+      <header><div><span className="eyebrow">AI-POWERED DATA INTELLIGENCE PLATFORM</span><h1>From intent to <em>traceable data.</em></h1><p>Describe what you need. NUMEN designs the workflow, collects permitted sources, validates evidence and returns a clean dataset.</p></div><div className={`livePill ${online ? 'online' : 'offline'}`}><span/> {online ? 'ENGINE ONLINE' : 'ENGINE OFFLINE'}</div></header>
 
       <section className="composer panel">
         <div className="composerTop"><Sparkles size={18}/><span>Describe your business requirement</span><kbd>NATURAL LANGUAGE</kbd></div>
         <textarea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="Example: Find 50 backend roles from permitted career pages and return company, title, location, URL and source..." />
         <div className="composerFooter">
           <div className="chips">{examples.map((x,i)=><button key={i} onClick={()=>setPrompt(x)}>0{i+1}</button>)}</div>
-          <button className="run" onClick={create} disabled={busy}>{busy ? <LoaderCircle className="spin" size={17}/> : <Play size={17}/>} Run intelligence workflow</button>
+          <button className="run" onClick={create} disabled={busy || !online}>{busy ? <LoaderCircle className="spin" size={17}/> : <Play size={17}/>} Run intelligence workflow</button>
         </div>
       </section>
 
@@ -102,7 +105,7 @@ export default function App() {
         <section className="runPanel panel">
           <div className="runHeader"><div><span className={`status ${selected.status.toLowerCase()}`}>{selected.status}</span><h2>{clip(selected.prompt, 90)}</h2></div><div className="runActions">{!['COMPLETED','FAILED','CANCELLED'].includes(selected.status) && <button onClick={()=>api.cancelTask(selected.id).then(refresh)}>Cancel</button>}<a className="export" href={api.exportUrl(selected.id)}><Download size={15}/> Export CSV</a></div></div>
           <div className="progressTrack"><div style={{width:`${selected.progress}%`}}/></div>
-          <div className="progressMeta"><span>{selected.stage}</span><b>{selected.progress}%</b></div>
+          <div className="progressMeta"><span>{selected.errorMessage || selected.stage}</span><b>{selected.progress}%</b></div>
           <div className="pipeline">
             {['Interpret','Discover','Collect','Normalize','Validate','Deduplicate','Publish'].map((s,i)=><div className={selected.progress >= [10,25,45,60,72,82,100][i] ? 'done' : ''} key={s}><CheckCircle2 size={15}/><span>{s}</span></div>)}
           </div>
@@ -112,7 +115,7 @@ export default function App() {
           <div className="resultsHeader"><div><FileSearch size={18}/><h3>Dataset explorer</h3><span>{records.length} rows</span></div><div className="filters"><label><Search size={15}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search records"/></label><select value={minQuality} onChange={e=>setMinQuality(Number(e.target.value))}><option value={0}>All quality</option><option value={80}>80%+</option><option value={90}>90%+</option></select></div></div>
           <div className="tableWrap"><table><thead><tr><th>INTELLIGENCE</th><th>ORGANIZATION</th><th>LOCATION</th><th>QUALITY</th><th>SOURCE</th></tr></thead><tbody>
             {records.map(r=><tr key={r.id}><td><strong>{r.title}</strong><small>{clip(r.excerpt, 78)}</small></td><td>{r.organization}</td><td>{r.location}</td><td><span className="quality">{Math.round(r.qualityScore)}%</span></td><td>{r.sourceUrl.startsWith('http') ? <a href={r.sourceUrl} target="_blank" rel="noreferrer">{r.sourceName}<ArrowUpRight size={13}/></a> : <span className="demoSource">{r.sourceName}</span>}</td></tr>)}
-            {!records.length && <tr><td colSpan={5} className="empty">{selected.status === 'COMPLETED' ? 'No records match the current filters.' : 'Records will appear here as the workflow completes.'}</td></tr>}
+            {!records.length && <tr><td colSpan={5} className="empty">{selected.status === 'COMPLETED' ? 'No records match the current filters.' : selected.status === 'FAILED' ? 'Collection failed. Review the workflow message above.' : 'Records will appear here as the workflow completes.'}</td></tr>}
           </tbody></table></div>
         </section>
       </> : <section className="emptyState panel"><Sparkles/><h2>Start your first intelligence run</h2><p>Use the prompt above to create a managed data-collection workflow.</p></section>}

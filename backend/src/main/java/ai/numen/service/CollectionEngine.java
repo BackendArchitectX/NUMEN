@@ -29,13 +29,26 @@ public class CollectionEngine {
     }
 
     public List<DatasetRecord> collect(UUID taskId, String prompt, WorkflowPlanner.Plan plan) {
+        List<String> urls = extractUrls(prompt).stream().limit(maxFetchUrls).toList();
         List<DatasetRecord> records = new ArrayList<>();
-        if (httpFetchEnabled) {
-            for (String raw : extractUrls(prompt).stream().limit(maxFetchUrls).toList()) {
-                try { records.add(fetch(taskId, raw)); } catch (Exception ignored) { }
+        List<String> failures = new ArrayList<>();
+
+        if (!urls.isEmpty()) {
+            if (!httpFetchEnabled) throw new IllegalStateException("Web collection is disabled for this deployment");
+            for (String raw : urls) {
+                try {
+                    records.add(fetch(taskId, raw));
+                } catch (Exception ex) {
+                    failures.add(raw);
+                }
             }
+            if (records.isEmpty()) {
+                throw new IllegalStateException("No supplied source could be collected safely. Verify that the URL is public, reachable and permits direct HTTP access.");
+            }
+        } else {
+            records.addAll(demoRecords(taskId, plan, prompt));
         }
-        if (records.isEmpty()) records.addAll(demoRecords(taskId, plan, prompt));
+
         return deduplicate(records);
     }
 
