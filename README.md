@@ -70,7 +70,9 @@ NUMEN combines those steps into one managed workflow with explicit source proven
 - Genuine SSE progress updates with reconnect hints and polling fallback.
 - Durable per-workflow timeline events for creation, state transitions, restart recovery, cancellation, failure and completion.
 - Aurora X premium visual system with Deep Ink navigation, Frost analytical surfaces, Azure interaction, Aqua live-state cues, Iris interpretation, Emerald verification, persisted light/dark themes and a compact outcome-first hierarchy.
-- Outcome-first completed research summaries, search, sortable dataset exploration, quality filtering, right-side record evidence inspection and spreadsheet-safe CSV export.
+- First-class Sources workspace with exact per-source record contribution, evidence coverage, freshness and explicit demo/live classification.
+- Deep-linked Research, Datasets, Sources and Runs workspaces so browser refresh/back/forward preserve the intended research context.
+- Outcome-first completed research summaries backed by exact persisted dataset aggregates, search, sortable dataset exploration, quality filtering, right-side record evidence inspection and spreadsheet-safe CSV export.
 - Stable API error codes and request correlation IDs.
 - Process-local gateway abuse controls for mutation bursts and excessive concurrent SSE streams, with deterministic HTTP 429 responses.
 - Aggregate health/readiness, Micrometer/Prometheus metrics and executor-saturation metrics.
