@@ -1,23 +1,33 @@
 import { useEffect, useState } from 'react'
-import { Activity, Database, History, Sparkles } from 'lucide-react'
+import { Activity, Database, History, Moon, Sun } from 'lucide-react'
 import { DatasetExplorer } from '../components/DatasetExplorer'
-import { MetricsGrid } from '../components/MetricsGrid'
 import { PromptComposer } from '../components/PromptComposer'
+import { ResearchOutcome } from '../components/ResearchOutcome'
 import { Sidebar } from '../components/Sidebar'
 import { WorkflowHistory } from '../components/WorkflowHistory'
 import { WorkflowPanel } from '../components/WorkflowPanel'
 import { useIntelligenceWorkspace } from '../hooks/useIntelligenceWorkspace'
 import type { Task, WorkspaceView } from '../model/types'
 
+type Theme = 'light' | 'dark'
+
 export default function App() {
   const workspace = useIntelligenceWorkspace()
   const [view, setView] = useState<WorkspaceView>(() => readView())
+  const [theme, setTheme] = useState<Theme>(() => readTheme())
 
   useEffect(() => {
     const syncFromHash = () => setView(readView())
     window.addEventListener('hashchange', syncFromHash)
     return () => window.removeEventListener('hashchange', syncFromHash)
   }, [])
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    localStorage.setItem('numen-theme', theme)
+    const meta = document.querySelector('meta[name="theme-color"]')
+    meta?.setAttribute('content', theme === 'dark' ? '#050B14' : '#08111F')
+  }, [theme])
 
   const navigate = (next: WorkspaceView) => {
     setView(next)
@@ -33,6 +43,7 @@ export default function App() {
   }
 
   const selectedComplete = workspace.selected?.status === 'COMPLETED'
+  const toggleTheme = () => setTheme(currentTheme => currentTheme === 'light' ? 'dark' : 'light')
 
   return <div className="shell">
     <Sidebar
@@ -40,82 +51,82 @@ export default function App() {
       selectedId={workspace.selectedId}
       totalRecords={workspace.totalRecords}
       activeView={view}
+      theme={theme}
+      onToggleTheme={toggleTheme}
       onNavigate={navigate}
       onSelect={id => selectAndOpen(id, 'console')}
     />
 
     <main id="main-content">
       <nav className="mobileNav" aria-label="Workspace views">
-        <button type="button" className={view === 'console' ? 'active' : ''} onClick={() => navigate('console')}><Activity size={15} aria-hidden="true"/> Console</button>
+        <button type="button" className={view === 'console' ? 'active' : ''} onClick={() => navigate('console')}><Activity size={15} aria-hidden="true"/> Research</button>
         <button type="button" className={view === 'datasets' ? 'active' : ''} onClick={() => navigate('datasets')}><Database size={15} aria-hidden="true"/> Datasets</button>
         <button type="button" className={view === 'history' ? 'active' : ''} onClick={() => navigate('history')}><History size={15} aria-hidden="true"/> Runs</button>
       </nav>
 
-      <WorkspaceHeader view={view} online={workspace.online}/>
+      <WorkspaceHeader view={view} online={workspace.online} theme={theme} onToggleTheme={toggleTheme}/>
       {workspace.error && <div className="error" role="alert">{workspace.error}</div>}
 
       {view === 'console' && <>
         <PromptComposer prompt={workspace.prompt} busy={workspace.busy} online={workspace.online} onPromptChange={workspace.setPrompt} onRun={() => void workspace.createTask()}/>
-        <MetricsGrid workflows={workspace.tasks.length} completed={workspace.completed} records={workspace.totalRecords} averageQuality={workspace.avgQuality}/>
 
         {workspace.selected ? <>
-          {selectedComplete && <DatasetExplorer records={workspace.records} status={workspace.selected.status} query={workspace.query} minQuality={workspace.minQuality}
-            onQueryChange={workspace.setQuery} onMinQualityChange={workspace.setMinQuality}/>}
+          {selectedComplete
+            ? <ResearchOutcome task={workspace.selected} records={workspace.records} exportUrl={workspace.exportUrl}/>
+            : <WorkflowPanel task={workspace.selected} timeline={workspace.timeline} exportUrl={workspace.exportUrl} onCancel={id => void workspace.cancelTask(id)}/>}
 
-          <WorkflowPanel task={workspace.selected} timeline={workspace.timeline} exportUrl={workspace.exportUrl} onCancel={id => void workspace.cancelTask(id)}/>
+          <DatasetExplorer records={workspace.records} status={workspace.selected.status} query={workspace.query} minQuality={workspace.minQuality}
+            onQueryChange={workspace.setQuery} onMinQualityChange={workspace.setMinQuality}/>
 
-          {!selectedComplete && <DatasetExplorer records={workspace.records} status={workspace.selected.status} query={workspace.query} minQuality={workspace.minQuality}
-            onQueryChange={workspace.setQuery} onMinQualityChange={workspace.setMinQuality}/>}
-        </> : <section className="emptyState panel"><Sparkles aria-hidden="true"/><h2>Start your first research run</h2><p>Describe what you need above. NUMEN will structure the request and preserve the evidence behind the results.</p></section>}
+          {selectedComplete && <WorkflowPanel task={workspace.selected} timeline={workspace.timeline} exportUrl={workspace.exportUrl} onCancel={id => void workspace.cancelTask(id)}/>}
+        </> : <section className="emptyState panel"><Activity aria-hidden="true"/><h2>Your research workspace is ready</h2><p>Ask a question above. Results, sources and captured evidence will stay connected to the run that produced them.</p></section>}
       </>}
 
       {view === 'datasets' && <>
-        <MetricsGrid workflows={workspace.tasks.length} completed={workspace.completed} records={workspace.totalRecords} averageQuality={workspace.avgQuality}/>
         <RunSelector tasks={workspace.tasks} selectedId={workspace.selectedId} onSelect={workspace.setSelectedId}/>
-        {workspace.selected
-          ? <DatasetExplorer records={workspace.records} status={workspace.selected.status} query={workspace.query} minQuality={workspace.minQuality}
-              onQueryChange={workspace.setQuery} onMinQualityChange={workspace.setMinQuality}/>
-          : <section className="emptyState panel"><Database aria-hidden="true"/><h2>No dataset available</h2><p>Run research first. Published records will be inspectable here with their source evidence.</p></section>}
+        {workspace.selected ? <>
+          {workspace.selected.status === 'COMPLETED' && <ResearchOutcome task={workspace.selected} records={workspace.records} exportUrl={workspace.exportUrl}/>}
+          <DatasetExplorer records={workspace.records} status={workspace.selected.status} query={workspace.query} minQuality={workspace.minQuality}
+            onQueryChange={workspace.setQuery} onMinQualityChange={workspace.setMinQuality}/>
+        </> : <section className="emptyState panel"><Database aria-hidden="true"/><h2>No dataset available</h2><p>Run research first. Published records will be inspectable here with their source evidence.</p></section>}
       </>}
 
-      {view === 'history' && <>
-        <MetricsGrid workflows={workspace.tasks.length} completed={workspace.completed} records={workspace.totalRecords} averageQuality={workspace.avgQuality}/>
-        <WorkflowHistory
-          tasks={workspace.tasks}
-          onOpen={id => selectAndOpen(id, 'console')}
-          onOpenDataset={id => selectAndOpen(id, 'datasets')}
-        />
-      </>}
+      {view === 'history' && <WorkflowHistory
+        tasks={workspace.tasks}
+        onOpen={id => selectAndOpen(id, 'console')}
+        onOpenDataset={id => selectAndOpen(id, 'datasets')}
+      />}
     </main>
   </div>
 }
 
-function WorkspaceHeader({ view, online }: { view: WorkspaceView; online: boolean }) {
+function WorkspaceHeader({ view, online, theme, onToggleTheme }: { view: WorkspaceView; online: boolean; theme: Theme; onToggleTheme: () => void }) {
   const content = {
     console: {
-      eyebrow: 'Research workspace',
-      title: 'Turn a question into traceable intelligence.',
-      description: 'Describe the outcome you need. NUMEN structures the request, collects permitted sources and keeps the evidence behind every published record.'
+      title: 'Research',
+      description: 'Ask a question. NUMEN turns it into structured results with source evidence attached.'
     },
     datasets: {
-      eyebrow: 'Datasets',
-      title: 'Explore published results.',
-      description: 'Search, sort and inspect the records created by each research run without losing the source evidence behind them.'
+      title: 'Datasets',
+      description: 'Explore published research outputs and inspect the evidence behind individual records.'
     },
     history: {
-      eyebrow: 'Runs',
-      title: 'Review research activity.',
-      description: 'Open previous runs, inspect outcomes and return to their published datasets or technical details when needed.'
+      title: 'Runs',
+      description: 'Review previous research activity, outcomes and technical details when you need them.'
     }
   }[view]
 
   return <header className="workspaceHeader">
     <div className="workspaceHeaderCopy">
-      <span className="eyebrow">{content.eyebrow}</span>
       <h1>{content.title}</h1>
       <p>{content.description}</p>
     </div>
-    <div className={`livePill ${online ? 'online' : 'offline'}`} role="status" aria-live="polite"><span aria-hidden="true"/> {online ? 'Engine online' : 'Engine offline'}</div>
+    <div className="workspaceHeaderActions">
+      <div className={`livePill ${online ? 'online' : 'offline'}`} role="status" aria-live="polite"><span aria-hidden="true"/> {online ? 'Engine online' : 'Engine offline'}</div>
+      <button type="button" className="themeToggle" onClick={onToggleTheme} aria-label={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'} title={theme === 'light' ? 'Dark theme' : 'Light theme'}>
+        {theme === 'light' ? <Moon size={16} aria-hidden="true"/> : <Sun size={16} aria-hidden="true"/>}
+      </button>
+    </div>
   </header>
 }
 
@@ -133,6 +144,13 @@ function readView(): WorkspaceView {
   if (typeof window === 'undefined') return 'console'
   const value = window.location.hash.replace('#', '')
   return value === 'datasets' || value === 'history' ? value : 'console'
+}
+
+function readTheme(): Theme {
+  if (typeof window === 'undefined') return 'light'
+  const saved = localStorage.getItem('numen-theme')
+  if (saved === 'light' || saved === 'dark') return saved
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
 function statusLabel(status: Task['status']): string {
