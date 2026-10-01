@@ -55,14 +55,18 @@ public class HttpPageConnector implements SourceConnector {
 
         List<DatasetRecord> records = new ArrayList<>();
         for (String raw : request.urls()) {
+            DatasetRecord record;
             try {
-                records.add(fetchWithRetry(request.taskId(), raw));
-                attempts.succeeded(request.taskId(), raw);
+                record = fetchWithRetry(request.taskId(), raw);
             } catch (Exception ex) {
                 attempts.failed(request.taskId(), raw, errorCode(ex), publicFailureMessage(ex));
                 log.warn("source_collection_failed taskId={} sourceHost={} error={}",
                         request.taskId(), safeHost(raw), ex.getClass().getSimpleName());
+                continue;
             }
+
+            attempts.succeeded(request.taskId(), raw);
+            records.add(record);
         }
 
         if (records.isEmpty()) {
