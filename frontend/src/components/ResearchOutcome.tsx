@@ -1,50 +1,49 @@
 import type { ReactNode } from 'react'
 import { Building2, CheckCircle2, Clock3, Database, Download, MapPin, Radio } from 'lucide-react'
-import type { DatasetRecord, Task } from '../model/types'
+import type { DatasetSummary, Task } from '../model/types'
 import { clip } from '../shared/text'
 
 interface ResearchOutcomeProps {
   task: Task
-  records: DatasetRecord[]
+  summary?: DatasetSummary
   exportUrl: string
 }
 
-export function ResearchOutcome({ task, records, exportUrl }: ResearchOutcomeProps) {
-  const organizations = uniqueCount(records.map(record => record.organization))
-  const locations = uniqueCount(records.map(record => record.location))
-  const sources = uniqueCount(records.map(record => record.sourceName || record.sourceUrl))
-  const evidenceLinked = records.filter(record => Boolean(record.sourceUrl && record.excerpt?.trim())).length
-  const demo = records.some(record => record.sourceType === 'DEMO')
-  const hasResults = records.length > 0
-  const updatedAt = newestDate(records.map(record => record.collectedAt)) || task.completedAt || task.createdAt
-  const topLocations = topValues(records.map(record => record.location), 3)
+export function ResearchOutcome({ task, summary, exportUrl }: ResearchOutcomeProps) {
+  const totalRecords = summary?.totalRecords ?? task.recordCount
+  const hasResults = totalRecords > 0
+  const allDemo = Boolean(summary && summary.totalRecords > 0 && summary.demoRecords === summary.totalRecords)
+  const mixedDemo = Boolean(summary && summary.demoRecords > 0 && summary.demoRecords < summary.totalRecords)
+  const updatedAt = summary?.latestCollectedAt || task.completedAt || task.createdAt
 
   return <section className="researchOutcome panel" aria-labelledby={`outcome-${task.id}`}>
     <div className="outcomeHeader">
       <div className="outcomeTitle">
-        <span className={`outcomeState ${demo ? 'demo' : hasResults ? 'ready' : 'empty'}`}>
-          {demo ? <Database size={14} aria-hidden="true"/> : <CheckCircle2 size={14} aria-hidden="true"/>}
-          {demo ? 'Demo dataset' : hasResults ? 'Research ready' : 'Research complete'}
+        <span className={`outcomeState ${allDemo || mixedDemo ? 'demo' : hasResults ? 'ready' : 'empty'}`}>
+          {allDemo || mixedDemo ? <Database size={14} aria-hidden="true"/> : <CheckCircle2 size={14} aria-hidden="true"/>}
+          {allDemo ? 'Demo dataset' : mixedDemo ? 'Mixed dataset' : hasResults ? 'Research ready' : 'Research complete'}
         </span>
         <h2 id={`outcome-${task.id}`}>{clip(task.prompt, 120)}</h2>
-        <p>{summary(records.length, organizations, sources, demo)}</p>
+        <p>{summary ? summaryText(summary) : hasResults ? 'Published results are ready. Loading exact dataset coverage…' : 'No publishable results were produced for this run.'}</p>
       </div>
-      {records.length > 0 && <a className="primaryAction" href={exportUrl}><Download size={15} aria-hidden="true"/> Export CSV</a>}
+      {hasResults && <a className="primaryAction" href={exportUrl}><Download size={15} aria-hidden="true"/> Export CSV</a>}
     </div>
 
-    <div className="outcomeStats" aria-label="Research outcome summary">
-      <OutcomeStat icon={<Database/>} label="Results" value={records.length.toString()} detail={demo ? 'sample records' : 'published records'}/>
-      <OutcomeStat icon={<Building2/>} label="Organizations" value={organizations.toString()} detail="unique values"/>
-      <OutcomeStat icon={<Radio/>} label="Sources" value={sources.toString()} detail="contributing sources"/>
-      <OutcomeStat icon={<MapPin/>} label="Locations" value={locations.toString()} detail="unique values"/>
-      <OutcomeStat icon={<CheckCircle2/>} label="Evidence linked" value={`${evidenceLinked}/${records.length}`} detail="records with captured evidence"/>
-      <OutcomeStat icon={<Clock3/>} label="Updated" value={formatRelative(updatedAt)} detail={formatDate(updatedAt)}/>
-    </div>
+    {summary ? <>
+      <div className="outcomeStats" aria-label="Research outcome summary">
+        <OutcomeStat icon={<Database/>} label="Results" value={summary.totalRecords.toString()} detail={allDemo ? 'sample records' : mixedDemo ? 'mixed-source records' : 'published records'}/>
+        <OutcomeStat icon={<Building2/>} label="Organizations" value={summary.uniqueOrganizations.toString()} detail="unique values"/>
+        <OutcomeStat icon={<Radio/>} label="Sources" value={summary.uniqueSources.toString()} detail="contributing sources"/>
+        <OutcomeStat icon={<MapPin/>} label="Locations" value={summary.uniqueLocations.toString()} detail="unique values"/>
+        <OutcomeStat icon={<CheckCircle2/>} label="Evidence linked" value={`${summary.evidenceLinkedRecords}/${summary.totalRecords}`} detail="records with captured evidence"/>
+        <OutcomeStat icon={<Clock3/>} label="Updated" value={formatRelative(updatedAt)} detail={formatDate(updatedAt)}/>
+      </div>
 
-    {topLocations.length > 0 && <div className="outcomeContext">
-      <span>Top locations</span>
-      <div>{topLocations.map(item => <span key={item.value}>{item.value} <b>{item.count}</b></span>)}</div>
-    </div>}
+      {summary.topLocations.length > 0 && <div className="outcomeContext">
+        <span>Top locations</span>
+        <div>{summary.topLocations.map(item => <span key={item.value}>{item.value} <b>{item.count}</b></span>)}</div>
+      </div>}
+    </> : hasResults && <div className="outcomeLoading" role="status">Loading exact dataset summary…</div>}
   </section>
 }
 
@@ -55,37 +54,22 @@ function OutcomeStat({ icon, label, value, detail }: { icon: ReactNode; label: s
   </div>
 }
 
-function uniqueCount(values: string[]): number {
-  return new Set(values.map(value => value.trim()).filter(Boolean)).size
-}
+function summaryText(summary: DatasetSummary): string {
+  if (summary.totalRecords === 0) return 'No publishable results were produced for this run.'
 
-function topValues(values: string[], limit: number): Array<{ value: string; count: number }> {
-  const counts = new Map<string, number>()
-  for (const raw of values) {
-    const value = raw.trim()
-    if (!value) continue
-    counts.set(value, (counts.get(value) || 0) + 1)
+  const resultLabel = summary.totalRecords === 1 ? 'result' : 'results'
+  const organizationLabel = summary.uniqueOrganizations === 1 ? 'organization' : 'organizations'
+  const sourceLabel = summary.uniqueSources === 1 ? 'source' : 'sources'
+
+  if (summary.demoRecords === summary.totalRecords) {
+    return `${summary.totalRecords} sample ${resultLabel} across ${summary.uniqueOrganizations} ${organizationLabel} from ${summary.uniqueSources} demo ${sourceLabel}. Demo content is clearly separated from live intelligence.`
   }
-  return [...counts.entries()]
-    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
-    .slice(0, limit)
-    .map(([value, count]) => ({ value, count }))
-}
 
-function newestDate(values: string[]): string | undefined {
-  return values
-    .map(value => ({ value, time: Date.parse(value) }))
-    .filter(item => Number.isFinite(item.time))
-    .sort((left, right) => right.time - left.time)[0]?.value
-}
+  if (summary.demoRecords > 0) {
+    return `${summary.totalRecords} published ${resultLabel} across ${summary.uniqueOrganizations} ${organizationLabel} from ${summary.uniqueSources} ${sourceLabel}. ${summary.demoRecords} records are explicitly marked as demo content.`
+  }
 
-function summary(records: number, organizations: number, sources: number, demo: boolean): string {
-  if (records === 0) return 'No publishable results were produced for this run.'
-  const resultLabel = records === 1 ? 'result' : 'results'
-  const organizationLabel = organizations === 1 ? 'organization' : 'organizations'
-  const sourceLabel = sources === 1 ? 'source' : 'sources'
-  if (demo) return `${records} sample ${resultLabel} across ${organizations} ${organizationLabel} from ${sources} demo ${sourceLabel}. Demo content is clearly separated from live intelligence.`
-  return `${records} published ${resultLabel} across ${organizations} ${organizationLabel} from ${sources} contributing ${sourceLabel}. Open any row to inspect its captured evidence.`
+  return `${summary.totalRecords} published ${resultLabel} across ${summary.uniqueOrganizations} ${organizationLabel} from ${summary.uniqueSources} contributing ${sourceLabel}. Open any row to inspect its captured evidence.`
 }
 
 function formatDate(value: string): string {
@@ -101,6 +85,5 @@ function formatRelative(value: string): string {
   if (minutes < 60) return `${minutes}m ago`
   const hours = Math.round(minutes / 60)
   if (hours < 24) return `${hours}h ago`
-  const days = Math.round(hours / 24)
-  return `${days}d ago`
+  return `${Math.round(hours / 24)}d ago`
 }
