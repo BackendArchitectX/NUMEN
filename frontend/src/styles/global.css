@@ -185,7 +185,7 @@ a { color: inherit; }
   flex-direction: column;
   overflow: hidden;
   color: var(--color-sidebar-secondary-text);
-  background: linear-gradient(180deg, var(--color-sidebar) 0%, var(--color-sidebar-secondary) 100%);
+  background: var(--color-sidebar);
   border-right: 1px solid rgba(255, 255, 255, .055);
 }
 
