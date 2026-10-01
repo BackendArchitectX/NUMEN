@@ -1232,3 +1232,82 @@ body::before { opacity: .12; }
   .workspaceHeader { flex-direction: column; }
   .inspectorGrid { grid-template-columns: 1fr; }
 }
+
+
+.timelineSection {
+  margin-top: 18px;
+  padding-top: 17px;
+  border-top: 1px solid #ebe5dd;
+}
+
+.timelineList {
+  list-style: none;
+  margin: 13px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+}
+
+.timelineList li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 15px 1fr;
+  gap: 9px;
+  padding: 0 0 15px;
+}
+
+.timelineList li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 13px;
+  bottom: 0;
+  width: 1px;
+  background: #e1dbd3;
+}
+
+.timelineDot {
+  position: relative;
+  z-index: 1;
+  width: 13px;
+  height: 13px;
+  margin-top: 2px;
+  border-radius: 50%;
+  border: 3px solid #f8f5ef;
+  background: #aaa69f;
+  box-shadow: 0 0 0 1px #d9d3cb;
+}
+
+.timelineDot.completed { background: var(--success); box-shadow: 0 0 0 1px #bcd7c8; }
+.timelineDot.failed,.timelineDot.cancelled { background: var(--danger); box-shadow: 0 0 0 1px #e4bfc1; }
+.timelineDot.planning,.timelineDot.collecting,.timelineDot.processing,.timelineDot.queued { background: var(--warning); box-shadow: 0 0 0 1px #dfc69e; }
+
+.timelineBody > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.timelineBody strong {
+  color: #44484d;
+  font-size: 11px;
+}
+
+.timelineBody > div > span {
+  color: #9a958e;
+  font: 9px var(--font-mono);
+  letter-spacing: .08em;
+}
+
+.timelineBody p {
+  margin: 4px 0 2px;
+  color: #73787d;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.timelineBody time {
+  color: #aaa59e;
+  font: 9px var(--font-mono);
+}
