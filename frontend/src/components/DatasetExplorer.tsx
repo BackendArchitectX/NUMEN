@@ -5,6 +5,7 @@ import { clip } from '../shared/text'
 
 interface DatasetExplorerProps {
   records: DatasetRecord[]
+  totalRecords: number
   status: TaskStatus
   query: string
   minQuality: number
@@ -15,7 +16,7 @@ interface DatasetExplorerProps {
 type SortKey = 'title' | 'organization' | 'location' | 'qualityScore' | 'sourceName'
 type SortDirection = 'asc' | 'desc'
 
-export function DatasetExplorer({ records, status, query, minQuality, onQueryChange, onMinQualityChange }: DatasetExplorerProps) {
+export function DatasetExplorer({ records, totalRecords, status, query, minQuality, onQueryChange, onMinQualityChange }: DatasetExplorerProps) {
   const [sortKey, setSortKey] = useState<SortKey>('qualityScore')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [selectedRecordId, setSelectedRecordId] = useState<string>()
@@ -32,6 +33,8 @@ export function DatasetExplorer({ records, status, query, minQuality, onQueryCha
 
   const selectedRecord = records.find(record => record.id === selectedRecordId)
   const containsDemoData = records.some(record => record.sourceType === 'DEMO')
+  const filtered = Boolean(query.trim()) || minQuality > 0
+  const mayBeTruncated = status === 'COMPLETED' && (filtered ? records.length >= 500 : totalRecords > records.length)
 
   useEffect(() => {
     if (!selectedRecord) return
@@ -88,7 +91,7 @@ export function DatasetExplorer({ records, status, query, minQuality, onQueryCha
 
   return <section className="results panel" aria-labelledby="dataset-heading">
     <div className="resultsHeader">
-      <div className="resultsTitle"><FileSearch size={18} aria-hidden="true"/><div><h3 id="dataset-heading">Results</h3><span>{records.length} visible rows</span></div></div>
+      <div className="resultsTitle"><FileSearch size={18} aria-hidden="true"/><div><h3 id="dataset-heading">Results</h3><span>{records.length} visible rows{status === 'COMPLETED' ? ` · ${totalRecords} published` : ''}</span></div></div>
       <div className="filters">
         <label className="searchField"><span className="srOnly">Search records</span><Search size={15} aria-hidden="true"/><input value={query} onChange={event => onQueryChange(event.target.value)} placeholder="Search results"/></label>
         <label className="srOnly" htmlFor="quality-filter">Minimum data quality</label>
@@ -99,6 +102,11 @@ export function DatasetExplorer({ records, status, query, minQuality, onQueryCha
     </div>
 
     {containsDemoData && <div className="demoNotice" role="note"><strong>Demo dataset</strong><span>These sample records are for product evaluation and are not live market intelligence.</span></div>}
+    {mayBeTruncated && <div className="resultLimitNotice" role="note">
+      {filtered
+        ? 'Showing the first 500 matching rows. Refine the filters for a narrower view; CSV export contains the complete published dataset.'
+        : `Showing the first ${records.length} of ${totalRecords} published rows. CSV export contains the complete dataset.`}
+    </div>}
 
     <div className="tableWrap"><table>
       <caption className="srOnly">Collected intelligence records and source provenance</caption>
