@@ -1,4 +1,4 @@
-import type { DatasetRecord, HealthResponse, Task, TaskTimelineEvent } from '../model/types'
+import type { DatasetRecord, DatasetSummary, HealthResponse, SourceSummary, Task, TaskTimelineEvent } from '../model/types'
 
 const API = '/api/v1'
 const DEFAULT_TIMEOUT_MS = 10_000
@@ -45,6 +45,8 @@ export const intelligenceApi = {
   listTasks: () => request<Task[]>(`${API}/tasks?limit=50`),
   getTask: (id: string) => request<Task>(`${API}/tasks/${id}`),
   getTimeline: (id: string) => request<TaskTimelineEvent[]>(`${API}/tasks/${id}/timeline`),
+  getSummary: (id: string) => request<DatasetSummary>(`${API}/tasks/${id}/summary`),
+  getSources: (id: string) => request<SourceSummary[]>(`${API}/tasks/${id}/sources`),
   createTask: (prompt: string, idempotencyKey: string) => request<Task>(`${API}/tasks`, {
     method: 'POST',
     headers: {
