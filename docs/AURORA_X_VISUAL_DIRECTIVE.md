@@ -673,7 +673,7 @@ A repeated idempotency key represents the same research request only when both t
 
 Changing Demo mode while reusing the same idempotency key is a different request and must produce an idempotency conflict rather than silently replaying the original task.
 
-## 33. Research intent and collection scope are different concepts
+## 51. Research intent and collection scope are different concepts
 
 Do not force users to embed operational source URLs inside the research question.
 
@@ -687,7 +687,7 @@ The source scope must be visible before submission, persisted with the run, incl
 
 If a URL is detected inside the natural-language question, the UI may offer to move it into the structured source scope. Do not silently broaden the source set.
 
-## 34. Partial success is a first-class outcome
+## 52. Partial success is a first-class outcome
 
 One successful source must not make failed configured sources disappear.
 
@@ -702,7 +702,7 @@ A completed research outcome with failed configured sources must say **Ready wit
 
 Do not claim full coverage merely because at least one source produced records.
 
-## 35. Failure diagnostics must be useful and sanitized
+## 53. Failure diagnostics must be useful and sanitized
 
 Per-source failure information should answer:
 
@@ -713,7 +713,7 @@ Per-source failure information should answer:
 
 Do not expose stack traces, internal exception messages, credentials, sensitive URL material or private infrastructure information.
 
-## 36. Failed research still has inspectable source diagnostics
+## 54. Failed research still has inspectable source diagnostics
 
 When all sources fail and the workflow cannot publish a dataset, the user must still be able to inspect the configured source set and collection outcomes.
 
@@ -721,7 +721,7 @@ The Sources workspace is therefore not limited to successful datasets.
 
 Run history should expose Sources for terminal runs that had source activity.
 
-## 37. Result browsing must scale beyond the first browser window
+## 55. Result browsing must scale beyond the first browser window
 
 Do not load a fixed first 250/500 rows and then imply that client-side sorting represents the complete dataset.
 
@@ -737,13 +737,13 @@ For larger datasets:
 
 Example: `51–100 of 438 matching · 1,842 published`, not `50 visible rows` when the wider dataset is known.
 
-## 38. Filtered browsing and export scope must not be confused
+## 56. Filtered browsing and export scope must not be confused
 
 If CSV export contains the complete published dataset while the UI is filtered, say so.
 
 Do not imply that the export reflects active filters unless the backend actually implements filtered exports.
 
-## 39. Loading, empty and error are separate dataset states
+## 57. Loading, empty and error are separate dataset states
 
 A dataset table must distinguish:
 
@@ -755,7 +755,7 @@ A dataset table must distinguish:
 
 Do not convert a network/API failure into a convincing-looking empty dataset.
 
-## 40. Source identity must survive zero-record outcomes
+## 58. Source identity must survive zero-record outcomes
 
 A configured source is still part of the research scope even when it contributed zero records.
 
@@ -763,13 +763,13 @@ Source summaries must be based on both configured source scope / collection outc
 
 Do not derive the Sources page only from successful dataset rows.
 
-## 41. URL storage and indexing must respect database limits
+## 59. URL storage and indexing must respect database limits
 
 Do not create database uniqueness indexes directly over large URL strings where index-size limits can make valid data fail.
 
 Use a bounded deterministic fingerprint for uniqueness/reconciliation while preserving the original URL separately for provenance and user inspection.
 
-## 42. The premium trust model
+## 60. The premium trust model
 
 A premium intelligence product should make these distinctions obvious:
 
@@ -781,3 +781,131 @@ A premium intelligence product should make these distinctions obvious:
 - **demo** must remain demo everywhere.
 
 The product should become more trustworthy as more detail is inspected, never less trustworthy because caveats were hidden.
+
+
+## 61. Repeated runs are history, not navigation noise
+
+Users often repeat the same research question while refining sources, refreshing data or testing changes.
+
+Primary navigation and recent-research surfaces should group repeated normalized research questions and show the latest outcome plus the number of runs.
+
+The detailed Runs workspace remains the place where every individual execution is preserved.
+
+Do not make seven repetitions of the same question look like seven unrelated research projects.
+
+## 62. Datasets require a real library
+
+Datasets is a product workspace, not a dropdown placed above whichever run happened to be selected elsewhere.
+
+When no dataset is open, show a compact published-dataset library containing only completed runs with publishable records.
+
+The library should expose:
+
+- research identity,
+- explicit demo/live state,
+- published result count,
+- update time,
+- direct access to sources,
+- a clear Open dataset action.
+
+Opening one dataset may move into the dataset detail context, but users must be able to return to the complete library without starting new research.
+
+## 63. Source setup uses progressive disclosure
+
+Exact source URLs are an operational boundary, not the primary research concept.
+
+Keep the natural-language question visually dominant.
+
+Source scope should be summarized in one compact disclosure:
+
+- source scope required,
+- N public sources configured,
+- or explicit Demo mode.
+
+Detailed source URL editing and Demo controls live inside that disclosure.
+
+The source requirement must remain visible enough that a disabled Run research action is explainable, but it must not dominate the first impression.
+
+## 64. Navigation counts must count the object named
+
+A number beside Datasets means dataset count, not total record count.
+
+A number beside Runs means run count.
+
+Do not place a technically correct but semantically different number beside a navigation label.
+
+If a useful count is unavailable, omit it instead of substituting a nearby metric.
+
+## 65. Completion language must be unambiguous
+
+Use **Research complete** when a run completed.
+
+Use **Complete with limitations** when publishable results exist but configured-source failures or other material limitations remain.
+
+Use **Demo dataset** for explicit sample output.
+
+Avoid **Research ready** as a completion status because ready can imply the research has not run yet.
+
+## 66. Libraries and details are different navigation intents
+
+Clicking a top-level workspace destination should normally open that workspace's library or overview.
+
+Contextual actions such as **View sources** or **Open dataset** may deep-link directly into a selected research context.
+
+Do not let a stale selection from another workspace silently hijack top-level navigation.
+
+## 67. Outcome hierarchy must survive repeated execution
+
+Running the same question again should produce another auditable run without forcing duplicate primary research entries everywhere.
+
+Until a first-class research/version model exists:
+
+- group repeated recent-research entries by normalized question,
+- retain all runs in Runs,
+- keep every dataset separately addressable,
+- never pretend grouping deletes execution history.
+
+This is a transitional product behavior, not a substitute for future dataset/research versioning.
+
+## 68. Technical truth and product copy must agree
+
+The product-facing label may humanize an internal state, but it must never contradict the persisted state.
+
+Examples:
+
+- COMPLETED → Complete / Research complete
+- FAILED → Needs attention
+- COLLECTING → Searching sources
+- PROCESSING → Validating results
+
+Humanization may remove jargon, not change meaning.
+
+## 69. Primary actions must reflect the user's next likely task
+
+Do not make a visually dominant primary action merely because the action already exists technically.
+
+On a completed research outcome, possible next actions include:
+
+- inspect results,
+- refine research,
+- inspect sources,
+- export.
+
+Because results are already visible, secondary actions can remain visually restrained. Export should not dominate the outcome if it is not clearly the principal user goal.
+
+## 70. Freshness comes from clarity, not chroma
+
+Aurora X should stay visually fresh even when most of the screen is neutral.
+
+Do not increase saturation to compensate for weak hierarchy.
+
+When the interface feels flat, first improve:
+
+- information order,
+- typography,
+- spacing,
+- grouping,
+- density,
+- interaction feedback.
+
+Only then consider whether a semantic accent is missing.
