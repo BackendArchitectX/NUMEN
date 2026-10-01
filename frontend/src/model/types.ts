@@ -10,6 +10,7 @@ export interface Task {
   id: string
   prompt: string
   demoMode: boolean
+  sourceUrls: string[]
   status: TaskStatus
   stage: string
   progress: number
