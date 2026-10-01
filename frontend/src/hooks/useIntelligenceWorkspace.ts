@@ -11,8 +11,8 @@ export function useIntelligenceWorkspace() {
   const [page, setPage] = useState(0)
   const [pageSize, setPageSizeState] = useState(50)
   const [totalPages, setTotalPages] = useState(0)
-  const [sortBy, setSortBy] = useState<DatasetSortKey>('qualityScore')
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
+  const [sortBy, setSortBy] = useState<DatasetSortKey>('title')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [timeline, setTimeline] = useState<TaskTimelineEvent[]>([])
   const [summary, setSummary] = useState<DatasetSummary>()
   const [sources, setSources] = useState<SourceSummary[]>([])
@@ -203,8 +203,8 @@ export function useIntelligenceWorkspace() {
     setQuery('')
     setMinQuality(0)
     setPage(0)
-    setSortBy('qualityScore')
-    setSortDirection('desc')
+    setSortBy('title')
+    setSortDirection('asc')
     setError('')
   }
 
