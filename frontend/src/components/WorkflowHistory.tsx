@@ -25,14 +25,18 @@ export function WorkflowHistory({ tasks, onOpen, onOpenDataset, onOpenSources }:
         <td><time dateTime={task.completedAt || task.startedAt || task.createdAt}>{formatRelative(task.completedAt || task.startedAt || task.createdAt)}</time></td>
         <td><div className="historyActions">
           <button type="button" className="tableAction" onClick={() => onOpen(task.id)}>Open <ArrowRight size={13} aria-hidden="true"/></button>
-          {task.status === 'COMPLETED' && task.recordCount > 0 && <>
-            <button type="button" className="tableAction" onClick={() => onOpenDataset(task.id)}><Database size={13} aria-hidden="true"/> Dataset</button>
-            <button type="button" className="tableAction" onClick={() => onOpenSources(task.id)}><Radio size={13} aria-hidden="true"/> Sources</button>
-          </>}
+          {task.status === 'COMPLETED' && task.recordCount > 0 &&
+            <button type="button" className="tableAction" onClick={() => onOpenDataset(task.id)}><Database size={13} aria-hidden="true"/> Dataset</button>}
+          {isTerminal(task.status) && (task.sourceUrls.length > 0 || task.demoMode || task.recordCount > 0) &&
+            <button type="button" className="tableAction" onClick={() => onOpenSources(task.id)}><Radio size={13} aria-hidden="true"/> Sources</button>}
         </div></td>
       </tr>)}</tbody>
     </table></div> : <div className="emptyState compact"><History aria-hidden="true"/><h2>No runs yet</h2><p>Research activity will appear here after you start your first run.</p></div>}
   </section>
+}
+
+function isTerminal(status: Task['status']): boolean {
+  return status === 'COMPLETED' || status === 'FAILED' || status === 'CANCELLED'
 }
 
 function outcomeLabel(task: Task): string {
