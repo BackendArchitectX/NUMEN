@@ -126,10 +126,16 @@ export function DatasetExplorer({
           <input value={query} onChange={event => onQueryChange(event.target.value)} placeholder="Search results"/>
         </label>
         <label className="srOnly" htmlFor="quality-filter">Minimum data quality</label>
-        <select id="quality-filter" aria-label="Minimum data quality" value={minQuality} onChange={event => onMinQualityChange(Number(event.target.value))}>
-          <option value={0}>All records</option>
-          <option value={80}>Quality 80%+</option>
-          <option value={90}>Quality 90%+</option>
+        <select
+          id="quality-filter"
+          aria-label={allDemo ? 'Data quality filter unavailable for demo records' : 'Minimum data quality'}
+          value={allDemo ? 0 : minQuality}
+          disabled={allDemo}
+          onChange={event => onMinQualityChange(Number(event.target.value))}
+        >
+          <option value={0}>{allDemo ? 'Demo records · no quality filter' : 'All records'}</option>
+          {!allDemo && <option value={80}>Quality 80%+</option>}
+          {!allDemo && <option value={90}>Quality 90%+</option>}
         </select>
         {filtered && <button type="button" className="clearFilters" onClick={clearFilters}>Clear</button>}
       </div>
@@ -154,7 +160,9 @@ export function DatasetExplorer({
             <td><button type="button" className="recordTitleButton" aria-haspopup="dialog" onClick={() => setSelectedRecordId(record.id)}><strong>{record.title}</strong><small>{clip(record.excerpt, 78)}</small></button></td>
             <td>{record.organization || '—'}</td>
             <td>{record.location || '—'}</td>
-            <td><span className="quality" title="Persisted data-quality score">{Math.round(record.qualityScore)}%</span></td>
+            <td>{record.sourceType === 'DEMO'
+              ? <span className="quality demoQuality" title="Demo records do not represent verified live-data quality">Sample</span>
+              : <span className="quality" title="Persisted record-quality score from source and field checks">{Math.round(record.qualityScore)}%</span>}</td>
             <td>{record.sourceUrl.startsWith('http')
               ? <a href={record.sourceUrl} target="_blank" rel="noreferrer" aria-label={`Open source ${record.sourceName} in a new tab`}>{record.sourceName}<ArrowUpRight size={13} aria-hidden="true"/></a>
               : <span className="demoSource">{record.sourceName || 'Demo source'}</span>}</td>
@@ -199,7 +207,7 @@ export function DatasetExplorer({
         <div className="inspectorGrid">
           <Detail label="Organization" value={selectedRecord.organization || '—'}/>
           <Detail label="Location" value={selectedRecord.location || '—'}/>
-          <Detail label="Data quality" value={`${Math.round(selectedRecord.qualityScore)}%`}/>
+          <Detail label="Data quality" value={selectedRecord.sourceType === 'DEMO' ? 'Not scored · demo' : `${Math.round(selectedRecord.qualityScore)}%`}/>
           <Detail label="Source type" value={selectedRecord.sourceType || '—'}/>
           <Detail label="Collected" value={formatDate(selectedRecord.collectedAt)}/>
           <Detail label="Fingerprint" value={selectedRecord.fingerprint || '—'} code/>
