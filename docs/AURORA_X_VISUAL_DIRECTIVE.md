@@ -581,3 +581,51 @@ If the frontend cannot truthfully compute a dataset-wide metric from the data it
 Never derive a product-level statement from a truncated or filtered page of rows merely because that data is already in memory.
 
 Premium intelligence software must protect semantic correctness as aggressively as visual correctness.
+
+
+## 44. Loading, error and empty are different states
+
+Never reuse an undefined value to mean all of:
+
+- not requested,
+- loading,
+- loaded empty,
+- failed.
+
+Outcome coverage and source coverage must expose explicit state transitions so a failed summary request cannot appear as "zero sources" or "zero records".
+
+Use separate loading, ready and error states. Preserve the underlying published dataset when secondary summary APIs fail.
+
+## 45. Result windows must disclose truncation
+
+The Results table may intentionally use a bounded API window for responsiveness.
+
+If the complete published dataset is larger than the loaded window:
+
+- show the exact published total separately,
+- say how many rows are currently visible,
+- disclose when the view is capped,
+- explain that export contains the full dataset,
+- do not imply the visible page is the complete result set.
+
+Filtered views must likewise disclose when the maximum matching-row window is reached.
+
+## 46. Internal identifiers belong in technical detail
+
+Run IDs, hashes and similar implementation identifiers should not occupy the primary user-facing run-history table.
+
+Keep them available under Run details for debugging and support.
+
+Product hierarchy should use the research question and outcome as the primary identity.
+
+## 47. Translate backend enums into product language
+
+Do not expose raw source or workflow enums such as WEB, PROCESSING or STATE_CHANGED where natural product language exists.
+
+Examples:
+
+- WEB → Public web
+- PROCESSING → Validating results
+- COLLECTING → Searching sources
+
+Raw enums remain acceptable in explicitly technical diagnostics.
