@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { examplePrompts } from '../model/prompts'
 import type { DatasetRecord, Task, TaskTimelineEvent } from '../model/types'
 import { intelligenceApi } from '../services/intelligenceApi'
 
@@ -8,7 +7,7 @@ export function useIntelligenceWorkspace() {
   const [selectedId, setSelectedId] = useState<string>()
   const [records, setRecords] = useState<DatasetRecord[]>([])
   const [timeline, setTimeline] = useState<TaskTimelineEvent[]>([])
-  const [prompt, setPrompt] = useState<string>(examplePrompts[0])
+  const [prompt, setPrompt] = useState('')
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [minQuality, setMinQuality] = useState(0)
@@ -22,7 +21,7 @@ export function useIntelligenceWorkspace() {
   const refresh = async () => {
     const next = await intelligenceApi.listTasks()
     setTasks(next)
-    setSelectedId(current => current && next.some(task => task.id === current) ? current : next[0]?.id)
+    setSelectedId(current => current && next.some(task => task.id === current) ? current : undefined)
   }
 
   const ping = async () => {
@@ -35,7 +34,7 @@ export function useIntelligenceWorkspace() {
   }
 
   useEffect(() => {
-    void refresh().catch(cause => setError(cause instanceof Error ? cause.message : 'Failed to load workflows'))
+    void refresh().catch(cause => setError(cause instanceof Error ? cause.message : 'Failed to load research'))
     void ping()
   }, [])
 
@@ -47,7 +46,7 @@ export function useIntelligenceWorkspace() {
       try {
         await Promise.all([refresh(), ping()])
       } catch {
-        // SSE remains primary; polling is the recovery path when the stream or network is interrupted.
+        // SSE remains primary; polling converges state after stream or network interruption.
       } finally {
         if (!cancelled) timer = window.setTimeout(poll, 2500)
       }
@@ -100,6 +99,18 @@ export function useIntelligenceWorkspace() {
     return () => stream.close()
   }, [selectedId])
 
+  const selectTask = (id?: string) => {
+    setSelectedId(id)
+    setQuery('')
+    setMinQuality(0)
+    setError('')
+  }
+
+  const startNewResearch = () => {
+    selectTask(undefined)
+    setPrompt('')
+  }
+
   const createTask = async () => {
     const normalized = prompt.trim()
     if (normalized.length < 10 || normalized.length > 4000 || submitting.current) return
@@ -112,9 +123,12 @@ export function useIntelligenceWorkspace() {
     try {
       const task = await intelligenceApi.createTask(normalized, idempotencyKey)
       setSelectedId(task.id)
+      setQuery('')
+      setMinQuality(0)
+      setPrompt('')
       await refresh()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Failed to create workflow')
+      setError(cause instanceof Error ? cause.message : 'Failed to start research')
     } finally {
       submitting.current = false
       setBusy(false)
@@ -127,7 +141,7 @@ export function useIntelligenceWorkspace() {
       await intelligenceApi.cancelTask(id)
       await refresh()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Failed to cancel workflow')
+      setError(cause instanceof Error ? cause.message : 'Failed to cancel research')
     }
   }
 
@@ -152,7 +166,8 @@ export function useIntelligenceWorkspace() {
     completed,
     totalRecords,
     avgQuality,
-    setSelectedId,
+    selectTask,
+    startNewResearch,
     setPrompt,
     setQuery,
     setMinQuality,
