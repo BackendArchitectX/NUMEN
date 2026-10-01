@@ -17,7 +17,15 @@ export function ResearchOutcome({ task, summary, summaryState, exportUrl, onRefi
   const allDemo = Boolean(summary ? summary.totalRecords > 0 && summary.demoRecords === summary.totalRecords : task.demoMode && hasResults)
   const mixedDemo = Boolean(summary && summary.demoRecords > 0 && summary.demoRecords < summary.totalRecords)
   const updatedAt = summary?.latestCollectedAt || task.completedAt || task.createdAt
-  const limited = Boolean(summary && summary.failedSources > 0 && hasResults && !allDemo)
+  const limited = Boolean(
+    summary
+      && (summary.sourceCoverageState === 'PARTIAL'
+        || summary.sourceCoverageState === 'NONE'
+        || summary.failedSources > 0
+        || summary.notAttemptedSources > 0)
+      && hasResults
+      && !allDemo
+  )
 
   return <section className="researchOutcome panel" aria-labelledby={`outcome-${task.id}`}>
     <div className="outcomeHeader">
@@ -45,7 +53,7 @@ export function ResearchOutcome({ task, summary, summaryState, exportUrl, onRefi
       <div className="outcomeFacts" aria-label="Research outcome summary">
         <OutcomeFact label="Results" value={summary.totalRecords.toString()} detail={allDemo ? 'sample records' : mixedDemo ? 'mixed-source records' : 'published records'}/>
         <OutcomeFact label="Organizations" value={summary.uniqueOrganizations.toString()} detail="unique values"/>
-        <OutcomeFact label="Sources" value={sourceCoverageValue(summary)} detail={summary.configuredSources > 0 ? 'contributing / configured' : 'contributing sources'}/>
+        <OutcomeFact label="Sources" value={sourceCoverageValue(summary)} detail={summary.configuredSources > 0 ? 'collected / configured' : 'contributing sources'}/>
         <OutcomeFact label="Locations" value={summary.uniqueLocations.toString()} detail="unique values"/>
         <OutcomeFact
           label="Evidence linked"
@@ -88,16 +96,31 @@ function summaryText(summary: DatasetSummary): string {
     return `${summary.totalRecords} published ${resultLabel} across ${summary.uniqueOrganizations} ${organizationLabel} from ${summary.uniqueSources} ${sourceLabel}. ${summary.demoRecords} records are explicitly marked as demo content.`
   }
 
-  const limitation = summary.failedSources > 0
-    ? ` ${summary.failedSources} configured ${summary.failedSources === 1 ? 'source could' : 'sources could'} not be collected.`
-    : ''
+  return `${summary.totalRecords} published ${resultLabel} across ${summary.uniqueOrganizations} ${organizationLabel} from ${summary.uniqueSources} contributing ${sourceLabel}.${sourceLimitationText(summary)} Open a result to inspect its captured evidence.`
+}
 
-  return `${summary.totalRecords} published ${resultLabel} across ${summary.uniqueOrganizations} ${organizationLabel} from ${summary.uniqueSources} contributing ${sourceLabel}.${limitation} Open a result to inspect its captured evidence.`
+function sourceLimitationText(summary: DatasetSummary): string {
+  const details: string[] = []
+  if (summary.unavailableSources > 0) details.push(`${summary.unavailableSources} unavailable`)
+  if (summary.unauthorizedSources > 0) details.push(`${summary.unauthorizedSources} access denied`)
+  if (summary.rejectedSources > 0) details.push(`${summary.rejectedSources} rejected by source policy`)
+  if (summary.rateLimitedSources > 0) details.push(`${summary.rateLimitedSources} rate limited`)
+  if (summary.notAttemptedSources > 0) details.push(`${summary.notAttemptedSources} not attempted`)
+
+  const classifiedFailures = summary.unavailableSources
+    + summary.unauthorizedSources
+    + summary.rejectedSources
+    + summary.rateLimitedSources
+  const unclassifiedFailures = Math.max(0, summary.failedSources - classifiedFailures)
+  if (unclassifiedFailures > 0) details.push(`${unclassifiedFailures} failed`)
+
+  if (!details.length) return ''
+  return ` Source limitations: ${details.join(', ')}.`
 }
 
 function sourceCoverageValue(summary: DatasetSummary): string {
   if (summary.configuredSources <= 0) return summary.uniqueSources.toString()
-  return `${summary.uniqueSources}/${summary.configuredSources}`
+  return `${summary.successfulSources}/${summary.configuredSources}`
 }
 
 function formatDate(value: string): string {

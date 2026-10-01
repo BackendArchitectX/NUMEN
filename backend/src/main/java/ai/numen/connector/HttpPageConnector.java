@@ -1,7 +1,9 @@
 package ai.numen.connector;
 
 import ai.numen.config.NumenProperties;
+import ai.numen.domain.SourceCapability;
 import ai.numen.entity.DatasetRecord;
+import ai.numen.entity.SourceCollectionStatus;
 import ai.numen.exception.UserVisibleWorkflowException;
 import ai.numen.security.UrlSafetyGuard;
 import ai.numen.service.SourceCollectionAttemptService;
@@ -19,6 +21,7 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Component
@@ -43,6 +46,17 @@ public class HttpPageConnector implements SourceConnector {
     }
 
     @Override
+    public Set<SourceCapability> capabilities() {
+        return Set.of(
+                SourceCapability.READ_RECORDS,
+                SourceCapability.EVIDENCE_CAPTURE,
+                SourceCapability.RETRY_SAFE_READ,
+                SourceCapability.PARTIAL_FAILURE,
+                SourceCapability.PUBLIC_HTTP
+        );
+    }
+
+    @Override
     public boolean supports(SourceCollectionRequest request) {
         return !request.urls().isEmpty();
     }
@@ -59,13 +73,21 @@ public class HttpPageConnector implements SourceConnector {
             try {
                 record = fetchWithRetry(request.taskId(), raw);
             } catch (Exception ex) {
-                attempts.failed(request.taskId(), raw, errorCode(ex), publicFailureMessage(ex));
-                log.warn("source_collection_failed taskId={} sourceHost={} error={}",
-                        request.taskId(), safeHost(raw), ex.getClass().getSimpleName());
+                attempts.failed(
+                        request.taskId(),
+                        raw,
+                        collectionStatus(ex),
+                        errorCode(ex),
+                        publicFailureMessage(ex),
+                        id(),
+                        capabilities()
+                );
+                log.warn("source_collection_failed taskId={} sourceHost={} status={} error={}",
+                        request.taskId(), safeHost(raw), collectionStatus(ex), ex.getClass().getSimpleName());
                 continue;
             }
 
-            attempts.succeeded(request.taskId(), raw);
+            attempts.succeeded(request.taskId(), raw, id(), capabilities());
             records.add(record);
         }
 
@@ -149,6 +171,21 @@ public class HttpPageConnector implements SourceConnector {
     }
 
 
+    static SourceCollectionStatus collectionStatusForHttpStatus(int statusCode) {
+        if (statusCode == 401 || statusCode == 403) return SourceCollectionStatus.UNAUTHORIZED;
+        if (statusCode == 429) return SourceCollectionStatus.RATE_LIMITED;
+        return SourceCollectionStatus.UNAVAILABLE;
+    }
+
+    private static SourceCollectionStatus collectionStatus(Exception ex) {
+        if (ex instanceof HttpStatusException http) {
+            return collectionStatusForHttpStatus(http.getStatusCode());
+        }
+        if (ex instanceof IllegalArgumentException) return SourceCollectionStatus.REJECTED;
+        if (ex instanceof IOException) return SourceCollectionStatus.UNAVAILABLE;
+        return SourceCollectionStatus.FAILED;
+    }
+
     private static String errorCode(Exception ex) {
         if (ex instanceof HttpStatusException http) return "HTTP_" + http.getStatusCode();
         if (ex instanceof IllegalArgumentException) return "SOURCE_REJECTED";
@@ -157,7 +194,15 @@ public class HttpPageConnector implements SourceConnector {
     }
 
     private static String publicFailureMessage(Exception ex) {
-        if (ex instanceof HttpStatusException http) return "Source returned HTTP " + http.getStatusCode();
+        if (ex instanceof HttpStatusException http) {
+            if (http.getStatusCode() == 401 || http.getStatusCode() == 403) {
+                return "Source did not permit this collection request";
+            }
+            if (http.getStatusCode() == 429) {
+                return "Source rate limit prevented collection during this run";
+            }
+            return "Source returned HTTP " + http.getStatusCode();
+        }
         if (ex instanceof IllegalArgumentException) return "Source was rejected by the public-source safety policy";
         if (ex instanceof IOException) return "Source could not be reached after the configured retry policy";
         return "Source could not be collected";

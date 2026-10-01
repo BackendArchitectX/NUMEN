@@ -66,3 +66,22 @@ Frontend verification now protects product hierarchy as well as rendering correc
 - bounded recent-run/dataset collections do not masquerade as lifetime totals,
 - zero-result outcomes avoid meaningless evidence ratios,
 - completed outcome actions stay visually secondary to the results themselves.
+
+## Aurora X¹² source-boundary verification
+
+Backend verification now protects the source capability and partiality contract:
+
+- the workflow plan declares source-capability and partial-source-truth safeguards;
+- HTTP 401/403 classify as UNAUTHORIZED;
+- HTTP 429 classifies as RATE_LIMITED;
+- source-side unavailability remains UNAVAILABLE;
+- persisted task summaries distinguish configured, attempted, successful, failed and not-attempted sources;
+- connector identity and capability metadata survive into source summaries.
+
+Frontend component-state verification protects the corresponding user semantics:
+
+- partial source coverage shows successful/configured collection rather than contributing/configured rows;
+- an unavailable source is labelled as unavailable rather than as an empty source;
+- active workflow progress counts checked sources and reports limitations without exposing fake milestone percentages.
+
+A future federated, partner, sovereign or air-gapped feature is not considered covered by these tests merely because this source-boundary foundation exists. Such a feature must add the relevant AURORA X¹² acceptance tests before it is presented as supported.

@@ -3,6 +3,7 @@ package ai.numen.service;
 import ai.numen.config.NumenProperties;
 import ai.numen.connector.SourceCollectionRequest;
 import ai.numen.connector.SourceConnector;
+import ai.numen.domain.SourceCapability;
 import ai.numen.domain.WorkflowPlan;
 import ai.numen.entity.DatasetRecord;
 import ai.numen.exception.UserVisibleWorkflowException;
@@ -12,6 +13,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -42,8 +44,10 @@ public class CollectionEngine {
         }
 
         SourceCollectionRequest request = new SourceCollectionRequest(taskId, prompt, plan, urls, demoMode);
+        Set<SourceCapability> requiredCapabilities = requiredCapabilities(request);
         List<SourceConnector> matching = connectors.stream()
                 .filter(connector -> connector.supports(request))
+                .filter(connector -> connector.capabilities().containsAll(requiredCapabilities))
                 .toList();
 
         if (matching.isEmpty() && urls.isEmpty() && !demoMode) {
@@ -51,11 +55,30 @@ public class CollectionEngine {
                     "No public source URL was supplied. Add one or more permitted HTTP(S) sources, or explicitly enable Demo mode for sample data.");
         }
 
+        if (matching.isEmpty()) {
+            throw new IllegalStateException(
+                    "No source connector satisfies the required capability contract: "
+                            + SourceCapability.apiNames(requiredCapabilities));
+        }
+
         if (matching.size() != 1) {
             throw new IllegalStateException("Expected exactly one source connector but found " + matching.size());
         }
 
         return deduplicate(matching.get(0).collect(request));
+    }
+
+    private static Set<SourceCapability> requiredCapabilities(SourceCollectionRequest request) {
+        if (request.demoMode()) {
+            return Set.of(SourceCapability.DEMO_DATA, SourceCapability.EVIDENCE_CAPTURE);
+        }
+        return Set.of(
+                SourceCapability.READ_RECORDS,
+                SourceCapability.EVIDENCE_CAPTURE,
+                SourceCapability.RETRY_SAFE_READ,
+                SourceCapability.PARTIAL_FAILURE,
+                SourceCapability.PUBLIC_HTTP
+        );
     }
 
     private List<String> extractUrls(String prompt) {

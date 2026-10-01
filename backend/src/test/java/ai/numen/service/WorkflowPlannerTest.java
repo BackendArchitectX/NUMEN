@@ -10,8 +10,13 @@ class WorkflowPlannerTest {
     void recognizesJobIntelligenceIntent() {
         var plan = planner.plan("Find backend job openings in India");
         assertThat(plan.useCase()).isEqualTo("JOB_INTELLIGENCE");
-        assertThat(plan.stages()).contains("collect", "validate", "deduplicate");
-        assertThat(plan.safeguards()).contains("private-network-block", "source-provenance");
+        assertThat(plan.stages()).contains("source-scope-validation", "collect", "validate", "deduplicate");
+        assertThat(plan.safeguards()).contains(
+                "private-network-block",
+                "source-capability-contract",
+                "partial-source-truth",
+                "source-provenance"
+        );
     }
 
     @Test

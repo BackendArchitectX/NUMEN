@@ -91,3 +91,13 @@ Controls: `main` is the only persistent origin branch and the branch-policy work
 The repository does not claim production-grade authentication, RBAC, tenant isolation, distributed rate limiting, source credential management, legal/robots-policy enforcement, centralized secrets, immutable audit storage, network egress enforcement, production TLS termination or regulated-data controls.
 
 These are deployment gates, not hidden assumptions.
+
+## Aurora X¹² source and federation boundary
+
+The shipped repository does not currently trust or authenticate external partner organizations. Live collection is limited to explicit public HTTP(S) sources and therefore has no transitive federation trust.
+
+The connector capability contract is a safety boundary: a connector must explicitly declare the behavior required for a request before CollectionEngine can select it. Capability metadata is descriptive and must not be treated as evidence quality or factual trust.
+
+Source-side access denial, rate limiting, policy rejection and unavailability are persisted as distinct outcomes. None of these states may be used as evidence that matching information does not exist.
+
+If NUMEN later adds partner federation, distributed query, source-local computation, clean-room analysis, sovereign deployment or offline mutation replay, the threat model must be extended before release to cover delegated authorization, cross-organization identity namespaces, non-transitive trust, data egress, query injection/complexity, source-local policy, cache isolation and revocation.

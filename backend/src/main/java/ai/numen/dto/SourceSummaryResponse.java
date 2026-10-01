@@ -3,6 +3,7 @@ package ai.numen.dto;
 import ai.numen.service.TaskService;
 
 import java.time.Instant;
+import java.util.List;
 
 public record SourceSummaryResponse(
         String name,
@@ -15,6 +16,8 @@ public record SourceSummaryResponse(
         String errorCode,
         String errorMessage,
         Instant lastAttemptedAt,
+        String connectorId,
+        List<String> capabilities,
         boolean demo,
         boolean configured) {
 
@@ -30,6 +33,8 @@ public record SourceSummaryResponse(
                 source.errorCode(),
                 source.errorMessage(),
                 source.lastAttemptedAt(),
+                source.connectorId(),
+                source.capabilities(),
                 source.demo(),
                 source.configured()
         );

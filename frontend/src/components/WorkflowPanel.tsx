@@ -104,18 +104,22 @@ function TechnicalDetails({ task, timeline, plan }: { task: Task; timeline: Task
 
 function describeSourceProgress(task: Task, sources: SourceSummary[], state: LoadState): string | undefined {
   if (task.demoMode) return task.status === 'FAILED' ? undefined : 'Demo mode uses labeled sample records; no live sources are contacted.'
-  if (!task.sourceUrls.length) return undefined
   if (state === 'error') return 'Live source progress is temporarily unavailable; the research run is still persisted.'
 
   const configured = sources.filter(source => source.configured && !source.demo)
-  const resolved = configured.filter(source => source.collectionStatus === 'SUCCEEDED' || source.collectionStatus === 'FAILED').length
-  const failed = configured.filter(source => source.collectionStatus === 'FAILED').length
-  const total = task.sourceUrls.length
+  const total = Math.max(task.sourceUrls.length, configured.length)
+  if (total === 0) return undefined
+
+  const resolved = configured.filter(source => source.collectionStatus !== 'NOT_ATTEMPTED').length
+  const limited = configured.filter(source =>
+    ['UNAVAILABLE', 'UNAUTHORIZED', 'REJECTED', 'RATE_LIMITED', 'FAILED'].includes(source.collectionStatus)
+  ).length
   const checked = Math.min(total, resolved)
+  const limitation = limited ? ` · ${limited} with limitations` : ''
 
   if (task.status === 'PLANNING' || task.status === 'QUEUED') return `0 / ${total} sources checked`
-  if (task.status === 'COLLECTING') return `${checked} / ${total} sources checked${failed ? ` · ${failed} unavailable` : ''}`
-  if (task.status === 'PROCESSING') return `${checked} / ${total} sources checked${failed ? ` · ${failed} unavailable` : ''}`
+  if (task.status === 'COLLECTING') return `${checked} / ${total} sources checked${limitation}`
+  if (task.status === 'PROCESSING') return `${checked} / ${total} sources checked${limitation}`
   return undefined
 }
 

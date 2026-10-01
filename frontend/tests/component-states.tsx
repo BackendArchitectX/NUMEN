@@ -279,6 +279,8 @@ const sourceProgress: SourceSummary[] = [{
   errorCode: null,
   errorMessage: null,
   lastAttemptedAt: '2026-09-30T00:00:12Z',
+  connectorId: 'http-page',
+  capabilities: ['evidence-capture', 'partial-failure', 'public-http', 'read-records', 'retry-safe-read'],
   demo: false,
   configured: true
 }]
@@ -313,7 +315,15 @@ const summary: DatasetSummary = {
   uniqueLocations: 1,
   uniqueSources: 1,
   configuredSources: 1,
+  attemptedSources: 1,
+  successfulSources: 1,
   failedSources: 0,
+  unavailableSources: 0,
+  unauthorizedSources: 0,
+  rejectedSources: 0,
+  rateLimitedSources: 0,
+  notAttemptedSources: 0,
+  sourceCoverageState: 'COMPLETE',
   evidenceLinkedRecords: 1,
   demoRecords: 0,
   latestCollectedAt: record.collectedAt,
@@ -331,6 +341,8 @@ const sourceSummary: SourceSummary = {
   errorCode: null,
   errorMessage: null,
   lastAttemptedAt: record.collectedAt,
+  connectorId: 'http-page',
+  capabilities: ['evidence-capture', 'partial-failure', 'public-http', 'read-records', 'retry-safe-read'],
   demo: false,
   configured: true
 }
@@ -348,7 +360,15 @@ includes(outcome, 'View sources', 'completed research must expose a real source-
 const limitedOutcome = renderToStaticMarkup(
   <ResearchOutcome
     task={completedTask}
-    summary={{ ...summary, configuredSources: 2, failedSources: 1 }}
+    summary={{
+      ...summary,
+      configuredSources: 2,
+      attemptedSources: 2,
+      successfulSources: 1,
+      failedSources: 1,
+      unavailableSources: 1,
+      sourceCoverageState: 'PARTIAL'
+    }}
     summaryState="ready"
     exportUrl="/api/v1/tasks/task-completed/export.csv"
     onRefine={noop}
@@ -401,7 +421,7 @@ const failedSource: SourceSummary = {
   records: 0,
   evidence: 0,
   latestCollectedAt: null,
-  collectionStatus: 'FAILED',
+  collectionStatus: 'UNAVAILABLE',
   errorCode: 'SOURCE_UNREACHABLE',
   errorMessage: 'Source could not be reached after the configured retry policy',
   lastAttemptedAt: record.collectedAt,
@@ -409,7 +429,8 @@ const failedSource: SourceSummary = {
   configured: true
 }
 const partialSources = renderToStaticMarkup(<SourceExplorer sources={[sourceSummary, failedSource]} totalRecords={1} state="ready" />)
-includes(partialSources, '1</strong> unavailable', 'source workspace must count configured collection failures')
+includes(partialSources, '1</strong> limited', 'source workspace must count configured collection limitations')
+includes(partialSources, 'Source unavailable', 'source workspace must distinguish source unavailability from a negative research result')
 includes(partialSources, 'Source could not be reached', 'source workspace must explain collection failure without hiding partial success')
 
 const zeroSourceCoverage = renderToStaticMarkup(

@@ -368,3 +368,9 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/DEPENDENCY_POLICY.md](docs/DEPE
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+## Aurora X¹² implementation boundary
+
+NUMEN applies AURORA X¹² at the source boundary that actually exists today: connectors declare capabilities, source outcomes preserve partial/unavailable/access-denied/rate-limited/safety-rejected truth, connector provenance is persisted, and dataset coverage is derived from exact collection outcomes.
+
+NUMEN does **not** present multi-organization federation, clean rooms, sovereign deployment or air-gapped operation as shipped features. See [docs/AURORA_X12_IMPLEMENTATION.md](docs/AURORA_X12_IMPLEMENTATION.md) for the exact implementation scope and release invariants.

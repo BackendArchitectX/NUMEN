@@ -23,8 +23,16 @@ public class WorkflowPlanner {
         return new WorkflowPlan(
                 useCase,
                 List.of("title", "organization", "location", "website", "sourceUrl", "excerpt", "qualityScore"),
-                List.of("interpret", "source-discovery", "collect", "normalize", "validate", "deduplicate", "publish"),
-                List.of("public-http(s)-only", "private-network-block", "source-provenance", "content-size-limit", "sha256-dedup")
+                List.of("interpret", "source-scope-validation", "collect", "normalize", "validate", "deduplicate", "publish"),
+                List.of(
+                        "public-http(s)-only",
+                        "private-network-block",
+                        "source-capability-contract",
+                        "partial-source-truth",
+                        "source-provenance",
+                        "content-size-limit",
+                        "sha256-dedup"
+                )
         );
     }
 }

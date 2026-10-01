@@ -157,3 +157,24 @@ SSE is server-to-client only. A subscriber receives the current workflow state i
 ## Authentication
 
 The local/demo runtime does not implement authentication or multi-tenant authorization. It binds host ports to loopback and is not presented as an internet-facing production deployment. Production deployment gates are documented in `DEPLOYMENT.md`.
+
+## Aurora X¹² source outcome contract
+
+GET /api/v1/tasks/{id}/summary exposes exact source-observation state in addition to dataset counts:
+
+- configuredSources
+- attemptedSources
+- successfulSources
+- failedSources
+- unavailableSources
+- unauthorizedSources
+- rejectedSources
+- rateLimitedSources
+- notAttemptedSources
+- sourceCoverageState
+
+sourceCoverageState is one of COMPLETE, PARTIAL, NONE, DEMO or NOT_APPLICABLE for the current implementation.
+
+GET /api/v1/tasks/{id}/sources additionally exposes connectorId and capabilities for source provenance. Live-source collection statuses include SUCCEEDED, UNAVAILABLE, UNAUTHORIZED, REJECTED, RATE_LIMITED and FAILED; configured sources that have not reached a terminal collection outcome are represented as NOT_ATTEMPTED. Demo sources remain DEMO.
+
+These states are intentionally not interchangeable. In particular, UNAVAILABLE, UNAUTHORIZED, REJECTED and RATE_LIMITED never mean that the source contained zero matching records.

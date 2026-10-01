@@ -19,7 +19,8 @@ export function SourceExplorer({ sources, totalRecords, state }: SourceExplorerP
   }, [sources, query])
 
   const successful = sources.filter(source => source.collectionStatus === 'SUCCEEDED').length
-  const failed = sources.filter(source => source.collectionStatus === 'FAILED').length
+  const limited = sources.filter(isLimitedSource).length
+  const pending = sources.filter(source => source.collectionStatus === 'NOT_ATTEMPTED').length
   const demoSources = sources.filter(source => source.demo).length
   const evidenceLinked = sources.reduce((sum, source) => sum + source.evidence, 0)
 
@@ -57,12 +58,13 @@ export function SourceExplorer({ sources, totalRecords, state }: SourceExplorerP
     {sources.length > 0 && <div className="sourceSummaryBar">
       <span><strong>{sources.length}</strong> tracked</span>
       <span><strong>{successful}</strong> collected</span>
-      <span><strong>{failed}</strong> unavailable</span>
+      <span><strong>{limited}</strong> limited</span>
+      <span><strong>{pending}</strong> pending</span>
       <span><strong>{demoSources}</strong> demo</span>
     </div>}
 
     {visible.length ? <div className="sourceList">
-      {visible.map(source => <article className={`sourceRow ${source.collectionStatus.toLowerCase()}`} key={source.url || `${source.type}:${source.name}`}>
+      {visible.map(source => <article className={`sourceRow ${sourceRowState(source)}`} key={source.url || `${source.type}:${source.name}`}>
         <div className="sourceIdentity">
           <span className={sourceDotClass(source)} aria-hidden="true"/>
           <div>
@@ -90,19 +92,35 @@ export function SourceExplorer({ sources, totalRecords, state }: SourceExplorerP
   </section>
 }
 
+function isLimitedSource(source: SourceSummary): boolean {
+  return ['UNAVAILABLE', 'UNAUTHORIZED', 'REJECTED', 'RATE_LIMITED', 'FAILED'].includes(source.collectionStatus)
+}
+
+function sourceRowState(source: SourceSummary): string {
+  if (source.demo) return 'demo'
+  if (isLimitedSource(source)) return 'failed'
+  if (source.collectionStatus === 'SUCCEEDED') return 'succeeded'
+  return 'pending'
+}
+
 function sourceDotClass(source: SourceSummary): string {
   if (source.demo) return 'sourceDot demo'
-  if (source.collectionStatus === 'FAILED') return 'sourceDot failed'
+  if (isLimitedSource(source)) return 'sourceDot failed'
   if (source.collectionStatus === 'SUCCEEDED') return 'sourceDot live'
   return 'sourceDot pending'
 }
 
 function sourceStatusText(source: SourceSummary): string {
+  const sourceType = sourceTypeLabel(source.type)
   if (source.demo) return 'Demo source'
-  if (source.collectionStatus === 'FAILED') return `${sourceTypeLabel(source.type)} · Collection unavailable`
-  if (source.collectionStatus === 'NOT_ATTEMPTED') return `${sourceTypeLabel(source.type)} · Not attempted`
-  if (source.configured) return `${sourceTypeLabel(source.type)} · Collected`
-  return `${sourceTypeLabel(source.type)} · Contributing source`
+  if (source.collectionStatus === 'UNAVAILABLE') return `${sourceType} · Source unavailable`
+  if (source.collectionStatus === 'UNAUTHORIZED') return `${sourceType} · Access denied`
+  if (source.collectionStatus === 'REJECTED') return `${sourceType} · Rejected by source safety policy`
+  if (source.collectionStatus === 'RATE_LIMITED') return `${sourceType} · Rate limited`
+  if (source.collectionStatus === 'FAILED') return `${sourceType} · Collection failed`
+  if (source.collectionStatus === 'NOT_ATTEMPTED') return `${sourceType} · Not attempted`
+  if (source.configured) return `${sourceType} · Collected`
+  return `${sourceType} · Contributing source`
 }
 
 function formatRelative(value?: string | null): string {

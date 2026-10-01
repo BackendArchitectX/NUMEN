@@ -1,5 +1,6 @@
 package ai.numen.connector;
 
+import ai.numen.domain.SourceCapability;
 import ai.numen.entity.DatasetRecord;
 import org.springframework.stereotype.Component;
 
@@ -9,12 +10,22 @@ import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 @Component
 public class DemoCatalogConnector implements SourceConnector {
     @Override
     public String id() {
         return "demo-catalog";
+    }
+
+    @Override
+    public Set<SourceCapability> capabilities() {
+        return Set.of(
+                SourceCapability.DEMO_DATA,
+                SourceCapability.EVIDENCE_CAPTURE,
+                SourceCapability.DETERMINISTIC
+        );
     }
 
     @Override

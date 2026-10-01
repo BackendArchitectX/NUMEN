@@ -104,3 +104,15 @@ The current worker pool is intentionally bounded for a single-node challenge dep
 ## Restart recovery
 
 At application readiness, workflows left in `QUEUED`, `PLANNING`, `COLLECTING` or `PROCESSING` by a previous process interruption move through an explicit recovery transition and are redispatched through the normal bounded executor. Publication remains atomic, so a recovered workflow cannot expose a partially replaced dataset. If admission capacity is exhausted, recovery failure is persisted visibly instead of leaving the task indefinitely stuck.
+
+## Aurora X¹² source-boundary semantics
+
+The current runtime remains a single NUMEN service with explicit public HTTP(S) collection rather than a multi-organization federation product. AURORA X¹² is therefore implemented at the real source boundary.
+
+Each SourceConnector publishes an explicit capability contract. CollectionEngine derives the capability set required by the request and will not execute a connector that does not satisfy it. Live HTTP research currently requires read, evidence-capture, retry-safe-read, partial-failure and public-HTTP capabilities. Demo research uses a distinct deterministic demo capability set.
+
+Per-source outcomes are persisted as SUCCEEDED, UNAVAILABLE, UNAUTHORIZED, REJECTED, RATE_LIMITED or FAILED, together with connector identity and capability metadata. This preserves the X¹² invariant that a source that could not be observed must never be represented as a negative fact.
+
+Dataset summaries derive source coverage from those persisted outcomes. The number of contributing source rows is not used as a substitute for successful collection. A completed run can therefore be accurately described as complete or partial without losing useful results from sources that did succeed.
+
+See docs/AURORA_X12_IMPLEMENTATION.md for supported and deliberately non-applicable X¹² capabilities.

@@ -1,11 +1,13 @@
 package ai.numen.service;
 
 import ai.numen.config.NumenProperties;
+import ai.numen.domain.SourceCapability;
 import ai.numen.dto.TaskEventResponse;
 import ai.numen.entity.CollectionTask;
 import ai.numen.entity.DatasetRecord;
-import ai.numen.entity.TaskTimelineEvent;
 import ai.numen.entity.SourceCollectionAttempt;
+import ai.numen.entity.SourceCollectionStatus;
+import ai.numen.entity.TaskTimelineEvent;
 import ai.numen.exception.IdempotencyConflictException;
 import ai.numen.exception.ResourceNotFoundException;
 import ai.numen.exception.WorkflowCapacityException;
@@ -199,7 +201,54 @@ public class TaskService {
 
         Set<String> configuredSourceUrls = new java.util.LinkedHashSet<>(task.getSourceUrls());
         attempts.stream().map(SourceCollectionAttempt::getSourceUrl).filter(TaskService::hasText).forEach(configuredSourceUrls::add);
-        int failedSources = (int) attempts.stream().filter(attempt -> "FAILED".equals(attempt.getStatus())).count();
+
+        Map<String, SourceCollectionAttempt> attemptBySourceUrl = attempts.stream()
+                .filter(attempt -> hasText(attempt.getSourceUrl()))
+                .collect(Collectors.toMap(
+                        SourceCollectionAttempt::getSourceUrl,
+                        attempt -> attempt,
+                        (left, right) -> right,
+                        LinkedHashMap::new
+                ));
+        Set<String> datasetSourceUrls = dataset.stream()
+                .map(DatasetRecord::getSourceUrl)
+                .filter(TaskService::hasText)
+                .map(String::trim)
+                .collect(Collectors.toSet());
+        long inferredHistoricalSuccesses = configuredSourceUrls.stream()
+                .filter(url -> !attemptBySourceUrl.containsKey(url))
+                .filter(datasetSourceUrls::contains)
+                .count();
+
+        int attemptedSources = attempts.size() + Math.toIntExact(inferredHistoricalSuccesses);
+        int successfulSources = (int) attempts.stream()
+                .filter(attempt -> attempt.getStatus() == SourceCollectionStatus.SUCCEEDED)
+                .count() + Math.toIntExact(inferredHistoricalSuccesses);
+        int unavailableSources = (int) attempts.stream()
+                .filter(attempt -> attempt.getStatus() == SourceCollectionStatus.UNAVAILABLE)
+                .count();
+        int unauthorizedSources = (int) attempts.stream()
+                .filter(attempt -> attempt.getStatus() == SourceCollectionStatus.UNAUTHORIZED)
+                .count();
+        int rejectedSources = (int) attempts.stream()
+                .filter(attempt -> attempt.getStatus() == SourceCollectionStatus.REJECTED)
+                .count();
+        int rateLimitedSources = (int) attempts.stream()
+                .filter(attempt -> attempt.getStatus() == SourceCollectionStatus.RATE_LIMITED)
+                .count();
+        int failedSources = (int) attempts.stream()
+                .filter(attempt -> attempt.getStatus().isFailure())
+                .count();
+        int notAttemptedSources = Math.max(0, configuredSourceUrls.size() - attemptedSources);
+        String sourceCoverageState = sourceCoverageState(
+                task,
+                dataset.size(),
+                demoRecords,
+                configuredSourceUrls.size(),
+                successfulSources,
+                failedSources,
+                notAttemptedSources
+        );
 
         return new DatasetSummary(
                 dataset.size(),
@@ -207,7 +256,15 @@ public class TaskService {
                 locations.size(),
                 sources.size(),
                 configuredSourceUrls.size(),
+                attemptedSources,
+                successfulSources,
                 failedSources,
+                unavailableSources,
+                unauthorizedSources,
+                rejectedSources,
+                rateLimitedSources,
+                notAttemptedSources,
+                sourceCoverageState,
                 evidenceLinked,
                 demoRecords,
                 latestCollectedAt,
@@ -253,10 +310,12 @@ public class TaskService {
                         0,
                         0,
                         null,
-                        attempt == null ? "NOT_ATTEMPTED" : attempt.getStatus(),
+                        attempt == null ? "NOT_ATTEMPTED" : attempt.getStatus().name(),
                         attempt == null ? null : attempt.getErrorCode(),
                         attempt == null ? null : attempt.getErrorMessage(),
                         attempt == null ? null : attempt.getAttemptedAt(),
+                        connectorId(attempt, "WEB"),
+                        capabilities(attempt, "WEB"),
                         false,
                         true
                 ));
@@ -289,7 +348,7 @@ public class TaskService {
                 .max(Comparator.naturalOrder())
                 .orElse(null);
         boolean demo = group.stream().allMatch(record -> "DEMO".equalsIgnoreCase(record.getSourceType()));
-        String status = demo ? "DEMO" : attempt != null ? attempt.getStatus() : "SUCCEEDED";
+        String status = demo ? "DEMO" : attempt != null ? attempt.getStatus().name() : "SUCCEEDED";
 
         return new SourceSummary(
                 hasText(first.getSourceName()) ? first.getSourceName().trim() : sourceKey(first),
@@ -302,6 +361,8 @@ public class TaskService {
                 attempt == null ? null : attempt.getErrorCode(),
                 attempt == null ? null : attempt.getErrorMessage(),
                 attempt == null ? latest : attempt.getAttemptedAt(),
+                connectorId(attempt, first.getSourceType()),
+                capabilities(attempt, first.getSourceType()),
                 demo,
                 configured
         );
@@ -345,6 +406,59 @@ public class TaskService {
             normalized.add(trimmed);
         }
         return List.copyOf(normalized);
+    }
+
+    private static String sourceCoverageState(CollectionTask task,
+                                              int totalRecords,
+                                              int demoRecords,
+                                              int configuredSources,
+                                              int successfulSources,
+                                              int failedSources,
+                                              int notAttemptedSources) {
+        if (task.isDemoMode()
+                || (configuredSources == 0 && totalRecords > 0 && demoRecords == totalRecords)) {
+            return "DEMO";
+        }
+        if (configuredSources == 0) return "NOT_APPLICABLE";
+        if (successfulSources == configuredSources && failedSources == 0 && notAttemptedSources == 0) {
+            return "COMPLETE";
+        }
+        if (successfulSources > 0) return "PARTIAL";
+        return "NONE";
+    }
+
+    private static String connectorId(SourceCollectionAttempt attempt, String sourceType) {
+        if (attempt != null && hasText(attempt.getConnectorId())) return attempt.getConnectorId().trim();
+        if ("DEMO".equalsIgnoreCase(sourceType)) return "demo-catalog";
+        if ("WEB".equalsIgnoreCase(sourceType)
+                || "HTTP".equalsIgnoreCase(sourceType)
+                || "HTTPS".equalsIgnoreCase(sourceType)) {
+            return "http-page";
+        }
+        return "unknown";
+    }
+
+    private static List<String> capabilities(SourceCollectionAttempt attempt, String sourceType) {
+        if (attempt != null && !attempt.getCapabilities().isEmpty()) return attempt.getCapabilities();
+        if ("DEMO".equalsIgnoreCase(sourceType)) {
+            return SourceCapability.apiNames(Set.of(
+                    SourceCapability.DEMO_DATA,
+                    SourceCapability.EVIDENCE_CAPTURE,
+                    SourceCapability.DETERMINISTIC
+            ));
+        }
+        if ("WEB".equalsIgnoreCase(sourceType)
+                || "HTTP".equalsIgnoreCase(sourceType)
+                || "HTTPS".equalsIgnoreCase(sourceType)) {
+            return SourceCapability.apiNames(Set.of(
+                    SourceCapability.READ_RECORDS,
+                    SourceCapability.EVIDENCE_CAPTURE,
+                    SourceCapability.RETRY_SAFE_READ,
+                    SourceCapability.PARTIAL_FAILURE,
+                    SourceCapability.PUBLIC_HTTP
+            ));
+        }
+        return List.of();
     }
 
     private static String sortableProperty(String value) {
@@ -397,7 +511,15 @@ public class TaskService {
             int uniqueLocations,
             int uniqueSources,
             int configuredSources,
+            int attemptedSources,
+            int successfulSources,
             int failedSources,
+            int unavailableSources,
+            int unauthorizedSources,
+            int rejectedSources,
+            int rateLimitedSources,
+            int notAttemptedSources,
+            String sourceCoverageState,
             int evidenceLinkedRecords,
             int demoRecords,
             Instant latestCollectedAt,
@@ -414,6 +536,8 @@ public class TaskService {
             String errorCode,
             String errorMessage,
             Instant lastAttemptedAt,
+            String connectorId,
+            List<String> capabilities,
             boolean demo,
             boolean configured) { }
 }
