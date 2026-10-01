@@ -175,7 +175,7 @@ public class TaskService {
                 .map(group -> {
                     DatasetRecord first = group.get(0);
                     int evidence = (int) group.stream()
-                            .filter(record -> hasText(record.getExcerpt()))
+                            .filter(record -> hasText(record.getSourceUrl()) && hasText(record.getExcerpt()))
                             .count();
                     Instant latest = group.stream()
                             .map(DatasetRecord::getCollectedAt)
