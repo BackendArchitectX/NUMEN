@@ -105,5 +105,19 @@ class TaskSummaryIntegrationTest {
                     assertThat(source.evidence()).isEqualTo(1);
                     assertThat(source.demo()).isTrue();
                 });
+
+        TaskService.DatasetPage firstPage = service.recordPage(taskId, "", 0, 0, 2, "title", "asc");
+        assertThat(firstPage.totalMatched()).isEqualTo(3);
+        assertThat(firstPage.totalPages()).isEqualTo(2);
+        assertThat(firstPage.records())
+                .extracting(DatasetRecord::getTitle)
+                .containsExactly("Backend Engineer", "Demo Research Item");
+
+        TaskService.DatasetPage filteredPage = service.recordPage(taskId, "demo", 0, 0, 25, "qualityScore", "desc");
+        assertThat(filteredPage.totalMatched()).isEqualTo(1);
+        assertThat(filteredPage.records())
+                .extracting(DatasetRecord::getTitle)
+                .containsExactly("Demo Research Item");
+
     }
 }
