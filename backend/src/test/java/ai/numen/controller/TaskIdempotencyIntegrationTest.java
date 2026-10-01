@@ -85,6 +85,24 @@ class TaskIdempotencyIntegrationTest {
                 .andExpect(status().isConflict());
     }
 
+
+    @Test
+    void rejectsReuseOfIdempotencyKeyForDifferentDemoMode() throws Exception {
+        String key = "demo-mode-conflict-key";
+
+        mvc.perform(post("/api/v1/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Idempotency-Key", key)
+                        .content("{\"prompt\":\"Collect traceable public market intelligence\",\"demoMode\":false}"))
+                .andExpect(status().isAccepted());
+
+        mvc.perform(post("/api/v1/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Idempotency-Key", key)
+                        .content("{\"prompt\":\"Collect traceable public market intelligence\",\"demoMode\":true}"))
+                .andExpect(status().isConflict());
+    }
+
     private static String extractId(String json) {
         int start = json.indexOf("\"id\":\"") + 6;
         int end = json.indexOf('"', start);
