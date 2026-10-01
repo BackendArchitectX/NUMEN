@@ -100,7 +100,7 @@ export default function App() {
 
         {workspace.selected ? <>
           {selectedComplete
-            ? <ResearchOutcome task={workspace.selected} summary={workspace.summary} exportUrl={workspace.exportUrl}/>
+            ? <ResearchOutcome task={workspace.selected} summary={workspace.summary} summaryState={workspace.summaryState} exportUrl={workspace.exportUrl}/>
             : <WorkflowPanel task={workspace.selected} timeline={workspace.timeline} exportUrl={workspace.exportUrl} onCancel={id => void workspace.cancelTask(id)}/>}
 
           <DatasetExplorer records={workspace.records} status={workspace.selected.status} query={workspace.query} minQuality={workspace.minQuality}
@@ -113,7 +113,7 @@ export default function App() {
       {view === 'datasets' && <>
         <RunSelector label="Published dataset" tasks={publishedTasks} selectedId={workspace.selectedId} onSelect={id => selectAndOpen(id, 'datasets')}/>
         {workspace.selected && workspace.selected.status === 'COMPLETED' && workspace.selected.recordCount > 0 ? <>
-          <ResearchOutcome task={workspace.selected} summary={workspace.summary} exportUrl={workspace.exportUrl}/>
+          <ResearchOutcome task={workspace.selected} summary={workspace.summary} summaryState={workspace.summaryState} exportUrl={workspace.exportUrl}/>
           <DatasetExplorer records={workspace.records} status={workspace.selected.status} query={workspace.query} minQuality={workspace.minQuality}
             onQueryChange={workspace.setQuery} onMinQualityChange={workspace.setMinQuality}/>
         </> : <section className="emptyState panel"><Database aria-hidden="true"/><h2>Select a published dataset</h2><p>Only completed research with published records appears here. Choose a dataset above or start new research.</p></section>}
@@ -122,7 +122,7 @@ export default function App() {
       {view === 'sources' && <>
         <RunSelector label="Research source set" tasks={publishedTasks} selectedId={workspace.selectedId} onSelect={id => selectAndOpen(id, 'sources')}/>
         {workspace.selected && workspace.selected.status === 'COMPLETED' && workspace.selected.recordCount > 0
-          ? <SourceExplorer sources={workspace.sources} totalRecords={workspace.summary?.totalRecords ?? workspace.selected.recordCount}/>
+          ? <SourceExplorer sources={workspace.sources} totalRecords={workspace.summary?.totalRecords ?? workspace.selected.recordCount} state={workspace.sourcesState}/>
           : <section className="emptyState panel"><Radio aria-hidden="true"/><h2>Select published research</h2><p>Source contribution and captured-evidence coverage are shown for completed research with published records.</p></section>}
       </>}
 
