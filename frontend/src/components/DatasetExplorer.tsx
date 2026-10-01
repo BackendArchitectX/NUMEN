@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ArrowDown, ArrowUp, ArrowUpRight, FileSearch, Search, X } from 'lucide-react'
 import type { DatasetRecord, TaskStatus } from '../model/types'
 import { clip } from '../shared/text'
@@ -32,6 +32,15 @@ export function DatasetExplorer({ records, status, query, minQuality, onQueryCha
   const selectedRecord = records.find(record => record.id === selectedRecordId)
   const containsDemoData = records.some(record => record.sourceType === 'DEMO')
 
+  useEffect(() => {
+    if (!selectedRecord) return
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSelectedRecordId(undefined)
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [selectedRecord])
+
   const sortBy = (key: SortKey) => {
     if (key === sortKey) {
       setSortDirection(current => current === 'asc' ? 'desc' : 'asc')
@@ -45,59 +54,76 @@ export function DatasetExplorer({ records, status, query, minQuality, onQueryCha
     <div className="resultsHeader">
       <div className="resultsTitle"><FileSearch size={18} aria-hidden="true"/><div><h3 id="dataset-heading">Results</h3><span>{records.length} visible rows</span></div></div>
       <div className="filters">
-        <label><span className="srOnly">Search records</span><Search size={15} aria-hidden="true"/><input value={query} onChange={event => onQueryChange(event.target.value)} placeholder="Search results"/></label>
-        <label className="srOnly" htmlFor="quality-filter">Minimum quality</label>
-        <select id="quality-filter" aria-label="Minimum quality" value={minQuality} onChange={event => onMinQualityChange(Number(event.target.value))}>
-          <option value={0}>All quality</option><option value={80}>80%+</option><option value={90}>90%+</option>
+        <label className="searchField"><span className="srOnly">Search records</span><Search size={15} aria-hidden="true"/><input value={query} onChange={event => onQueryChange(event.target.value)} placeholder="Search results"/></label>
+        <label className="srOnly" htmlFor="quality-filter">Minimum data quality</label>
+        <select id="quality-filter" aria-label="Minimum data quality" value={minQuality} onChange={event => onMinQualityChange(Number(event.target.value))}>
+          <option value={0}>All records</option><option value={80}>Quality 80%+</option><option value={90}>Quality 90%+</option>
         </select>
       </div>
     </div>
 
-    {containsDemoData && <div className="demoNotice" role="note"><strong>Demo data</strong><span>These sample records are for product evaluation and are not live market intelligence.</span></div>}
+    {containsDemoData && <div className="demoNotice" role="note"><strong>Demo dataset</strong><span>These sample records are for product evaluation and are not live market intelligence.</span></div>}
 
     <div className="tableWrap"><table>
       <caption className="srOnly">Collected intelligence records and source provenance</caption>
       <thead><tr>
-        <SortableHeader label="Intelligence" column="title" active={sortKey} direction={sortDirection} onSort={sortBy}/>
+        <SortableHeader label="Result" column="title" active={sortKey} direction={sortDirection} onSort={sortBy}/>
         <SortableHeader label="Organization" column="organization" active={sortKey} direction={sortDirection} onSort={sortBy}/>
         <SortableHeader label="Location" column="location" active={sortKey} direction={sortDirection} onSort={sortBy}/>
-        <SortableHeader label="Quality" column="qualityScore" active={sortKey} direction={sortDirection} onSort={sortBy}/>
+        <SortableHeader label="Data quality" column="qualityScore" active={sortKey} direction={sortDirection} onSort={sortBy}/>
         <SortableHeader label="Source" column="sourceName" active={sortKey} direction={sortDirection} onSort={sortBy}/>
       </tr></thead>
       <tbody>
-        {sortedRecords.map(record => <tr key={record.id}>
-          <td><button type="button" className="recordTitleButton" onClick={() => setSelectedRecordId(record.id)}><strong>{record.title}</strong><small>{clip(record.excerpt, 78)}</small></button></td>
-          <td>{record.organization}</td><td>{record.location}</td>
-          <td><span className="quality">{Math.round(record.qualityScore)}%</span></td>
+        {sortedRecords.map(record => <tr key={record.id} className={record.id === selectedRecordId ? 'selectedRow' : undefined}>
+          <td><button type="button" className="recordTitleButton" aria-pressed={record.id === selectedRecordId} onClick={() => setSelectedRecordId(record.id)}><strong>{record.title}</strong><small>{clip(record.excerpt, 78)}</small></button></td>
+          <td>{record.organization || '—'}</td>
+          <td>{record.location || '—'}</td>
+          <td><span className="quality" title="Persisted data-quality score">{Math.round(record.qualityScore)}%</span></td>
           <td>{record.sourceUrl.startsWith('http')
             ? <a href={record.sourceUrl} target="_blank" rel="noreferrer" aria-label={`Open source ${record.sourceName} in a new tab`}>{record.sourceName}<ArrowUpRight size={13} aria-hidden="true"/></a>
-            : <span className="demoSource">{record.sourceName}</span>}</td>
+            : <span className="demoSource">{record.sourceName || 'Demo source'}</span>}</td>
         </tr>)}
-        {!records.length && <tr><td colSpan={5} className="empty">{emptyMessage(status)}</td></tr>}
+        {!records.length && <tr><td colSpan={5} className="empty">{emptyMessage(status, query, minQuality)}</td></tr>}
       </tbody>
     </table></div>
 
-    {selectedRecord && <aside className="recordInspector" aria-labelledby="record-inspector-title">
-      <div className="inspectorHeader">
-        <div><span>Record evidence</span><h4 id="record-inspector-title">{selectedRecord.title}</h4></div>
-        <button type="button" className="iconAction" onClick={() => setSelectedRecordId(undefined)} aria-label="Close record evidence"><X size={17} aria-hidden="true"/></button>
-      </div>
-      <div className="inspectorGrid">
-        <Detail label="Organization" value={selectedRecord.organization || '—'}/>
-        <Detail label="Location" value={selectedRecord.location || '—'}/>
-        <Detail label="Quality" value={`${Math.round(selectedRecord.qualityScore)}%`}/>
-        <Detail label="Source type" value={selectedRecord.sourceType || '—'}/>
-        <Detail label="Collected" value={formatDate(selectedRecord.collectedAt)}/>
-        <Detail label="Fingerprint" value={selectedRecord.fingerprint || '—'} code/>
-      </div>
-      <div className="evidenceExcerpt"><span>Captured excerpt</span><p>{selectedRecord.excerpt || 'No excerpt was persisted for this record.'}</p></div>
-      <div className="evidenceSource">
-        <span>Source</span>
-        {selectedRecord.sourceUrl.startsWith('http')
-          ? <a href={selectedRecord.sourceUrl} target="_blank" rel="noreferrer">{selectedRecord.sourceName || selectedRecord.sourceUrl}<ArrowUpRight size={13} aria-hidden="true"/></a>
-          : <code>{selectedRecord.sourceUrl}</code>}
-      </div>
-    </aside>}
+    {selectedRecord && <>
+      <button type="button" className="inspectorBackdrop" onClick={() => setSelectedRecordId(undefined)} aria-label="Close record evidence"/>
+      <aside className="recordInspector" aria-labelledby="record-inspector-title">
+        <div className="inspectorHeader">
+          <div><span>Record evidence</span><h4 id="record-inspector-title">{selectedRecord.title}</h4><p>{selectedRecord.organization || 'Unknown organization'}</p></div>
+          <button type="button" className="iconAction" onClick={() => setSelectedRecordId(undefined)} aria-label="Close record evidence"><X size={17} aria-hidden="true"/></button>
+        </div>
+
+        <div className="evidenceTrust">
+          <span className={selectedRecord.sourceType === 'DEMO' ? 'trustDemo' : 'trustSource'}>
+            {selectedRecord.sourceType === 'DEMO' ? 'Demo record' : 'Source-backed record'}
+          </span>
+          <span>Collected {formatRelative(selectedRecord.collectedAt)}</span>
+        </div>
+
+        <div className="inspectorGrid">
+          <Detail label="Organization" value={selectedRecord.organization || '—'}/>
+          <Detail label="Location" value={selectedRecord.location || '—'}/>
+          <Detail label="Data quality" value={`${Math.round(selectedRecord.qualityScore)}%`}/>
+          <Detail label="Source type" value={selectedRecord.sourceType || '—'}/>
+          <Detail label="Collected" value={formatDate(selectedRecord.collectedAt)}/>
+          <Detail label="Fingerprint" value={selectedRecord.fingerprint || '—'} code/>
+        </div>
+
+        <div className="evidenceExcerpt">
+          <span>Captured evidence</span>
+          <p>{selectedRecord.excerpt || 'No excerpt was persisted for this record.'}</p>
+        </div>
+
+        <div className="evidenceSource">
+          <span>Source</span>
+          {selectedRecord.sourceUrl.startsWith('http')
+            ? <a href={selectedRecord.sourceUrl} target="_blank" rel="noreferrer">{selectedRecord.sourceName || selectedRecord.sourceUrl}<ArrowUpRight size={13} aria-hidden="true"/></a>
+            : <code>{selectedRecord.sourceUrl}</code>}
+        </div>
+      </aside>
+    </>}
   </section>
 }
 
@@ -123,9 +149,21 @@ function formatDate(value: string): string {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString()
 }
 
-function emptyMessage(status: TaskStatus): string {
-  if (status === 'COMPLETED') return 'No records match the current filters.'
-  if (status === 'FAILED') return 'Research failed. Review the run details above.'
+function formatRelative(value: string): string {
+  const time = Date.parse(value)
+  if (!Number.isFinite(time)) return 'recently'
+  const minutes = Math.max(0, Math.round((Date.now() - time) / 60_000))
+  if (minutes < 1) return 'just now'
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.round(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.round(hours / 24)}d ago`
+}
+
+function emptyMessage(status: TaskStatus, query: string, minQuality: number): string {
+  if (status === 'COMPLETED' && (query.trim() || minQuality > 0)) return 'No records match the current filters. Clear or relax the filters to see more results.'
+  if (status === 'COMPLETED') return 'This run completed without publishable records.'
+  if (status === 'FAILED') return 'Research stopped before a publishable dataset was available. Open Run details for diagnostics.'
   if (status === 'CANCELLED') return 'This research run was cancelled before a publishable dataset was available.'
-  return 'Results will appear here as the research run completes.'
+  return 'Results will appear here when publishable records are available.'
 }
