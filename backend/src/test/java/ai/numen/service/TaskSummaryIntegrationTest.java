@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,10 +26,19 @@ class TaskSummaryIntegrationTest {
     @Autowired
     private DatasetRecordRepository records;
 
+    @Autowired
+    private SourceCollectionAttemptService sourceAttempts;
+
     @Test
     void derivesExactOutcomeAndSourceCoverageFromPersistedRecords() {
         UUID taskId = UUID.randomUUID();
-        tasks.saveAndFlush(new CollectionTask(taskId, "Research backend engineering opportunities"));
+        tasks.saveAndFlush(new CollectionTask(
+                taskId,
+                "Research backend engineering opportunities",
+                null,
+                false,
+                List.of("https://example.com/jobs", "https://failed.example/jobs")
+        ));
 
         records.save(new DatasetRecord(
                 taskId,
@@ -72,12 +82,22 @@ class TaskSummaryIntegrationTest {
                 "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
         ));
 
+        sourceAttempts.succeeded(taskId, "https://example.com/jobs");
+        sourceAttempts.failed(
+                taskId,
+                "https://failed.example/jobs",
+                "SOURCE_UNREACHABLE",
+                "Source could not be reached after the configured retry policy"
+        );
+
         TaskService.DatasetSummary summary = service.summary(taskId);
 
         assertThat(summary.totalRecords()).isEqualTo(3);
         assertThat(summary.uniqueOrganizations()).isEqualTo(2);
         assertThat(summary.uniqueLocations()).isEqualTo(2);
         assertThat(summary.uniqueSources()).isEqualTo(2);
+        assertThat(summary.configuredSources()).isEqualTo(2);
+        assertThat(summary.failedSources()).isEqualTo(1);
         assertThat(summary.evidenceLinkedRecords()).isEqualTo(2);
         assertThat(summary.demoRecords()).isEqualTo(1);
         assertThat(summary.latestCollectedAt()).isNotNull();
@@ -89,7 +109,7 @@ class TaskSummaryIntegrationTest {
                 });
 
         assertThat(service.sources(taskId))
-                .hasSize(2)
+                .hasSize(3)
                 .first()
                 .satisfies(source -> {
                     assertThat(source.name()).isEqualTo("Example Careers");
@@ -104,6 +124,15 @@ class TaskSummaryIntegrationTest {
                     assertThat(source.records()).isEqualTo(1);
                     assertThat(source.evidence()).isEqualTo(1);
                     assertThat(source.demo()).isTrue();
+                });
+
+        assertThat(service.sources(taskId))
+                .anySatisfy(source -> {
+                    assertThat(source.url()).isEqualTo("https://failed.example/jobs");
+                    assertThat(source.records()).isZero();
+                    assertThat(source.collectionStatus()).isEqualTo("FAILED");
+                    assertThat(source.errorCode()).isEqualTo("SOURCE_UNREACHABLE");
+                    assertThat(source.configured()).isTrue();
                 });
 
         TaskService.DatasetPage firstPage = service.recordPage(taskId, "", 0, 0, 2, "title", "asc");
