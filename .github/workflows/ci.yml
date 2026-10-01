@@ -30,6 +30,8 @@ jobs:
         run: bash scripts/quality/check-runtime.sh
       - name: Validate source policy
         run: bash scripts/quality/check-source-policy.sh
+      - name: Validate Aurora visual policy
+        run: bash scripts/quality/check-visual-policy.sh
       - name: Validate whitespace in latest change
         run: git diff --check HEAD^ HEAD
       - name: Validate Compose model
