@@ -415,7 +415,6 @@ const sidebar = renderToStaticMarkup(
   <Sidebar
     tasks={[completedTask]}
     selectedId={completedTask.id}
-    publishedDatasets={1}
     activeView="sources"
     theme="light"
     onToggleTheme={noop}
@@ -450,8 +449,8 @@ const datasetLibrary = renderToStaticMarkup(
     onNewResearch={noop}
   />
 )
-includes(datasetLibrary, 'Published datasets', 'published dataset library must expose reusable outputs')
-includes(datasetLibrary, '1', 'published dataset library must expose the persisted result count')
+includes(datasetLibrary, 'Recent published datasets', 'published dataset library must expose reusable outputs')
+includes(datasetLibrary, '1', 'published dataset library must expose persisted result counts without claiming a global dataset total')
 includes(datasetLibrary, 'Open dataset', 'published dataset library must expose a real open action')
 includes(datasetLibrary, 'Sources', 'published dataset library must keep provenance one action away')
 
