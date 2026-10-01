@@ -1,5 +1,5 @@
 export const examplePrompts = [
-  'Find Java backend engineering roles in India and structure title, company, location, URL and source',
-  'Collect sponsor opportunities for an AI developer event and structure company, location and source',
-  'Build a market-intelligence dataset for cloud data platforms with source provenance'
+  'Collect and structure public information from https://spring.io/projects/spring-boot and preserve source evidence',
+  'Build a source-backed research record from https://www.postgresql.org/about/ with title, organization and evidence',
+  'Analyze https://kubernetes.io/docs/concepts/overview/ and preserve the source behind every published record'
 ] as const
