@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react'
 import { ArrowUpRight, Radio, Search } from 'lucide-react'
-import type { SourceSummary } from '../model/types'
+import type { LoadState, SourceSummary } from '../model/types'
 
 interface SourceExplorerProps {
   sources: SourceSummary[]
   totalRecords: number
+  state: LoadState
 }
 
-export function SourceExplorer({ sources, totalRecords }: SourceExplorerProps) {
+export function SourceExplorer({ sources, totalRecords, state }: SourceExplorerProps) {
   const [query, setQuery] = useState('')
 
   const visible = useMemo(() => {
@@ -18,6 +19,24 @@ export function SourceExplorer({ sources, totalRecords }: SourceExplorerProps) {
 
   const liveSources = sources.filter(source => !source.demo).length
   const evidenceLinked = sources.reduce((sum, source) => sum + source.evidence, 0)
+
+  if (state === 'loading' || state === 'idle') {
+    return <section className="sourcesPanel panel" aria-labelledby="sources-heading">
+      <div className="resultsHeader">
+        <div className="resultsTitle"><Radio size={18} aria-hidden="true"/><div><h3 id="sources-heading">Sources</h3><span>Loading exact source contribution…</span></div></div>
+      </div>
+      <div className="sourceStateNotice" role="status">Loading the complete persisted source set…</div>
+    </section>
+  }
+
+  if (state === 'error') {
+    return <section className="sourcesPanel panel" aria-labelledby="sources-heading">
+      <div className="resultsHeader">
+        <div className="resultsTitle"><Radio size={18} aria-hidden="true"/><div><h3 id="sources-heading">Sources</h3><span>Source coverage is temporarily unavailable</span></div></div>
+      </div>
+      <div className="sourceStateNotice errorState" role="alert">NUMEN could not load the exact source summary. The published dataset remains available.</div>
+    </section>
+  }
 
   return <section className="sourcesPanel panel" aria-labelledby="sources-heading">
     <div className="resultsHeader">
