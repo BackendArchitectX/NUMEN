@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Database, Gauge, Layers3, Link2 } from 'lucide-react'
+import { CheckCircle2, Database, Gauge, Layers3 } from 'lucide-react'
 
 interface MetricsGridProps {
   workflows: number
@@ -9,11 +9,11 @@ interface MetricsGridProps {
 }
 
 export function MetricsGrid({ workflows, completed, records, averageQuality }: MetricsGridProps) {
-  return <section className="metrics">
-    <Metric icon={<Layers3/>} label="WORKFLOWS" value={workflows.toString()} detail={`${completed} completed`}/>
-    <Metric icon={<Database/>} label="RECORDS" value={records.toString()} detail="deduplicated"/>
-    <Metric icon={<Gauge/>} label="AVG QUALITY" value={`${averageQuality || '—'}${averageQuality ? '%' : ''}`} detail="field completeness"/>
-    <Metric icon={<Link2/>} label="PROVENANCE" value={records ? '100%' : '—'} detail="source-backed"/>
+  return <section className="metrics" aria-label="Persisted workspace metrics">
+    <Metric icon={<Layers3/>} label="WORKFLOWS" value={workflows.toString()} detail="persisted runs"/>
+    <Metric icon={<CheckCircle2/>} label="COMPLETED" value={completed.toString()} detail="terminal success"/>
+    <Metric icon={<Database/>} label="RECORDS" value={records.toString()} detail="published records"/>
+    <Metric icon={<Gauge/>} label="AVG QUALITY" value={`${averageQuality || '—'}${averageQuality ? '%' : ''}`} detail="completed-run average"/>
   </section>
 }
 
