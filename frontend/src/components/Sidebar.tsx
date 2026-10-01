@@ -1,4 +1,4 @@
-import { Activity, Database, Layers3, ShieldCheck } from 'lucide-react'
+import { Activity, Database, History, ShieldCheck } from 'lucide-react'
 import type { Task, WorkspaceView } from '../model/types'
 import { clip } from '../shared/text'
 
@@ -13,18 +13,23 @@ interface SidebarProps {
 
 export function Sidebar({ tasks, selectedId, totalRecords, activeView, onNavigate, onSelect }: SidebarProps) {
   return <aside className="sidebar" aria-label="NUMEN workspace">
-    <div className="brand"><div className="brandMark" aria-hidden="true">N</div><div><b>NUMEN</b><span>DATA INTELLIGENCE</span></div></div>
-    <div className="navLabel">WORKSPACE</div>
+    <div className="brand">
+      <div className="brandMark" aria-hidden="true"><span>N</span></div>
+      <div className="brandCopy"><b>NUMEN</b><span>Intelligence workspace</span></div>
+    </div>
+
+    <div className="navLabel">Workspace</div>
     <button type="button" className={`nav ${activeView === 'console' ? 'active' : ''}`} aria-current={activeView === 'console' ? 'page' : undefined} onClick={() => onNavigate('console')}>
-      <Activity size={16} aria-hidden="true"/> Intelligence Console
+      <Activity size={17} aria-hidden="true"/> <span className="navText">Console</span>
     </button>
     <button type="button" className={`nav ${activeView === 'datasets' ? 'active' : ''}`} aria-current={activeView === 'datasets' ? 'page' : undefined} onClick={() => onNavigate('datasets')}>
-      <Database size={16} aria-hidden="true"/> Datasets <span>{totalRecords}</span>
+      <Database size={17} aria-hidden="true"/> <span className="navText">Datasets</span><span className="navCount">{totalRecords}</span>
     </button>
     <button type="button" className={`nav ${activeView === 'history' ? 'active' : ''}`} aria-current={activeView === 'history' ? 'page' : undefined} onClick={() => onNavigate('history')}>
-      <Layers3 size={16} aria-hidden="true"/> Workflow History <span>{tasks.length}</span>
+      <History size={17} aria-hidden="true"/> <span className="navText">Runs</span><span className="navCount">{tasks.length}</span>
     </button>
-    <div className="navLabel">RECENT RUNS</div>
+
+    <div className="navLabel recentLabel">Recent research</div>
     <div className="recentList">
       {tasks.slice(0, 7).map(task => <button
         type="button"
@@ -34,9 +39,22 @@ export function Sidebar({ tasks, selectedId, totalRecords, activeView, onNavigat
         onClick={() => onSelect(task.id)}
       >
         <span className={`dot ${task.status.toLowerCase()}`} aria-hidden="true"/>
-        <div><strong>{clip(task.prompt, 34)}</strong><small>{task.stage}</small></div>
+        <div><strong>{clip(task.prompt, 31)}</strong><small>{recentMeta(task)}</small></div>
       </button>)}
+      {!tasks.length && <p className="sidebarEmpty">Your recent research will appear here.</p>}
     </div>
-    <div className="trust"><ShieldCheck size={18} aria-hidden="true"/><div><b>Guarded collection</b><span>Public HTTP(S) only · SSRF protection · provenance</span></div></div>
+
+    <div className="sidebarFooter"><ShieldCheck size={15} aria-hidden="true"/><span>Protected collection</span></div>
   </aside>
+}
+
+function recentMeta(task: Task): string {
+  if (task.status === 'COMPLETED') return `${task.recordCount} records · complete`
+  if (task.status === 'FAILED') return 'Needs attention'
+  if (task.status === 'CANCELLED') return 'Cancelled'
+  return humanize(task.stage)
+}
+
+function humanize(value: string): string {
+  return value.replaceAll('_', ' ').toLowerCase().replace(/^./, letter => letter.toUpperCase())
 }
