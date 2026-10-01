@@ -12,7 +12,7 @@ interface WorkflowHistoryProps {
 export function WorkflowHistory({ tasks, onOpen, onOpenDataset, onOpenSources }: WorkflowHistoryProps) {
   return <section className="historyPanel panel" aria-labelledby="history-heading">
     <div className="resultsHeader">
-      <div className="resultsTitle"><History size={18} aria-hidden="true"/><div><h3 id="history-heading">Runs</h3><span>{tasks.length} persisted research runs</span></div></div>
+      <div className="resultsTitle"><History size={18} aria-hidden="true"/><div><h3 id="history-heading">Runs</h3><span>{tasks.length} persisted research {tasks.length === 1 ? 'run' : 'runs'}</span></div></div>
     </div>
     {tasks.length ? <div className="tableWrap"><table className="historyTable">
       <caption className="srOnly">Persisted research run history</caption>
@@ -36,7 +36,7 @@ export function WorkflowHistory({ tasks, onOpen, onOpenDataset, onOpenSources }:
 }
 
 function outcomeLabel(task: Task): string {
-  if (task.status === 'COMPLETED') return task.recordCount > 0 ? `${task.recordCount} published records` : 'No publishable records'
+  if (task.status === 'COMPLETED') return task.recordCount > 0 ? `${task.recordCount} published ${task.recordCount === 1 ? 'record' : 'records'}` : 'No publishable records'
   if (task.status === 'FAILED') return 'Stopped before completion'
   if (task.status === 'CANCELLED') return 'Cancelled before completion'
   return statusLabel(task.status)
