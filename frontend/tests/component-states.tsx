@@ -3,7 +3,9 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { DatasetExplorer } from '../src/components/DatasetExplorer'
 import { MetricsGrid } from '../src/components/MetricsGrid'
 import { PromptComposer } from '../src/components/PromptComposer'
-import { WorkflowPanel } from '../src/components/WorkflowPanel'\nimport { Sidebar } from '../src/components/Sidebar'\nimport { WorkflowHistory } from '../src/components/WorkflowHistory'
+import { Sidebar } from '../src/components/Sidebar'
+import { WorkflowHistory } from '../src/components/WorkflowHistory'
+import { WorkflowPanel } from '../src/components/WorkflowPanel'
 import type { DatasetRecord, Task } from '../src/model/types'
 
 const noop = () => undefined
@@ -91,6 +93,12 @@ const activeTask: Task = {
   status: 'COLLECTING',
   stage: 'Collecting permitted sources',
   progress: 45,
+  planJson: JSON.stringify({
+    useCase: 'Hiring intelligence',
+    fields: ['title', 'organization'],
+    stages: ['Interpret', 'Collect', 'Publish'],
+    safeguards: ['Preserve source provenance']
+  }),
   recordCount: 0,
   averageQuality: 0,
   createdAt: '2026-09-30T00:00:00Z'
@@ -100,7 +108,9 @@ const activeWorkflow = renderToStaticMarkup(
   <WorkflowPanel task={activeTask} exportUrl="#" onCancel={noop} />
 )
 includes(activeWorkflow, '>Cancel<', 'active workflows need a cancellation control')
-includes(activeWorkflow, 'aria-valuenow="45"', 'workflow progress must be exposed semantically')\nincludes(activeWorkflow, 'Hiring intelligence', 'workflow panel must expose the persisted plan rather than a fabricated pipeline')\nincludes(activeWorkflow, 'Preserve source provenance', 'workflow panel must expose persisted safeguards')
+includes(activeWorkflow, 'aria-valuenow="45"', 'workflow progress must be exposed semantically')
+includes(activeWorkflow, 'Hiring intelligence', 'workflow panel must expose the persisted plan rather than a fabricated pipeline')
+includes(activeWorkflow, 'Preserve source provenance', 'workflow panel must expose persisted safeguards')
 excludes(activeWorkflow, 'Export CSV', 'empty in-progress workflows must not advertise an export')
 
 const completedTask: Task = {
@@ -125,11 +135,9 @@ const metrics = renderToStaticMarkup(
   <MetricsGrid workflows={4} completed={3} records={12} averageQuality={91} />
 )
 includes(metrics, 'WORKFLOWS', 'metrics grid should expose workflow summary')
+includes(metrics, 'COMPLETED', 'metrics grid should expose completed-run count instead of a fabricated provenance percentage')
 includes(metrics, '12', 'metrics grid should expose record count')
 includes(metrics, '91%', 'metrics grid should expose measured quality')
-
-console.log('[NUMEN] frontend component-state tests passed')
-
 
 const sidebar = renderToStaticMarkup(
   <Sidebar
@@ -150,3 +158,5 @@ const history = renderToStaticMarkup(
 includes(history, 'Workflow history', 'history view must render persisted workflow history')
 includes(history, 'Open run', 'history rows must expose a functional run action')
 includes(history, 'Dataset', 'completed runs with data must expose their dataset action')
+
+console.log('[NUMEN] frontend component-state tests passed')
