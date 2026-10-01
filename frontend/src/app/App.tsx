@@ -93,7 +93,6 @@ export default function App() {
     <Sidebar
       tasks={workspace.tasks}
       selectedId={workspace.selectedId}
-      publishedDatasets={publishedTasks.length}
       activeView={view}
       theme={theme}
       onToggleTheme={toggleTheme}
