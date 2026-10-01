@@ -38,7 +38,7 @@ export function WorkflowPanel({ task, timeline, onCancel }: WorkflowPanelProps) 
       <div className="runIdentity">
         <span className={`status ${task.status.toLowerCase()}`} aria-live="polite">{statusLabel(task.status)}</span>
         <div>
-          <span className="runKicker">Research in progress</span>
+          <span className="runKicker">{task.demoMode ? 'Demo research in progress' : 'Research in progress'}</span>
           <h2 id={`workflow-${task.id}`}>{clip(task.prompt, 100)}</h2>
         </div>
       </div>
