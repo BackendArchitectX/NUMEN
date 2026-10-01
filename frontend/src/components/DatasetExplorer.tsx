@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowDown, ArrowUp, ArrowUpRight, FileSearch, Search, X } from 'lucide-react'
 import type { DatasetRecord, TaskStatus } from '../model/types'
 import { clip } from '../shared/text'
@@ -19,6 +19,7 @@ export function DatasetExplorer({ records, status, query, minQuality, onQueryCha
   const [sortKey, setSortKey] = useState<SortKey>('qualityScore')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [selectedRecordId, setSelectedRecordId] = useState<string>()
+  const inspectorRef = useRef<HTMLElement>(null)
 
   const sortedRecords = useMemo(() => [...records].sort((left, right) => {
     const leftValue = left[sortKey]
@@ -34,11 +35,46 @@ export function DatasetExplorer({ records, status, query, minQuality, onQueryCha
 
   useEffect(() => {
     if (!selectedRecord) return
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setSelectedRecordId(undefined)
+
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    const inspector = inspectorRef.current
+    const focusable = () => inspector
+      ? [...inspector.querySelectorAll<HTMLElement>('button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+      : []
+
+    window.requestAnimationFrame(() => focusable()[0]?.focus())
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        setSelectedRecordId(undefined)
+        return
+      }
+
+      if (event.key !== 'Tab') return
+      const items = focusable()
+      if (!items.length) return
+      const first = items[0]
+      const last = items[items.length - 1]
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
     }
-    window.addEventListener('keydown', closeOnEscape)
-    return () => window.removeEventListener('keydown', closeOnEscape)
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      document.body.style.overflow = previousOverflow
+      previousFocus?.focus()
+    }
   }, [selectedRecord])
 
   const sortBy = (key: SortKey) => {
@@ -75,7 +111,7 @@ export function DatasetExplorer({ records, status, query, minQuality, onQueryCha
       </tr></thead>
       <tbody>
         {sortedRecords.map(record => <tr key={record.id} className={record.id === selectedRecordId ? 'selectedRow' : undefined}>
-          <td><button type="button" className="recordTitleButton" aria-pressed={record.id === selectedRecordId} onClick={() => setSelectedRecordId(record.id)}><strong>{record.title}</strong><small>{clip(record.excerpt, 78)}</small></button></td>
+          <td><button type="button" className="recordTitleButton" aria-haspopup="dialog" onClick={() => setSelectedRecordId(record.id)}><strong>{record.title}</strong><small>{clip(record.excerpt, 78)}</small></button></td>
           <td>{record.organization || '—'}</td>
           <td>{record.location || '—'}</td>
           <td><span className="quality" title="Persisted data-quality score">{Math.round(record.qualityScore)}%</span></td>
@@ -88,8 +124,8 @@ export function DatasetExplorer({ records, status, query, minQuality, onQueryCha
     </table></div>
 
     {selectedRecord && <>
-      <button type="button" className="inspectorBackdrop" onClick={() => setSelectedRecordId(undefined)} aria-label="Close record evidence"/>
-      <aside className="recordInspector" aria-labelledby="record-inspector-title">
+      <div className="inspectorBackdrop" aria-hidden="true" onClick={() => setSelectedRecordId(undefined)}/>
+      <aside ref={inspectorRef} className="recordInspector" role="dialog" aria-modal="true" aria-labelledby="record-inspector-title">
         <div className="inspectorHeader">
           <div><span>Record evidence</span><h4 id="record-inspector-title">{selectedRecord.title}</h4><p>{selectedRecord.organization || 'Unknown organization'}</p></div>
           <button type="button" className="iconAction" onClick={() => setSelectedRecordId(undefined)} aria-label="Close record evidence"><X size={17} aria-hidden="true"/></button>
@@ -135,7 +171,7 @@ function SortableHeader({ label, column, active, direction, onSort }: {
   onSort: (key: SortKey) => void
 }) {
   const selected = active === column
-  return <th scope="col"><button type="button" className="sortButton" onClick={() => onSort(column)} aria-label={`Sort by ${label.toLowerCase()}`}>
+  return <th scope="col"><button type="button" className="sortButton" onClick={() => onSort(column)} aria-label={`Sort by ${label.toLowerCase()}`} aria-sort={selected ? direction === 'asc' ? 'ascending' : 'descending' : undefined}>
     {label}{selected ? direction === 'asc' ? <ArrowUp size={12} aria-hidden="true"/> : <ArrowDown size={12} aria-hidden="true"/> : null}
   </button></th>
 }
