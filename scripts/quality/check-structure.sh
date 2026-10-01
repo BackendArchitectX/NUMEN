@@ -28,6 +28,7 @@ required_files=(
   scripts/quality/check-structure.sh
   scripts/quality/check-runtime.sh
   scripts/quality/check-source-policy.sh
+  scripts/quality/check-visual-policy.sh
   scripts/quality/check-powershell.ps1
   docs/API.md
   docs/ARCHITECTURE.md
