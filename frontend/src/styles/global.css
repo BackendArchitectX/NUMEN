@@ -1505,6 +1505,23 @@ td a:hover { text-decoration: underline; }
 
 .runDetailsContent { padding: 0 0 13px; }
 
+.technicalMeta {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0 10px;
+  color: var(--color-text-subtle);
+  font-size: 9px;
+}
+
+.technicalMeta code {
+  overflow-wrap: anywhere;
+  color: var(--color-text-muted);
+  font: 9px var(--font-mono);
+}
+
 .timelineSection,
 .executionPlan {
   padding-top: 13px;
