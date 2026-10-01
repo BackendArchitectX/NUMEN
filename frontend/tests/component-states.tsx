@@ -6,7 +6,7 @@ import { PromptComposer } from '../src/components/PromptComposer'
 import { Sidebar } from '../src/components/Sidebar'
 import { WorkflowHistory } from '../src/components/WorkflowHistory'
 import { WorkflowPanel } from '../src/components/WorkflowPanel'
-import type { DatasetRecord, Task } from '../src/model/types'
+import type { DatasetRecord, Task, TaskTimelineEvent } from '../src/model/types'
 
 const noop = () => undefined
 
@@ -104,13 +104,25 @@ const activeTask: Task = {
   createdAt: '2026-09-30T00:00:00Z'
 }
 
+const timeline: TaskTimelineEvent[] = [{
+  id: 'timeline-1',
+  taskId: activeTask.id,
+  eventType: 'STATE_CHANGED',
+  status: 'COLLECTING',
+  stage: 'Collecting permitted sources',
+  progress: 45,
+  occurredAt: '2026-09-30T00:00:15Z'
+}]
+
 const activeWorkflow = renderToStaticMarkup(
-  <WorkflowPanel task={activeTask} exportUrl="#" onCancel={noop} />
+  <WorkflowPanel task={activeTask} timeline={timeline} exportUrl="#" onCancel={noop} />
 )
 includes(activeWorkflow, '>Cancel<', 'active workflows need a cancellation control')
 includes(activeWorkflow, 'aria-valuenow="45"', 'workflow progress must be exposed semantically')
 includes(activeWorkflow, 'Hiring intelligence', 'workflow panel must expose the persisted plan rather than a fabricated pipeline')
 includes(activeWorkflow, 'Preserve source provenance', 'workflow panel must expose persisted safeguards')
+includes(activeWorkflow, 'RUN TIMELINE', 'workflow panel must expose the persisted run timeline')
+includes(activeWorkflow, 'Collecting permitted sources', 'workflow panel must render persisted timeline events')
 excludes(activeWorkflow, 'Export CSV', 'empty in-progress workflows must not advertise an export')
 
 const completedTask: Task = {
@@ -125,7 +137,7 @@ const completedTask: Task = {
 }
 
 const completedWorkflow = renderToStaticMarkup(
-  <WorkflowPanel task={completedTask} exportUrl="/api/v1/tasks/task-completed/export.csv" onCancel={noop} />
+  <WorkflowPanel task={completedTask} timeline={timeline} exportUrl="/api/v1/tasks/task-completed/export.csv" onCancel={noop} />
 )
 excludes(completedWorkflow, '>Cancel<', 'terminal workflows must not expose cancellation')
 includes(completedWorkflow, 'Export CSV', 'completed workflows with records need export access')
