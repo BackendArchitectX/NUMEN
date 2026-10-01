@@ -277,7 +277,7 @@ function WorkspaceHeader({
     },
     sources: {
       title: 'Sources',
-      description: 'See which sources contributed records, how much evidence they supplied and when they were last collected.'
+      description: 'Inspect source contribution, collection outcomes and the latest successful observation or attempt.'
     },
     history: {
       title: 'Runs',
@@ -305,13 +305,13 @@ function ResearchIntro() {
   return <section className="researchIntro" aria-labelledby="research-intro-title">
     <div>
       <span className="eyebrow">Research intelligence workspace</span>
-      <h2 id="research-intro-title">Ask a question. Keep the evidence attached.</h2>
-      <p>Define the outcome, scope the public sources and turn the run into a structured dataset you can inspect, refine and export.</p>
+      <h2 id="research-intro-title">Turn a research question into evidence you can inspect.</h2>
+      <p>Define the outcome, attach the public sources NUMEN should inspect and keep every published result connected to its evidence.</p>
     </div>
     <div className="researchIntroSignals" aria-label="NUMEN research capabilities">
-      <span>Explicit source scope</span>
-      <span>Evidence-linked results</span>
-      <span>Structured export</span>
+      <span>Source-bounded collection</span>
+      <span>Evidence-level provenance</span>
+      <span>Reusable structured results</span>
     </div>
   </section>
 }

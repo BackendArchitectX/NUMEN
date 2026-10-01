@@ -43,7 +43,8 @@ const offlinePrompt = renderToStaticMarkup(
     onRun={noop}
   />
 )
-includes(offlinePrompt, 'class="run" disabled=""', 'offline research submission must disable the Run research action')
+includes(offlinePrompt, 'class="run needsSource" disabled=""', 'offline research submission must disable the primary research action')
+includes(offlinePrompt, 'Service unavailable', 'offline composer must explain why the primary action cannot run')
 includes(offlinePrompt, 'aria-busy="false"', 'idle submission must expose aria-busy=false')
 includes(offlinePrompt, 'New research', 'composer must present plain-language research terminology')
 
@@ -61,7 +62,8 @@ const busyPrompt = renderToStaticMarkup(
   />
 )
 includes(busyPrompt, 'aria-busy="true"', 'busy submission must expose aria-busy=true')
-includes(busyPrompt, 'class="run" disabled=""', 'busy submission must keep the Run research action disabled')
+includes(busyPrompt, 'class="run needsSource" disabled=""', 'busy submission must keep the primary research action disabled')
+includes(busyPrompt, 'Starting research', 'busy composer must expose submission state')
 
 const sourceLessPrompt = renderToStaticMarkup(
   <PromptComposer
@@ -76,10 +78,15 @@ const sourceLessPrompt = renderToStaticMarkup(
     onRun={noop}
   />
 )
-includes(sourceLessPrompt, 'Required before live research can run', 'composer must keep source setup visible without dominating the primary research surface')
-includes(sourceLessPrompt, 'class="composerAdvanced needsSetup"', 'source configuration must remain progressively disclosed')
-includes(sourceLessPrompt, 'Source scope required.', 'expanded source details must explain that live research requires supplied public sources')
-includes(sourceLessPrompt, 'class="run" disabled=""', 'source-less live research must disable Run research rather than silently generating demo data')
+includes(sourceLessPrompt, 'Required before live research can run', 'composer must explain the live source prerequisite')
+includes(sourceLessPrompt, 'class="composerAdvanced needsSetup"', 'missing source setup must retain the needs-setup state')
+includes(sourceLessPrompt, 'open=""', 'missing source setup must be open by default instead of hiding the prerequisite')
+includes(sourceLessPrompt, 'Source scope required.', 'source details must explain that live research requires supplied public sources')
+includes(sourceLessPrompt, 'class="run needsSource"', 'source-less research must turn the primary action into a source-setup action')
+excludes(sourceLessPrompt, 'class="run needsSource" disabled=""', 'valid prompts without a source must keep the source-setup action clickable')
+includes(sourceLessPrompt, 'Add source to run', 'the primary action must say what is required instead of looking broken')
+includes(sourceLessPrompt, 'Use demo data', 'source-less research must expose an explicit labeled demo path')
+includes(sourceLessPrompt, 'One more step: choose the source scope', 'readiness copy must explain why the run cannot submit yet')
 
 const liveSourcePrompt = renderToStaticMarkup(
   <PromptComposer
@@ -95,7 +102,9 @@ const liveSourcePrompt = renderToStaticMarkup(
   />
 )
 includes(liveSourcePrompt, '1 public source configured.', 'composer must confirm the explicit live source scope')
+includes(liveSourcePrompt, 'class="run"', 'valid explicit-source research must expose the normal Run research action')
 excludes(liveSourcePrompt, 'class="run" disabled=""', 'valid explicit-source research must enable the Run research action when the service is online')
+includes(liveSourcePrompt, 'Ready to run', 'configured live research must expose positive readiness state')
 
 const explicitDemoPrompt = renderToStaticMarkup(
   <PromptComposer
@@ -112,6 +121,7 @@ const explicitDemoPrompt = renderToStaticMarkup(
 )
 includes(explicitDemoPrompt, 'Demo mode', 'demo generation must require an explicit visible mode')
 excludes(explicitDemoPrompt, 'class="run" disabled=""', 'explicit demo research may enable Run research without external URLs')
+includes(explicitDemoPrompt, 'Ready to run', 'explicit demo mode must expose positive readiness state')
 
 const emptyCompleted = renderToStaticMarkup(
   <DatasetExplorer

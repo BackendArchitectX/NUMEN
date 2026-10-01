@@ -225,6 +225,10 @@ export function useIntelligenceWorkspace() {
   const createTask = async () => {
     const normalized = prompt.trim()
     if (normalized.length < 10 || normalized.length > 4000 || submitting.current) return
+    if (!demoMode && sourceUrls.length === 0) {
+      setError('Add at least one public source URL or explicitly enable Demo mode before starting research.')
+      return
+    }
 
     submitting.current = true
     setBusy(true)
