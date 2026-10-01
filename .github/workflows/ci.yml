@@ -140,7 +140,10 @@ jobs:
             | python3 -c 'import json,sys; rows=json.load(sys.stdin); assert rows; assert all(r["sourceType"]=="DEMO" for r in rows); assert all(r["sourceUrl"].startswith("urn:numen:demo:") for r in rows)'
 
           curl --fail --silent "http://localhost:5173/api/v1/tasks/$task_id/summary" \
-            | python3 -c 'import json,sys; s=json.load(sys.stdin); assert s["totalRecords"]>0; assert s["demoRecords"]==s["totalRecords"]; assert 0 <= s["evidenceLinkedRecords"] <= s["totalRecords"]; assert s["uniqueSources"]>=1'
+            | python3 -c 'import json,sys; s=json.load(sys.stdin); assert s["totalRecords"]>0; assert s["demoRecords"]==s["totalRecords"]; assert 0 <= s["evidenceLinkedRecords"] <= s["totalRecords"]; assert s["uniqueSources"]>=1; assert s["failedSources"]==0'
+
+          curl --fail --silent "http://localhost:5173/api/v1/tasks/$task_id/records/page?page=0&pageSize=2&sortBy=title&direction=asc" \
+            | python3 -c 'import json,sys; p=json.load(sys.stdin); assert p["totalMatched"]>0; assert 1 <= len(p["records"]) <= 2; assert p["page"]==0; assert p["pageSize"]==2; assert p["totalPages"]>=1'
 
           curl --fail --silent "http://localhost:5173/api/v1/tasks/$task_id/sources" \
             | python3 -c 'import json,sys; rows=json.load(sys.stdin); assert rows; assert all(r["demo"] for r in rows); assert all(r["records"]>=1 for r in rows); assert all(0 <= r["evidence"] <= r["records"] for r in rows)'
