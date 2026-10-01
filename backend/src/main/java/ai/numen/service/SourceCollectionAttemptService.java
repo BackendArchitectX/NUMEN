@@ -18,7 +18,7 @@ public class SourceCollectionAttemptService {
 
     @Transactional
     public void succeeded(UUID taskId, String sourceUrl) {
-        SourceCollectionAttempt attempt = attempts.findByTaskIdAndSourceUrl(taskId, sourceUrl)
+        SourceCollectionAttempt attempt = attempts.findByTaskIdAndSourceKey(taskId, SourceCollectionAttempt.sourceKey(sourceUrl))
                 .orElseGet(() -> new SourceCollectionAttempt(UUID.randomUUID(), taskId, sourceUrl));
         attempt.succeeded();
         attempts.save(attempt);
@@ -26,7 +26,7 @@ public class SourceCollectionAttemptService {
 
     @Transactional
     public void failed(UUID taskId, String sourceUrl, String errorCode, String errorMessage) {
-        SourceCollectionAttempt attempt = attempts.findByTaskIdAndSourceUrl(taskId, sourceUrl)
+        SourceCollectionAttempt attempt = attempts.findByTaskIdAndSourceKey(taskId, SourceCollectionAttempt.sourceKey(sourceUrl))
                 .orElseGet(() -> new SourceCollectionAttempt(UUID.randomUUID(), taskId, sourceUrl));
         attempt.failed(errorCode, clip(errorMessage, 512));
         attempts.save(attempt);
