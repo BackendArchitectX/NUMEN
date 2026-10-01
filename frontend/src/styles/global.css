@@ -704,6 +704,47 @@ main {
   bottom: 8px;
 }
 
+.sourceModeNotice {
+  min-height: 34px;
+  margin-top: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 8px 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-muted);
+  font-size: 9.75px;
+  line-height: 1.45;
+}
+
+.sourceModeNotice svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.sourceModeNotice strong {
+  color: var(--color-text-secondary);
+  font-weight: 650;
+}
+
+.sourceModeNotice.live {
+  border-color: color-mix(in srgb, var(--color-live) 18%, var(--color-border));
+  background: var(--color-live-subtle);
+}
+
+.sourceModeNotice.live svg { color: var(--color-live-strong); }
+
+.sourceModeNotice.demo {
+  border-color: color-mix(in srgb, var(--color-intelligence) 18%, var(--color-border));
+  background: var(--color-intelligence-subtle);
+}
+
+.sourceModeNotice.demo svg { color: var(--color-intelligence); }
+
+.sourceModeNotice.missing svg { color: var(--color-text-subtle); }
+
 .composerFooter {
   min-height: 34px;
   margin-top: 8px;
@@ -741,6 +782,41 @@ main {
   color: var(--color-action-primary);
   border-color: color-mix(in srgb, var(--color-action-primary) 25%, var(--color-border));
   background: var(--color-action-subtle);
+}
+
+.composerControls {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.demoToggle {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 7px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 9.5px;
+  white-space: nowrap;
+}
+
+.demoToggle:has(input:checked) {
+  color: var(--color-intelligence);
+  border-color: color-mix(in srgb, var(--color-intelligence) 28%, var(--color-border));
+  background: var(--color-intelligence-subtle);
+}
+
+.demoToggle input {
+  width: 13px;
+  height: 13px;
+  margin: 0;
+  accent-color: var(--color-intelligence);
 }
 
 .composerMeta {
@@ -2072,6 +2148,7 @@ td a:hover { text-decoration: underline; }
   .composerHint { display: none; }
   .composer textarea { min-height: 112px; padding-right: 13px; padding-bottom: 54px; }
   .composerInputShell > .run { left: 8px; right: 8px; width: calc(100% - 16px); }
+  .composerControls { width: 100%; justify-content: space-between; }
   .composerMeta { justify-content: space-between; }
   .chips { max-width: 100%; }
 
