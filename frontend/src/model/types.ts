@@ -52,3 +52,25 @@ export interface HealthResponse {
   version: string
   time: string
 }
+
+
+export interface DatasetSummary {
+  totalRecords: number
+  uniqueOrganizations: number
+  uniqueLocations: number
+  uniqueSources: number
+  evidenceLinkedRecords: number
+  demoRecords: number
+  latestCollectedAt?: string | null
+  topLocations: Array<{ value: string; count: number }>
+}
+
+export interface SourceSummary {
+  name: string
+  url: string
+  type: string
+  records: number
+  evidence: number
+  latestCollectedAt?: string | null
+  demo: boolean
+}
