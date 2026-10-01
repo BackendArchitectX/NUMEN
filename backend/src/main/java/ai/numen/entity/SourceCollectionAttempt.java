@@ -2,7 +2,10 @@ package ai.numen.entity;
 
 import jakarta.persistence.*;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.Instant;
+import java.util.HexFormat;
 import java.util.UUID;
 
 @Entity
@@ -16,6 +19,9 @@ public class SourceCollectionAttempt {
 
     @Column(name = "source_url", nullable = false, length = 2048)
     private String sourceUrl;
+
+    @Column(name = "source_key", nullable = false, length = 64)
+    private String sourceKey;
 
     @Column(nullable = false, length = 16)
     private String status;
@@ -35,6 +41,7 @@ public class SourceCollectionAttempt {
         this.id = id;
         this.taskId = taskId;
         this.sourceUrl = sourceUrl;
+        this.sourceKey = sourceKey(sourceUrl);
         this.status = "FAILED";
         this.attemptedAt = Instant.now();
     }
@@ -56,8 +63,19 @@ public class SourceCollectionAttempt {
     public UUID getId() { return id; }
     public UUID getTaskId() { return taskId; }
     public String getSourceUrl() { return sourceUrl; }
+    public String getSourceKey() { return sourceKey; }
     public String getStatus() { return status; }
     public String getErrorCode() { return errorCode; }
     public String getErrorMessage() { return errorMessage; }
     public Instant getAttemptedAt() { return attemptedAt; }
+
+    public static String sourceKey(String sourceUrl) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(sourceUrl.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(digest);
+        } catch (Exception ex) {
+            throw new IllegalStateException("SHA-256 is unavailable", ex);
+        }
+    }
 }
