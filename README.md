@@ -67,8 +67,9 @@ NUMEN combines those steps into one managed workflow with explicit source proven
 - Idempotent workflow creation with payload-conflict detection.
 - Bounded asynchronous execution, overload rejection and interrupted-workflow restart recovery.
 - Bounded transient source retries with backoff and jitter.
-- Genuine SSE progress updates with reconnect hints and polling fallback.\n- Durable per-workflow timeline events for creation, state transitions, restart recovery, cancellation, failure and completion.
-- Premium operational workspace UI with real Console/Datasets/History navigation, persisted execution-plan and run-timeline inspection, record evidence drill-downs, a documented design-token system, responsive layout and accessible focus/motion behavior.
+- Genuine SSE progress updates with reconnect hints and polling fallback.
+- Durable per-workflow timeline events for creation, state transitions, restart recovery, cancellation, failure and completion.
+- Aurora premium visual system with Deep Ink navigation, Frost analytical surfaces, Azure interaction, Aqua live-state cues, Iris intelligence cues, Emerald verification, compact results-first hierarchy and accessible focus/motion behavior.
 - Search, sortable dataset exploration, quality filtering, record-level evidence inspection and spreadsheet-safe CSV export.
 - Stable API error codes and request correlation IDs.
 - Process-local gateway abuse controls for mutation bursts and excessive concurrent SSE streams, with deterministic HTTP 429 responses.
@@ -227,7 +228,7 @@ make smoke
 make reset
 ```
 
-`make quality` validates repository structure, source policy, launcher syntax and whitespace. `make test` runs backend tests plus the frontend check pipeline. `make verify` performs the complete static/backend/frontend verification path.
+`make quality` validates repository structure, source policy, Aurora visual policy, launcher syntax and whitespace. `make test` runs backend tests plus the frontend check pipeline. `make verify` performs the complete static/backend/frontend verification path.
 
 For direct service development and debugging, see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). The visual system is documented in [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md).
 
