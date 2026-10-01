@@ -672,3 +672,112 @@ Trust is improved by making the boundary visible before work begins.
 A repeated idempotency key represents the same research request only when both the normalized research prompt and execution mode match.
 
 Changing Demo mode while reusing the same idempotency key is a different request and must produce an idempotency conflict rather than silently replaying the original task.
+
+## 33. Research intent and collection scope are different concepts
+
+Do not force users to embed operational source URLs inside the research question.
+
+The composer should separate:
+
+- **Research intent** — what the user wants to learn or structure.
+- **Public source scope** — the exact HTTP(S) sources NUMEN is permitted to collect.
+- **Demo mode** — explicit sample-data evaluation with no live collection.
+
+The source scope must be visible before submission, persisted with the run, included in idempotency semantics and recoverable after process restart.
+
+If a URL is detected inside the natural-language question, the UI may offer to move it into the structured source scope. Do not silently broaden the source set.
+
+## 34. Partial success is a first-class outcome
+
+One successful source must not make failed configured sources disappear.
+
+For every configured source, preserve enough status to distinguish:
+
+- succeeded and contributed records,
+- failed after collection policy/retry,
+- not attempted,
+- explicit demo source.
+
+A completed research outcome with failed configured sources must say **Ready with limitations** or equivalent plain language.
+
+Do not claim full coverage merely because at least one source produced records.
+
+## 35. Failure diagnostics must be useful and sanitized
+
+Per-source failure information should answer:
+
+- which source was affected,
+- whether it was rejected, unreachable or returned an HTTP failure,
+- when collection was attempted,
+- whether other sources still produced usable results.
+
+Do not expose stack traces, internal exception messages, credentials, sensitive URL material or private infrastructure information.
+
+## 36. Failed research still has inspectable source diagnostics
+
+When all sources fail and the workflow cannot publish a dataset, the user must still be able to inspect the configured source set and collection outcomes.
+
+The Sources workspace is therefore not limited to successful datasets.
+
+Run history should expose Sources for terminal runs that had source activity.
+
+## 37. Result browsing must scale beyond the first browser window
+
+Do not load a fixed first 250/500 rows and then imply that client-side sorting represents the complete dataset.
+
+For larger datasets:
+
+- paginate on the server,
+- calculate the exact filtered match count,
+- sort on the server across the full matching result set,
+- use stable tie-breaking,
+- reset page position when filters or sort order change,
+- expose page size deliberately,
+- state the visible range truthfully.
+
+Example: `51–100 of 438 matching · 1,842 published`, not `50 visible rows` when the wider dataset is known.
+
+## 38. Filtered browsing and export scope must not be confused
+
+If CSV export contains the complete published dataset while the UI is filtered, say so.
+
+Do not imply that the export reflects active filters unless the backend actually implements filtered exports.
+
+## 39. Loading, empty and error are separate dataset states
+
+A dataset table must distinguish:
+
+- loading,
+- loaded with rows,
+- loaded with zero matching rows,
+- completed run with zero publishable rows,
+- failed record-query request.
+
+Do not convert a network/API failure into a convincing-looking empty dataset.
+
+## 40. Source identity must survive zero-record outcomes
+
+A configured source is still part of the research scope even when it contributed zero records.
+
+Source summaries must be based on both configured source scope / collection outcomes and published provenance.
+
+Do not derive the Sources page only from successful dataset rows.
+
+## 41. URL storage and indexing must respect database limits
+
+Do not create database uniqueness indexes directly over large URL strings where index-size limits can make valid data fail.
+
+Use a bounded deterministic fingerprint for uniqueness/reconciliation while preserving the original URL separately for provenance and user inspection.
+
+## 42. The premium trust model
+
+A premium intelligence product should make these distinctions obvious:
+
+- **configured** is not the same as **collected**,
+- **collected** is not the same as **published**,
+- **published** is not the same as **verified truth**,
+- **source-backed** means traceable to captured evidence, not infallible,
+- **partial success** must remain partial in the UI,
+- **demo** must remain demo everywhere.
+
+The product should become more trustworthy as more detail is inspected, never less trustworthy because caveats were hidden.
