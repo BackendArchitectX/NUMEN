@@ -77,7 +77,7 @@ function statusLabel(status: Task['status']): string {
     case 'PLANNING': return 'Preparing'
     case 'COLLECTING': return 'Searching'
     case 'PROCESSING': return 'Validating'
-    case 'COMPLETED': return 'Ready'
+    case 'COMPLETED': return 'Complete'
     case 'CANCELLED': return 'Cancelled'
     case 'FAILED': return 'Needs attention'
   }
