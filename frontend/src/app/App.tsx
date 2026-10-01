@@ -55,7 +55,7 @@ export default function App() {
         <PromptComposer prompt={workspace.prompt} busy={workspace.busy} online={workspace.online} onPromptChange={workspace.setPrompt} onRun={() => void workspace.createTask()}/>
         <MetricsGrid workflows={workspace.tasks.length} completed={workspace.completed} records={workspace.totalRecords} averageQuality={workspace.avgQuality}/>
         {workspace.selected ? <>
-          <WorkflowPanel task={workspace.selected} exportUrl={workspace.exportUrl} onCancel={id => void workspace.cancelTask(id)}/>
+          <WorkflowPanel task={workspace.selected} timeline={workspace.timeline} exportUrl={workspace.exportUrl} onCancel={id => void workspace.cancelTask(id)}/>
           <DatasetExplorer records={workspace.records} status={workspace.selected.status} query={workspace.query} minQuality={workspace.minQuality}
             onQueryChange={workspace.setQuery} onMinQualityChange={workspace.setMinQuality}/>
         </> : <section className="emptyState panel"><Sparkles aria-hidden="true"/><h2>Start your first intelligence run</h2><p>Use the composer above to create a managed source-backed workflow.</p></section>}
