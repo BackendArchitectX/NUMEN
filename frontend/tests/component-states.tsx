@@ -23,10 +23,12 @@ const offlinePrompt = renderToStaticMarkup(
   <PromptComposer
     prompt="Collect traceable public intelligence"
     demoMode={false}
+    sourceUrls={[]}
     busy={false}
     online={false}
     onPromptChange={noop}
     onDemoModeChange={noop}
+    onSourceUrlsChange={noop}
     onRun={noop}
   />
 )
@@ -38,10 +40,12 @@ const busyPrompt = renderToStaticMarkup(
   <PromptComposer
     prompt="Collect traceable public intelligence"
     demoMode={false}
+    sourceUrls={[]}
     busy={true}
     online={true}
     onPromptChange={noop}
     onDemoModeChange={noop}
+    onSourceUrlsChange={noop}
     onRun={noop}
   />
 )
@@ -52,10 +56,12 @@ const sourceLessPrompt = renderToStaticMarkup(
   <PromptComposer
     prompt="Find Java backend engineering roles in India"
     demoMode={false}
+    sourceUrls={[]}
     busy={false}
     online={true}
     onPromptChange={noop}
     onDemoModeChange={noop}
+    onSourceUrlsChange={noop}
     onRun={noop}
   />
 )
@@ -64,26 +70,30 @@ includes(sourceLessPrompt, 'disabled=""', 'source-less live research must be dis
 
 const liveSourcePrompt = renderToStaticMarkup(
   <PromptComposer
-    prompt="Research https://example.com and preserve source evidence"
+    prompt="Research a public technology source and preserve evidence"
     demoMode={false}
+    sourceUrls={['https://example.com/']}
     busy={false}
     online={true}
     onPromptChange={noop}
     onDemoModeChange={noop}
+    onSourceUrlsChange={noop}
     onRun={noop}
   />
 )
-includes(liveSourcePrompt, 'Public source detected.', 'composer must confirm when a permitted public source is present')
-excludes(liveSourcePrompt, 'disabled=""', 'valid public-source research must be runnable when the service is online')
+includes(liveSourcePrompt, '1 public source configured.', 'composer must confirm the explicit live source scope')
+excludes(liveSourcePrompt, 'disabled=""', 'valid explicit-source research must be runnable when the service is online')
 
 const explicitDemoPrompt = renderToStaticMarkup(
   <PromptComposer
     prompt="Find Java backend engineering roles in India"
     demoMode={true}
+    sourceUrls={[]}
     busy={false}
     online={true}
     onPromptChange={noop}
     onDemoModeChange={noop}
+    onSourceUrlsChange={noop}
     onRun={noop}
   />
 )
@@ -155,6 +165,7 @@ const activeTask: Task = {
   id: 'task-active',
   prompt: 'Collect permitted public sources and return traceable records',
   demoMode: false,
+  sourceUrls: ['https://example.com/'],
   status: 'COLLECTING',
   stage: 'Collecting permitted sources',
   progress: 45,
