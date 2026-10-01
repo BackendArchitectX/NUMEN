@@ -42,9 +42,18 @@ grep -q 'Refine research' frontend/src/components/ResearchOutcome.tsx || fail "c
 grep -q 'View sources' frontend/src/components/ResearchOutcome.tsx || fail "completed research is missing direct source navigation"
 grep -q 'sources checked' frontend/src/components/WorkflowPanel.tsx || fail "active research is missing measurable source-progress language"
 grep -q 'Demo records · no quality filter' frontend/src/components/DatasetExplorer.tsx || fail "demo-only datasets must not expose misleading quality precision"
+grep -q 'composerAdvanced' frontend/src/components/PromptComposer.tsx || fail "source configuration must remain progressively disclosed"
+grep -q 'groupResearchTasks' frontend/src/components/Sidebar.tsx || fail "recent research must group repeated runs instead of showing duplicate task noise"
+grep -q 'publishedDatasets' frontend/src/components/Sidebar.tsx || fail "dataset navigation count must represent datasets rather than raw record count"
+grep -q 'Research complete' frontend/src/components/ResearchOutcome.tsx || fail "completed research must use explicit completed-outcome language"
+if grep -q 'Research ready' frontend/src/components/ResearchOutcome.tsx; then
+  fail "ambiguous Research ready copy was reintroduced"
+fi
 
 
 [[ -f frontend/src/components/SourceExplorer.tsx ]] || fail "first-class source coverage workspace is missing"
+[[ -f frontend/src/components/DatasetLibrary.tsx ]] || fail "published dataset library is missing"
+[[ -f frontend/src/shared/research.ts ]] || fail "recent-research grouping helper is missing"
 grep -q "New research" frontend/src/components/Sidebar.tsx || fail "explicit new-research action is missing"
 grep -q "Research complete" frontend/src/components/ResearchOutcome.tsx || fail "zero-result completion state is missing"
 
