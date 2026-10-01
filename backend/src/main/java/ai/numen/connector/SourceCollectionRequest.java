@@ -9,7 +9,8 @@ public record SourceCollectionRequest(
         UUID taskId,
         String prompt,
         WorkflowPlan plan,
-        List<String> urls
+        List<String> urls,
+        boolean demoMode
 ) {
     public SourceCollectionRequest {
         urls = List.copyOf(urls);
