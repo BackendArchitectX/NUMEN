@@ -92,7 +92,7 @@ export default function App() {
         <button type="button" className={view === 'history' ? 'active' : ''} onClick={() => navigateWorkspace('history')}><History size={15} aria-hidden="true"/> Runs</button>
       </nav>
 
-      <WorkspaceHeader view={view} online={workspace.online} theme={theme} onToggleTheme={toggleTheme}/>
+      <WorkspaceHeader view={view} online={workspace.online === true} theme={theme} onToggleTheme={toggleTheme}/>
       {workspace.error && <div className="error" role="alert">{workspace.error}</div>}
 
       {view === 'research' && <>
@@ -136,7 +136,7 @@ export default function App() {
   </div>
 }
 
-function WorkspaceHeader({ view, online, theme, onToggleTheme }: { view: WorkspaceView; online: boolean; theme: Theme; onToggleTheme: () => void }) {
+function WorkspaceHeader({ view, online, theme, onToggleTheme }: { view: WorkspaceView; online: boolean | null; theme: Theme; onToggleTheme: () => void }) {
   const content = {
     research: {
       title: 'Research',
@@ -162,7 +162,7 @@ function WorkspaceHeader({ view, online, theme, onToggleTheme }: { view: Workspa
       <p>{content.description}</p>
     </div>
     <div className="workspaceHeaderActions">
-      {!online && <div className="livePill offline" role="status" aria-live="polite"><span aria-hidden="true"/> Service unavailable</div>}
+      {online === false && <div className="livePill offline" role="status" aria-live="polite"><span aria-hidden="true"/> Service unavailable</div>}
       <button type="button" className="themeToggle" onClick={onToggleTheme} aria-label={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'} title={theme === 'light' ? 'Dark theme' : 'Light theme'}>
         {theme === 'light' ? <Moon size={16} aria-hidden="true"/> : <Sun size={16} aria-hidden="true"/>}
       </button>
