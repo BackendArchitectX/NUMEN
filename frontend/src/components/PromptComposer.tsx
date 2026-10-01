@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { FlaskConical, Link2, LoaderCircle, Play, Plus, Search, Sparkles, X } from 'lucide-react'
+import { FlaskConical, Link2, LoaderCircle, MessageSquareText, Play, Plus, Search, X } from 'lucide-react'
 import { examplePrompts } from '../model/prompts'
 import { clip } from '../shared/text'
 
@@ -67,11 +67,12 @@ export function PromptComposer({
           <small>Describe the outcome first. Configure the exact public sources separately so research intent and collection scope stay clear.</small>
         </div>
       </div>
-      <span className="composerHint"><Sparkles size={13} aria-hidden="true"/> Natural language</span>
+      <span className="composerHint"><MessageSquareText size={13} aria-hidden="true"/> Natural language</span>
     </div>
 
     <div className="composerInputShell">
       <textarea
+        id="research-question"
         value={prompt}
         maxLength={4000}
         aria-describedby="prompt-help source-mode-help"
