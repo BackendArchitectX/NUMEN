@@ -12,6 +12,7 @@ public class CollectionTask {
     @Version private long version;
     @Column(nullable = false, columnDefinition = "text") private String prompt;
     @Column(name = "idempotency_key", length = 128, unique = true) private String idempotencyKey;
+    @Column(name = "demo_mode", nullable = false) private boolean demoMode;
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 32) private TaskStatus status;
     @Column(nullable = false, length = 128) private String stage;
     @Column(nullable = false) private int progress;
@@ -30,9 +31,14 @@ public class CollectionTask {
     }
 
     public CollectionTask(UUID id, String prompt, String idempotencyKey) {
+        this(id, prompt, idempotencyKey, false);
+    }
+
+    public CollectionTask(UUID id, String prompt, String idempotencyKey, boolean demoMode) {
         this.id = id;
         this.prompt = prompt;
         this.idempotencyKey = idempotencyKey;
+        this.demoMode = demoMode;
         this.status = TaskStatus.QUEUED;
         this.stage = "Queued";
         this.progress = 0;
@@ -43,6 +49,7 @@ public class CollectionTask {
     public long getVersion() { return version; }
     public String getPrompt() { return prompt; }
     public String getIdempotencyKey() { return idempotencyKey; }
+    public boolean isDemoMode() { return demoMode; }
     public TaskStatus getStatus() { return status; }
     public String getStage() { return stage; }
     public int getProgress() { return progress; }
