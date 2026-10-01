@@ -104,7 +104,7 @@ jobs:
           set -Eeuo pipefail
 
           idempotency_key="ci-${GITHUB_RUN_ID}-workflow"
-          payload='{"prompt":"Find backend job openings from permitted public sources and return traceable records"}'
+          payload='{"prompt":"Find backend job openings from permitted public sources and return traceable records","demoMode":true}'
 
           created="$(curl --fail --silent \
             -H 'Content-Type: application/json' \
