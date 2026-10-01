@@ -103,7 +103,7 @@ export default function App() {
             ? <ResearchOutcome task={workspace.selected} summary={workspace.summary} summaryState={workspace.summaryState} exportUrl={workspace.exportUrl}/>
             : <WorkflowPanel task={workspace.selected} timeline={workspace.timeline} exportUrl={workspace.exportUrl} onCancel={id => void workspace.cancelTask(id)}/>}
 
-          <DatasetExplorer records={workspace.records} status={workspace.selected.status} query={workspace.query} minQuality={workspace.minQuality}
+          <DatasetExplorer records={workspace.records} totalRecords={workspace.summary?.totalRecords ?? workspace.selected.recordCount} status={workspace.selected.status} query={workspace.query} minQuality={workspace.minQuality}
             onQueryChange={workspace.setQuery} onMinQualityChange={workspace.setMinQuality}/>
 
           {selectedComplete && <WorkflowPanel task={workspace.selected} timeline={workspace.timeline} exportUrl={workspace.exportUrl} onCancel={id => void workspace.cancelTask(id)}/>}
@@ -114,7 +114,7 @@ export default function App() {
         <RunSelector label="Published dataset" tasks={publishedTasks} selectedId={workspace.selectedId} onSelect={id => selectAndOpen(id, 'datasets')}/>
         {workspace.selected && workspace.selected.status === 'COMPLETED' && workspace.selected.recordCount > 0 ? <>
           <ResearchOutcome task={workspace.selected} summary={workspace.summary} summaryState={workspace.summaryState} exportUrl={workspace.exportUrl}/>
-          <DatasetExplorer records={workspace.records} status={workspace.selected.status} query={workspace.query} minQuality={workspace.minQuality}
+          <DatasetExplorer records={workspace.records} totalRecords={workspace.summary?.totalRecords ?? workspace.selected.recordCount} status={workspace.selected.status} query={workspace.query} minQuality={workspace.minQuality}
             onQueryChange={workspace.setQuery} onMinQualityChange={workspace.setMinQuality}/>
         </> : <section className="emptyState panel"><Database aria-hidden="true"/><h2>Select a published dataset</h2><p>Only completed research with published records appears here. Choose a dataset above or start new research.</p></section>}
       </>}
