@@ -51,7 +51,7 @@ public class TaskController {
             @RequestHeader(name = "Idempotency-Key", required = false)
             @Pattern(regexp = "[A-Za-z0-9._:-]{8,128}", message = "must contain 8-128 safe characters")
             String idempotencyKey) {
-        TaskService.TaskCreation creation = service.create(request.prompt(), request.demoMode(), idempotencyKey);
+        TaskService.TaskCreation creation = service.create(request.prompt(), request.demoMode(), request.sourceUrls(), idempotencyKey);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(creation.task().getId())
