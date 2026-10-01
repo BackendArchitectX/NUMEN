@@ -19,7 +19,7 @@ public class DemoCatalogConnector implements SourceConnector {
 
     @Override
     public boolean supports(SourceCollectionRequest request) {
-        return request.urls().isEmpty();
+        return request.urls().isEmpty() && request.demoMode();
     }
 
     @Override
