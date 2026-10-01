@@ -12,9 +12,10 @@
     "dev": "vite",
     "typecheck": "tsc -b --pretty false",
     "build": "tsc -b && vite build",
-    "check": "npm run typecheck && npm run test:components && npm run build",
+    "check": "npm run check:colors && npm run typecheck && npm run test:components && npm run build",
     "preview": "vite preview",
-    "test:components": "vite build --ssr tests/component-states.tsx --outDir .test-dist --emptyOutDir && node .test-dist/component-states.js"
+    "test:components": "vite build --ssr tests/component-states.tsx --outDir .test-dist --emptyOutDir && node .test-dist/component-states.js",
+    "check:colors": "node scripts/check-color-policy.mjs"
   },
   "dependencies": {
     "lucide-react": "1.48.0",
