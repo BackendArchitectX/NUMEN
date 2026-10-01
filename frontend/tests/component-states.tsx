@@ -29,7 +29,7 @@ const offlinePrompt = renderToStaticMarkup(
 )
 includes(offlinePrompt, 'disabled=""', 'offline workflow submission must be disabled')
 includes(offlinePrompt, 'aria-busy="false"', 'idle submission must expose aria-busy=false')
-includes(offlinePrompt, 'Describe your business requirement', 'prompt composer must keep its accessible label')
+includes(offlinePrompt, 'What do you want to research?', 'prompt composer must expose the research question label')
 
 const busyPrompt = renderToStaticMarkup(
   <PromptComposer
@@ -120,8 +120,8 @@ const activeWorkflow = renderToStaticMarkup(
 includes(activeWorkflow, '>Cancel<', 'active workflows need a cancellation control')
 includes(activeWorkflow, 'aria-valuenow="45"', 'workflow progress must be exposed semantically')
 includes(activeWorkflow, 'Hiring intelligence', 'workflow panel must expose the persisted plan rather than a fabricated pipeline')
-includes(activeWorkflow, 'Preserve source provenance', 'workflow panel must expose persisted safeguards')
-includes(activeWorkflow, 'RUN TIMELINE', 'workflow panel must expose the persisted run timeline')
+includes(activeWorkflow, 'Preserve Source Provenance', 'workflow panel must expose persisted safeguards')
+includes(activeWorkflow, 'Run timeline', 'workflow panel must expose the persisted run timeline')
 includes(activeWorkflow, 'Collecting permitted sources', 'workflow panel must render persisted timeline events')
 excludes(activeWorkflow, 'Export CSV', 'empty in-progress workflows must not advertise an export')
 
@@ -141,13 +141,14 @@ const completedWorkflow = renderToStaticMarkup(
 )
 excludes(completedWorkflow, '>Cancel<', 'terminal workflows must not expose cancellation')
 includes(completedWorkflow, 'Export CSV', 'completed workflows with records need export access')
-includes(completedWorkflow, 'aria-valuenow="100"', 'completed workflow progress must be 100')
+includes(completedWorkflow, '3 records published', 'completed workflow should summarize the published outcome instead of emphasizing a progress bar')
+excludes(completedWorkflow, 'role="progressbar"', 'completed workflow should not keep a decorative progress bar visible')
 
 const metrics = renderToStaticMarkup(
   <MetricsGrid workflows={4} completed={3} records={12} averageQuality={91} />
 )
-includes(metrics, 'WORKFLOWS', 'metrics grid should expose workflow summary')
-includes(metrics, 'COMPLETED', 'metrics grid should expose completed-run count instead of a fabricated provenance percentage')
+includes(metrics, 'Runs', 'metrics grid should expose workflow summary')
+includes(metrics, 'Completed', 'metrics grid should expose completed-run count instead of a fabricated provenance percentage')
 includes(metrics, '12', 'metrics grid should expose record count')
 includes(metrics, '91%', 'metrics grid should expose measured quality')
 
@@ -167,7 +168,7 @@ includes(sidebar, 'aria-current="page"', 'active workspace destination must expo
 const history = renderToStaticMarkup(
   <WorkflowHistory tasks={[completedTask]} onOpen={noop} onOpenDataset={noop} />
 )
-includes(history, 'Workflow history', 'history view must render persisted workflow history')
+includes(history, 'Runs', 'history view must render persisted research runs')
 includes(history, 'Open run', 'history rows must expose a functional run action')
 includes(history, 'Dataset', 'completed runs with data must expose their dataset action')
 
