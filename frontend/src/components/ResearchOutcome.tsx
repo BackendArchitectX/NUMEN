@@ -80,8 +80,11 @@ function newestDate(values: string[]): string | undefined {
 
 function summary(records: number, organizations: number, sources: number, demo: boolean): string {
   if (records === 0) return 'No publishable results were produced for this run.'
-  if (demo) return `${records} sample records across ${organizations} organizations from ${sources} demo sources. Demo content is clearly separated from live intelligence.`
-  return `${records} published results across ${organizations} organizations from ${sources} contributing sources. Open any row to inspect its captured evidence.`
+  const resultLabel = records === 1 ? 'result' : 'results'
+  const organizationLabel = organizations === 1 ? 'organization' : 'organizations'
+  const sourceLabel = sources === 1 ? 'source' : 'sources'
+  if (demo) return `${records} sample ${resultLabel} across ${organizations} ${organizationLabel} from ${sources} demo ${sourceLabel}. Demo content is clearly separated from live intelligence.`
+  return `${records} published ${resultLabel} across ${organizations} ${organizationLabel} from ${sources} contributing ${sourceLabel}. Open any row to inspect its captured evidence.`
 }
 
 function formatDate(value: string): string {
