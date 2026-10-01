@@ -167,3 +167,34 @@ Healthy infrastructure remains visually quiet. The header surfaces service avail
 Dataset-wide outcome metrics are never derived from the filtered Results table. The UI consumes the exact dataset summary API for total records, organization/location/source counts, evidence-linked records, demo-record count and top locations.
 
 Visual clarity must never be achieved by weakening data truthfulness.
+
+## Aurora X outcome-first hardening
+
+The premium product hierarchy now enforces several additional rules that close gaps between visual polish and actual product clarity:
+
+- when a research run is selected, the **New research** composer is not shown above the outcome; completed research opens directly into outcome summary and results,
+- **Refine research** is a real action that restores the prior question, demo/live mode and explicit source scope into a fresh composer,
+- **View sources** is a direct action from the completed outcome,
+- active live research reports measurable source progress such as `3 / 8 sources checked` from persisted source-attempt state instead of exposing milestone percentages,
+- demo-only datasets suppress arbitrary quality precision and disable the quality-threshold filter,
+- result ordering defaults to a neutral title sort rather than silently prioritizing heuristic quality scores,
+- the completed outcome uses a compact analytical fact strip instead of a generic icon-heavy KPI wall,
+- global overlays use a named layering model (`--z-sticky`, `--z-navigation`, `--z-inspector-backdrop`, `--z-inspector`, `--z-modal`, `--z-toast`) rather than arbitrary large z-index values,
+- non-interactive section icons are visually quieter than primary actions so Azure remains an interaction color rather than decoration,
+- mobile and non-research workspaces retain an explicit **New research** action so the primary task is never trapped behind desktop-only navigation.
+
+### Additional acceptance cases
+
+Visual quality must survive:
+
+- a selected completed run with a very long research question,
+- an active run where some configured sources have succeeded, some failed and others have not been attempted,
+- a demo-only dataset where synthetic quality values exist internally but must not be presented as verified precision,
+- zero-result completion with a useful next step,
+- source-summary failure while published records remain available,
+- narrow mobile layouts with the sidebar hidden,
+- inspector focus trapping, Escape close, backdrop close and focus restoration,
+- 200% zoom without clipping the outcome actions or result controls,
+- dark mode without neon accents, glowing borders or washed-out slate text.
+
+Aurora X is considered successful only when product meaning remains obvious after removing all technical workflow terminology from the primary screen.
