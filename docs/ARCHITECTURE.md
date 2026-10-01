@@ -31,6 +31,7 @@ Spring Boot :8080
   │
   ├─ WorkflowPlanner
   ├─ TaskRunner
+  ├─ WorkflowStateService
   ├─ CollectionEngine
   │    ├─ HttpPageConnector ── UrlSafetyGuard ── public HTTP(S)
   │    └─ DemoCatalogConnector
@@ -73,7 +74,7 @@ sequenceDiagram
     API-->>UI: 202 Accepted + task id
     API->>Worker: Dispatch bounded async work
     UI->>API: Subscribe to SSE progress
-    Worker->>DB: Persist state transitions
+    Worker->>DB: Persist state transition + durable timeline event
     Worker->>Source: Collect permitted sources
     Source-->>Worker: Source-backed records
     Worker->>DB: Atomic dataset replace + COMPLETED
@@ -85,11 +86,11 @@ sequenceDiagram
 
 `QUEUED → PLANNING → COLLECTING → PROCESSING → COMPLETED`
 
-Terminal alternatives are `FAILED` and `CANCELLED`. The entity enforces valid transitions and monotonic non-terminal progress rather than allowing arbitrary state mutation. Progress events are published through Server-Sent Events with bounded stream lifetimes and browser reconnect hints. Empty listener groups are removed and all emitters are completed during application shutdown. Optimistic locking protects concurrent workflow updates.
+Terminal alternatives are `FAILED` and `CANCELLED`. The entity enforces valid transitions and monotonic non-terminal progress rather than allowing arbitrary state mutation. Each lifecycle transition also records a durable timeline snapshot, and the UI renders that persisted history instead of reconstructing stage completion from a percentage. Progress events are published through Server-Sent Events with bounded stream lifetimes and browser reconnect hints. Empty listener groups are removed and all emitters are completed during application shutdown. Optimistic locking protects concurrent workflow updates.
 
 ## Persistence
 
-Flyway owns schema evolution. Hibernate runs with `ddl-auto=validate`, so accidental schema drift fails fast instead of mutating production tables. Dataset replacement and terminal workflow completion are committed by `WorkflowResultPublisher` in one transaction so a failed/cancelled publication cannot expose a partially replaced result set.
+Flyway owns schema evolution. Hibernate runs with `ddl-auto=validate`, so accidental schema drift fails fast instead of mutating production tables. Dataset replacement, terminal workflow completion and the final `COMPLETED` timeline event are committed by `WorkflowResultPublisher` in one transaction so a failed/cancelled publication cannot expose a partially replaced result set or a completion event without its dataset.
 
 ## Collection boundary
 
