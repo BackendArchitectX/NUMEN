@@ -1,6 +1,6 @@
 export type TaskStatus = 'QUEUED' | 'PLANNING' | 'COLLECTING' | 'PROCESSING' | 'COMPLETED' | 'CANCELLED' | 'FAILED'
 
-export type WorkspaceView = 'console' | 'datasets' | 'history'
+export type WorkspaceView = 'research' | 'datasets' | 'sources' | 'history'
 
 export type TaskTimelineEventType = 'CREATED' | 'STATE_CHANGED' | 'RECOVERED' | 'COMPLETED' | 'CANCELLED' | 'FAILED'
 
