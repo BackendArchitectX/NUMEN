@@ -1,4 +1,4 @@
-import { Activity, Database, History, ShieldCheck } from 'lucide-react'
+import { Activity, Database, History, Moon, Sun } from 'lucide-react'
 import type { Task, WorkspaceView } from '../model/types'
 import { clip } from '../shared/text'
 
@@ -7,20 +7,22 @@ interface SidebarProps {
   selectedId?: string
   totalRecords: number
   activeView: WorkspaceView
+  theme: 'light' | 'dark'
+  onToggleTheme: () => void
   onNavigate: (view: WorkspaceView) => void
   onSelect: (id: string) => void
 }
 
-export function Sidebar({ tasks, selectedId, totalRecords, activeView, onNavigate, onSelect }: SidebarProps) {
+export function Sidebar({ tasks, selectedId, totalRecords, activeView, theme, onToggleTheme, onNavigate, onSelect }: SidebarProps) {
   return <aside className="sidebar" aria-label="NUMEN workspace">
     <div className="brand">
       <div className="brandMark" aria-hidden="true"><span>N</span></div>
-      <div className="brandCopy"><b>NUMEN</b><span>Intelligence workspace</span></div>
+      <div className="brandCopy"><b>NUMEN</b><span>Traceable intelligence</span></div>
     </div>
 
     <div className="navLabel">Workspace</div>
     <button type="button" className={`nav ${activeView === 'console' ? 'active' : ''}`} aria-current={activeView === 'console' ? 'page' : undefined} onClick={() => onNavigate('console')}>
-      <Activity size={17} aria-hidden="true"/> <span className="navText">Console</span>
+      <Activity size={17} aria-hidden="true"/> <span className="navText">Research</span>
     </button>
     <button type="button" className={`nav ${activeView === 'datasets' ? 'active' : ''}`} aria-current={activeView === 'datasets' ? 'page' : undefined} onClick={() => onNavigate('datasets')}>
       <Database size={17} aria-hidden="true"/> <span className="navText">Datasets</span><span className="navCount">{totalRecords}</span>
@@ -44,12 +46,18 @@ export function Sidebar({ tasks, selectedId, totalRecords, activeView, onNavigat
       {!tasks.length && <p className="sidebarEmpty">Your recent research will appear here.</p>}
     </div>
 
-    <div className="sidebarFooter"><ShieldCheck size={15} aria-hidden="true"/><span>Protected collection</span></div>
+    <div className="sidebarFooter">
+      <span>Appearance</span>
+      <button type="button" onClick={onToggleTheme} aria-label={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}>
+        {theme === 'light' ? <Moon size={15} aria-hidden="true"/> : <Sun size={15} aria-hidden="true"/>}
+        {theme === 'light' ? 'Dark' : 'Light'}
+      </button>
+    </div>
   </aside>
 }
 
 function recentMeta(task: Task): string {
-  if (task.status === 'COMPLETED') return `${task.recordCount} records · complete`
+  if (task.status === 'COMPLETED') return `${task.recordCount} records · ready`
   if (task.status === 'FAILED') return 'Needs attention'
   if (task.status === 'CANCELLED') return 'Cancelled'
   return humanize(task.stage)
