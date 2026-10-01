@@ -21,13 +21,28 @@ if grep -R -nEi 'radial-gradient|filter:[[:space:]]*drop-shadow|text-shadow:|bac
   fail "decorative glow/background effects violate Aurora X restraint"
 fi
 
-for token in   --color-bg-app   --color-bg-surface   --color-text-primary   --color-border   --color-action-primary   --color-live   --color-intelligence   --color-success   --color-error; do
+for token in   --color-bg-app   --color-bg-surface   --color-text-primary   --color-border   --color-action-primary   --color-live   --color-intelligence   --color-success   --color-error   --z-navigation   --z-sticky   --z-inspector-backdrop   --z-inspector; do
   grep -q -- "$token" frontend/src/styles/global.css || fail "required semantic visual token missing: $token"
 done
 
 if [[ -f frontend/src/components/MetricsGrid.tsx ]]; then
   fail "generic KPI-card wall component was reintroduced; outcome-specific summaries are required"
 fi
+
+if grep -R -nE 'z-index:[[:space:]]*(999|[1-9][0-9]{3,})' frontend/src --include='*.css'; then
+  fail "arbitrary extreme z-index values violate the Aurora X layering model"
+fi
+
+if grep -R -nE 'OutcomeStatIcon|outcomeStatIcon|className="outcomeStats"' frontend/src --include='*.tsx' --include='*.css'; then
+  fail "generic KPI-wall outcome styling was reintroduced"
+fi
+
+grep -q '!workspace.selected && <PromptComposer' frontend/src/app/App.tsx || fail "selected research must remain outcome-first instead of composer-first"
+grep -q 'Refine research' frontend/src/components/ResearchOutcome.tsx || fail "completed research is missing a functional refine action"
+grep -q 'View sources' frontend/src/components/ResearchOutcome.tsx || fail "completed research is missing direct source navigation"
+grep -q 'sources checked' frontend/src/components/WorkflowPanel.tsx || fail "active research is missing measurable source-progress language"
+grep -q 'Demo records · no quality filter' frontend/src/components/DatasetExplorer.tsx || fail "demo-only datasets must not expose misleading quality precision"
+
 
 [[ -f frontend/src/components/SourceExplorer.tsx ]] || fail "first-class source coverage workspace is missing"
 grep -q "New research" frontend/src/components/Sidebar.tsx || fail "explicit new-research action is missing"
