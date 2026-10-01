@@ -73,6 +73,9 @@ jobs:
       - name: Install dependencies from lockfile
         working-directory: frontend
         run: npm ci --ignore-scripts
+      - name: Validate hue policy
+        working-directory: frontend
+        run: npm run check:colors
       - name: Typecheck
         working-directory: frontend
         run: npm run typecheck
