@@ -29,9 +29,17 @@ public class CollectionEngine {
     }
 
     public List<DatasetRecord> collect(UUID taskId, String prompt, WorkflowPlan plan, boolean demoMode) {
-        List<String> urls = extractUrls(prompt).stream()
-                .limit(properties.getMaxFetchUrls())
-                .toList();
+        return collect(taskId, prompt, plan, demoMode, List.of());
+    }
+
+    public List<DatasetRecord> collect(UUID taskId, String prompt, WorkflowPlan plan, boolean demoMode, List<String> explicitUrls) {
+        List<String> urls = explicitUrls == null || explicitUrls.isEmpty()
+                ? extractUrls(prompt).stream().limit(properties.getMaxFetchUrls()).toList()
+                : explicitUrls.stream().limit(properties.getMaxFetchUrls()).toList();
+
+        if (demoMode && !urls.isEmpty()) {
+            throw new UserVisibleWorkflowException("Demo mode cannot be combined with live public source URLs.");
+        }
 
         SourceCollectionRequest request = new SourceCollectionRequest(taskId, prompt, plan, urls, demoMode);
         List<SourceConnector> matching = connectors.stream()
@@ -40,7 +48,7 @@ public class CollectionEngine {
 
         if (matching.isEmpty() && urls.isEmpty() && !demoMode) {
             throw new UserVisibleWorkflowException(
-                    "No public source URL was supplied. Add one or more permitted HTTP(S) URLs to the research request, or explicitly enable Demo mode for sample data.");
+                    "No public source URL was supplied. Add one or more permitted HTTP(S) sources, or explicitly enable Demo mode for sample data.");
         }
 
         if (matching.size() != 1) {
