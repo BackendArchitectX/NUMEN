@@ -2476,3 +2476,28 @@ td a:hover { text-decoration: underline; }
   .pageControls { justify-content: space-between; }
   .exportScopeNote { justify-self: start; text-align: left; }
 }
+
+
+/* Partial-coverage trust states */
+.outcomeState.limited {
+  color: var(--color-intelligence);
+}
+
+.sourceDot.failed { background: var(--color-error); }
+.sourceDot.pending { background: var(--color-text-subtle); }
+
+.sourceRow.failed {
+  background: color-mix(in srgb, var(--color-error-subtle) 46%, var(--color-bg-surface));
+}
+
+.sourceError {
+  max-width: 520px;
+  margin: 4px 0 0;
+  color: var(--color-error);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.sourceRow.failed .sourceMetric strong {
+  color: var(--color-text-muted);
+}
