@@ -66,6 +66,7 @@ required_files=(
   frontend/src/app/AppErrorBoundary.tsx
   frontend/src/components/WorkflowHistory.tsx
   frontend/src/components/ResearchOutcome.tsx
+  frontend/src/components/SourceExplorer.tsx
   frontend/public/theme-init.js
   frontend/tests/component-states.tsx
 )
