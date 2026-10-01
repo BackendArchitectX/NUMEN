@@ -13,7 +13,7 @@ interface ResearchOutcomeProps {
 export function ResearchOutcome({ task, summary, summaryState, exportUrl }: ResearchOutcomeProps) {
   const totalRecords = summary?.totalRecords ?? task.recordCount
   const hasResults = totalRecords > 0
-  const allDemo = Boolean(summary && summary.totalRecords > 0 && summary.demoRecords === summary.totalRecords)
+  const allDemo = Boolean(summary ? summary.totalRecords > 0 && summary.demoRecords === summary.totalRecords : task.demoMode && hasResults)
   const mixedDemo = Boolean(summary && summary.demoRecords > 0 && summary.demoRecords < summary.totalRecords)
   const updatedAt = summary?.latestCollectedAt || task.completedAt || task.createdAt
 
