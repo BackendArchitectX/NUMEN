@@ -1,9 +1,6 @@
-import { CheckCircle2, Download } from 'lucide-react'
+import { Download, FileJson2, ShieldCheck } from 'lucide-react'
 import type { Task } from '../model/types'
 import { clip } from '../shared/text'
-
-const stages = ['Interpret', 'Discover', 'Collect', 'Normalize', 'Validate', 'Deduplicate', 'Publish']
-const thresholds = [10, 25, 45, 60, 72, 82, 100]
 
 interface WorkflowPanelProps {
   task: Task
@@ -11,8 +8,17 @@ interface WorkflowPanelProps {
   onCancel: (id: string) => void
 }
 
+interface PersistedPlan {
+  useCase?: string
+  fields?: string[]
+  stages?: string[]
+  safeguards?: string[]
+}
+
 export function WorkflowPanel({ task, exportUrl, onCancel }: WorkflowPanelProps) {
   const active = !['COMPLETED', 'FAILED', 'CANCELLED'].includes(task.status)
+  const plan = parsePlan(task.planJson)
+
   return <section className="runPanel panel" aria-labelledby={`workflow-${task.id}`}>
     <div className="runHeader">
       <div>
@@ -24,14 +30,54 @@ export function WorkflowPanel({ task, exportUrl, onCancel }: WorkflowPanelProps)
         {task.recordCount > 0 && <a className="export" href={exportUrl}><Download size={15} aria-hidden="true"/> Export CSV</a>}
       </div>
     </div>
+
+    <div className="currentStage" aria-label="Current persisted workflow state">
+      <div>
+        <span>Current stage</span>
+        <strong>{task.errorMessage || task.stage}</strong>
+      </div>
+      <b>{task.progress}%</b>
+    </div>
     <div className="progressTrack" role="progressbar" aria-label="Workflow progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={task.progress}>
       <div style={{ width: `${task.progress}%` }}/>
     </div>
-    <div className="progressMeta"><span>{task.errorMessage || task.stage}</span><b>{task.progress}%</b></div>
-    <div className="pipeline" aria-label="Workflow stages">
-      {stages.map((stage, index) => <div className={task.progress >= thresholds[index] ? 'done' : ''} key={stage}>
-        <CheckCircle2 size={15} aria-hidden="true"/><span>{stage}</span>
-      </div>)}
-    </div>
+
+    <section className="executionPlan" aria-label="Persisted execution plan">
+      <div className="sectionTitle"><FileJson2 size={16} aria-hidden="true"/><div><span>EXECUTION PLAN</span><strong>{plan?.useCase || 'Plan pending'}</strong></div></div>
+      {plan ? <div className="planGrid">
+        <div>
+          <span className="planLabel">Stages</span>
+          {plan.stages?.length ? <ol className="planList">{plan.stages.map(stage => <li key={stage}>{stage}</li>)}</ol> : <p className="planEmpty">No stages declared by the persisted plan.</p>}
+        </div>
+        <div>
+          <span className="planLabel">Output fields</span>
+          {plan.fields?.length ? <div className="planChips">{plan.fields.map(field => <span key={field}>{field}</span>)}</div> : <p className="planEmpty">No output fields declared yet.</p>}
+        </div>
+        <div>
+          <span className="planLabel">Safeguards</span>
+          {plan.safeguards?.length ? <ul className="safeguardList">{plan.safeguards.map(item => <li key={item}><ShieldCheck size={13} aria-hidden="true"/>{item}</li>)}</ul> : <p className="planEmpty">No safeguards declared by the plan.</p>}
+        </div>
+      </div> : <p className="planEmpty">NUMEN is still preparing the persisted execution plan. This panel does not infer stage completion from decorative thresholds.</p>}
+    </section>
   </section>
+}
+
+function parsePlan(value?: string): PersistedPlan | undefined {
+  if (!value) return undefined
+  try {
+    const parsed = JSON.parse(value) as PersistedPlan
+    return {
+      useCase: typeof parsed.useCase === 'string' ? parsed.useCase : undefined,
+      fields: stringList(parsed.fields),
+      stages: stringList(parsed.stages),
+      safeguards: stringList(parsed.safeguards)
+    }
+  } catch {
+    return undefined
+  }
+}
+
+function stringList(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
 }
