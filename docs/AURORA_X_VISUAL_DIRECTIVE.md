@@ -466,15 +466,17 @@ A new-research state should:
 
 Starting new work and reopening old work are different user intents and must remain visually and behaviorally distinct.
 
-## 35. Published-data workspaces must not include non-published runs
+## 35. Published datasets and source diagnostics are different scopes
 
-Datasets and Sources should list only research that actually produced published records.
+**Datasets** lists only research that actually produced published records.
 
 Do not make failed, cancelled, queued or still-running tasks look like datasets merely because they exist in workflow history.
 
-Runs is the operational history.
+**Sources** is different: source diagnostics remain valuable when a terminal run failed or was cancelled after source activity. The Sources workspace may therefore expose terminal research with configured or attempted sources even when no dataset was published.
+
+Runs is the complete operational history.
 Datasets is published output.
-Sources is published provenance.
+Sources is configured/attempted/contributing source traceability.
 
 These concepts must remain separate.
 
