@@ -6,7 +6,6 @@ import { clip } from '../shared/text'
 interface SidebarProps {
   tasks: Task[]
   selectedId?: string
-  publishedDatasets: number
   activeView: WorkspaceView
   theme: 'light' | 'dark'
   onToggleTheme: () => void
@@ -15,7 +14,7 @@ interface SidebarProps {
   onSelect: (id: string) => void
 }
 
-export function Sidebar({ tasks, selectedId, publishedDatasets, activeView, theme, onToggleTheme, onNewResearch, onNavigate, onSelect }: SidebarProps) {
+export function Sidebar({ tasks, selectedId, activeView, theme, onToggleTheme, onNewResearch, onNavigate, onSelect }: SidebarProps) {
   const recentResearch = groupResearchTasks(tasks).slice(0, 7)
 
   return <aside className="sidebar" aria-label="NUMEN workspace">
@@ -33,13 +32,13 @@ export function Sidebar({ tasks, selectedId, publishedDatasets, activeView, them
       <Activity size={17} aria-hidden="true"/> <span className="navText">Research</span>
     </button>
     <button type="button" className={`nav ${activeView === 'datasets' ? 'active' : ''}`} aria-current={activeView === 'datasets' ? 'page' : undefined} onClick={() => onNavigate('datasets')}>
-      <Database size={17} aria-hidden="true"/> <span className="navText">Datasets</span><span className="navCount" aria-label={`${publishedDatasets} published datasets`}>{publishedDatasets}</span>
+      <Database size={17} aria-hidden="true"/> <span className="navText">Datasets</span>
     </button>
     <button type="button" className={`nav ${activeView === 'sources' ? 'active' : ''}`} aria-current={activeView === 'sources' ? 'page' : undefined} onClick={() => onNavigate('sources')}>
       <Radio size={17} aria-hidden="true"/> <span className="navText">Sources</span>
     </button>
     <button type="button" className={`nav ${activeView === 'history' ? 'active' : ''}`} aria-current={activeView === 'history' ? 'page' : undefined} onClick={() => onNavigate('history')}>
-      <History size={17} aria-hidden="true"/> <span className="navText">Runs</span><span className="navCount">{tasks.length}</span>
+      <History size={17} aria-hidden="true"/> <span className="navText">Runs</span>
     </button>
 
     <div className="navLabel recentLabel">Recent research</div>
