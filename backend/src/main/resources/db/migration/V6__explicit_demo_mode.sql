@@ -1,0 +1,2 @@
+ALTER TABLE collection_tasks
+    ADD COLUMN demo_mode BOOLEAN NOT NULL DEFAULT FALSE;
