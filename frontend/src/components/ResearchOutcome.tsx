@@ -16,13 +16,14 @@ export function ResearchOutcome({ task, summary, summaryState, exportUrl }: Rese
   const allDemo = Boolean(summary ? summary.totalRecords > 0 && summary.demoRecords === summary.totalRecords : task.demoMode && hasResults)
   const mixedDemo = Boolean(summary && summary.demoRecords > 0 && summary.demoRecords < summary.totalRecords)
   const updatedAt = summary?.latestCollectedAt || task.completedAt || task.createdAt
+  const limited = Boolean(summary && summary.failedSources > 0 && hasResults && !allDemo)
 
   return <section className="researchOutcome panel" aria-labelledby={`outcome-${task.id}`}>
     <div className="outcomeHeader">
       <div className="outcomeTitle">
-        <span className={`outcomeState ${allDemo || mixedDemo ? 'demo' : hasResults ? 'ready' : 'empty'}`}>
+        <span className={`outcomeState ${allDemo || mixedDemo ? 'demo' : limited ? 'limited' : hasResults ? 'ready' : 'empty'}`}>
           {allDemo || mixedDemo ? <Database size={14} aria-hidden="true"/> : <CheckCircle2 size={14} aria-hidden="true"/>}
-          {allDemo ? 'Demo dataset' : mixedDemo ? 'Mixed dataset' : hasResults ? 'Research ready' : 'Research complete'}
+          {allDemo ? 'Demo dataset' : mixedDemo ? 'Mixed dataset' : limited ? 'Ready with limitations' : hasResults ? 'Research ready' : 'Research complete'}
         </span>
         <h2 id={`outcome-${task.id}`}>{clip(task.prompt, 120)}</h2>
         <p>{summary ? summaryText(summary) : hasResults ? summaryState === 'error' ? 'Published results are ready, but dataset-wide coverage is temporarily unavailable.' : 'Published results are ready. Loading exact dataset coverage…' : 'No publishable results were produced for this run.'}</p>
@@ -34,7 +35,11 @@ export function ResearchOutcome({ task, summary, summaryState, exportUrl }: Rese
       <div className="outcomeStats" aria-label="Research outcome summary">
         <OutcomeStat icon={<Database/>} label="Results" value={summary.totalRecords.toString()} detail={allDemo ? 'sample records' : mixedDemo ? 'mixed-source records' : 'published records'}/>
         <OutcomeStat icon={<Building2/>} label="Organizations" value={summary.uniqueOrganizations.toString()} detail="unique values"/>
-        <OutcomeStat icon={<Radio/>} label="Sources" value={summary.uniqueSources.toString()} detail="contributing sources"/>
+        <OutcomeStat
+          icon={<Radio/>}
+          label="Sources"
+          value={sourceCoverageValue(summary)}
+          detail={summary.configuredSources > 0 ? 'contributing / configured' : 'contributing sources'}/>
         <OutcomeStat icon={<MapPin/>} label="Locations" value={summary.uniqueLocations.toString()} detail="unique values"/>
         <OutcomeStat icon={<CheckCircle2/>} label="Evidence linked" value={`${summary.evidenceLinkedRecords}/${summary.totalRecords}`} detail="records with captured evidence"/>
         <OutcomeStat icon={<Clock3/>} label="Updated" value={formatRelative(updatedAt)} detail={formatDate(updatedAt)}/>
@@ -72,7 +77,16 @@ function summaryText(summary: DatasetSummary): string {
     return `${summary.totalRecords} published ${resultLabel} across ${summary.uniqueOrganizations} ${organizationLabel} from ${summary.uniqueSources} ${sourceLabel}. ${summary.demoRecords} records are explicitly marked as demo content.`
   }
 
-  return `${summary.totalRecords} published ${resultLabel} across ${summary.uniqueOrganizations} ${organizationLabel} from ${summary.uniqueSources} contributing ${sourceLabel}. Open any row to inspect its captured evidence.`
+  const limitation = summary.failedSources > 0
+    ? ` ${summary.failedSources} configured ${summary.failedSources === 1 ? 'source could' : 'sources could'} not be collected.`
+    : ''
+
+  return `${summary.totalRecords} published ${resultLabel} across ${summary.uniqueOrganizations} ${organizationLabel} from ${summary.uniqueSources} contributing ${sourceLabel}.${limitation} Open any row to inspect its captured evidence.`
+}
+
+function sourceCoverageValue(summary: DatasetSummary): string {
+  if (summary.configuredSources <= 0) return summary.uniqueSources.toString()
+  return `${summary.uniqueSources}/${summary.configuredSources}`
 }
 
 function formatDate(value: string): string {
