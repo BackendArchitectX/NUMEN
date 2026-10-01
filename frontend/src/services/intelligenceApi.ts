@@ -1,4 +1,4 @@
-import type { DatasetRecord, DatasetSummary, HealthResponse, SourceSummary, Task, TaskTimelineEvent } from '../model/types'
+import type { DatasetPage, DatasetRecord, DatasetSortKey, DatasetSummary, HealthResponse, SortDirection, SourceSummary, Task, TaskTimelineEvent } from '../model/types'
 
 const API = '/api/v1'
 const DEFAULT_TIMEOUT_MS = 10_000
@@ -59,6 +59,25 @@ export const intelligenceApi = {
   getRecords: (id: string, q = '', minQuality = 0) => {
     const params = new URLSearchParams({ q, minQuality: String(minQuality), limit: '500' })
     return request<DatasetRecord[]>(`${API}/tasks/${id}/records?${params.toString()}`)
+  },
+  getRecordPage: (
+    id: string,
+    q = '',
+    minQuality = 0,
+    page = 0,
+    pageSize = 50,
+    sortBy: DatasetSortKey = 'qualityScore',
+    direction: SortDirection = 'desc'
+  ) => {
+    const params = new URLSearchParams({
+      q,
+      minQuality: String(minQuality),
+      page: String(page),
+      pageSize: String(pageSize),
+      sortBy,
+      direction
+    })
+    return request<DatasetPage>(`${API}/tasks/${id}/records/page?${params.toString()}`)
   },
   eventsUrl: (id: string) => `${API}/tasks/${id}/events`,
   exportUrl: (id: string) => `${API}/tasks/${id}/export.csv`
