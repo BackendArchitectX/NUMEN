@@ -88,7 +88,7 @@ function summaryText(summary: DatasetSummary): string {
     ? ` ${summary.failedSources} configured ${summary.failedSources === 1 ? 'source could' : 'sources could'} not be collected.`
     : ''
 
-  return `${summary.totalRecords} published ${resultLabel} across ${summary.uniqueOrganizations} ${organizationLabel} from ${summary.uniqueSources} contributing ${sourceLabel}.${limitation} Open any row to inspect its captured evidence.`
+  return `${summary.totalRecords} published ${resultLabel} across ${summary.uniqueOrganizations} ${organizationLabel} from ${summary.uniqueSources} contributing ${sourceLabel}.${limitation} Open a result to inspect its captured evidence.`
 }
 
 function sourceCoverageValue(summary: DatasetSummary): string {
