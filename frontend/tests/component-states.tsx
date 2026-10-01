@@ -260,6 +260,8 @@ const summary: DatasetSummary = {
   uniqueOrganizations: 1,
   uniqueLocations: 1,
   uniqueSources: 1,
+  configuredSources: 1,
+  failedSources: 0,
   evidenceLinkedRecords: 1,
   demoRecords: 0,
   latestCollectedAt: record.collectedAt,
@@ -273,7 +275,12 @@ const sourceSummary: SourceSummary = {
   records: 1,
   evidence: 1,
   latestCollectedAt: record.collectedAt,
-  demo: false
+  collectionStatus: 'SUCCEEDED',
+  errorCode: null,
+  errorMessage: null,
+  lastAttemptedAt: record.collectedAt,
+  demo: false,
+  configured: true
 }
 
 const outcome = renderToStaticMarkup(
@@ -283,6 +290,17 @@ includes(outcome, 'Research ready', 'completed live research must foreground the
 includes(outcome, '1 published result', 'outcome summary must be derived from actual persisted records')
 includes(outcome, 'Evidence linked', 'outcome must foreground evidence coverage')
 includes(outcome, 'Export CSV', 'completed research must expose its export action')
+
+const limitedOutcome = renderToStaticMarkup(
+  <ResearchOutcome
+    task={completedTask}
+    summary={{ ...summary, configuredSources: 2, failedSources: 1 }}
+    summaryState="ready"
+    exportUrl="/api/v1/tasks/task-completed/export.csv"
+  />
+)
+includes(limitedOutcome, 'Ready with limitations', 'partial source failure must be visible in the completed outcome')
+includes(limitedOutcome, '1/2', 'outcome source coverage must distinguish contributing from configured sources')
 
 const demoOutcome = renderToStaticMarkup(
   <ResearchOutcome
@@ -316,6 +334,24 @@ includes(sources, 'Sources', 'source workspace must be first-class')
 includes(sources, 'Example Careers', 'source workspace must aggregate contributing sources')
 includes(sources, '1/1', 'source workspace must expose evidence contribution')
 includes(sources, 'Open source', 'live sources must expose a real external-source action')
+
+const failedSource: SourceSummary = {
+  name: 'Unavailable Careers',
+  url: 'https://unavailable.example/jobs',
+  type: 'WEB',
+  records: 0,
+  evidence: 0,
+  latestCollectedAt: null,
+  collectionStatus: 'FAILED',
+  errorCode: 'SOURCE_UNREACHABLE',
+  errorMessage: 'Source could not be reached after the configured retry policy',
+  lastAttemptedAt: record.collectedAt,
+  demo: false,
+  configured: true
+}
+const partialSources = renderToStaticMarkup(<SourceExplorer sources={[sourceSummary, failedSource]} totalRecords={1} state="ready" />)
+includes(partialSources, '1</strong> unavailable', 'source workspace must count configured collection failures')
+includes(partialSources, 'Source could not be reached', 'source workspace must explain collection failure without hiding partial success')
 
 const sidebar = renderToStaticMarkup(
   <Sidebar
