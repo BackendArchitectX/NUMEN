@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { ChevronDown, FlaskConical, Link2, LoaderCircle, MessageSquareText, Play, Plus, Search, X } from 'lucide-react'
 import { examplePrompts } from '../model/prompts'
 import { clip } from '../shared/text'
@@ -41,10 +41,6 @@ export function PromptComposer({
   const promptValid = prompt.trim().length >= 10 && length <= 4000
   const runnable = online && !busy && promptValid && hasCollectionMode
   const primaryDisabled = !online || busy || !promptValid
-
-  useEffect(() => {
-    if (!hasCollectionMode && sourceDetailsRef.current) sourceDetailsRef.current.open = true
-  }, [hasCollectionMode])
 
   const addSources = (values: string[]) => {
     if (demoMode) return
@@ -145,7 +141,7 @@ export function PromptComposer({
       <span>{runReadinessDetail({ online, busy, promptValid, demoMode, sourceCount: sourceUrls.length })}</span>
     </div>
 
-    <details ref={sourceDetailsRef} defaultOpen={!hasCollectionMode} className={`composerAdvanced ${hasCollectionMode ? 'configured' : 'needsSetup'}`}>
+    <details ref={sourceDetailsRef} open={!hasCollectionMode ? true : undefined} className={`composerAdvanced ${hasCollectionMode ? 'configured' : 'needsSetup'}`}>
       <summary>
         <div className="advancedSummaryCopy">
           <Link2 size={14} aria-hidden="true"/>
