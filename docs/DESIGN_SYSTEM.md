@@ -1,46 +1,158 @@
-# NUMEN Visual Design System
+# NUMEN Aurora Visual System
 
-NUMEN uses a premium light interface designed for long analytical sessions. The visual direction is intentionally restrained: warm neutral canvas, bright information surfaces, charcoal typography, muted supporting text, a single warm copper accent, and green only for healthy/verified states.
+NUMEN uses the **Aurora** visual system: a fresh, cool, premium analytical interface built around Deep Ink structure, Frost workspace surfaces, Azure interaction, Aqua live-state cues, Iris intelligence cues and Emerald verification. The system explicitly avoids orange, beige, muddy warm palettes and generic blue-SaaS styling.
 
-## Principles
+## Product feel
 
-- **Clarity before decoration** — hierarchy is created through spacing, typography, borders and elevation rather than visual noise.
-- **Warm light, not sterile white** — the application canvas uses soft ivory and stone tones to reduce glare while keeping data dense and readable.
-- **One primary accent** — copper is reserved for primary actions, emphasis and brand moments.
-- **Semantic status colors** — green means healthy/completed, amber means active/in-progress, red means failure or destructive feedback.
-- **Measured elevation** — panels use low-contrast borders and layered shadows rather than heavy outlines.
-- **Self-contained UI** — no runtime font or styling CDN is required.
-- **Accessible motion** — focus states are visible and reduced-motion preferences are honored.
+The interface should feel:
 
-## Core tokens
+- fresh without being playful,
+- technical without being cold,
+- enterprise without being boring,
+- dense without being cramped,
+- minimal without being empty,
+- distinctive without becoming gimmicky.
 
-| Token | Purpose |
-| --- | --- |
-| `--canvas` | warm page background |
-| `--surface` / `--surface-solid` | cards and elevated content |
-| `--ink` | primary text |
-| `--muted` | secondary text |
-| `--line` | subtle borders |
-| `--accent` | primary brand/action color |
-| `--success` / `--warning` / `--danger` | semantic states |
-| `--shadow-sm/md/lg` | controlled elevation |
-| `--radius-sm/md/lg` | consistent corner system |
+Premium quality comes from hierarchy, typography, density, precise spacing, strong tables and quiet interaction feedback rather than decorative effects.
 
-## Component treatment
+## Semantic color roles
 
-The sidebar uses a translucent warm surface with backdrop blur. Workspace headers are compact and operational rather than landing-page heroes. The prompt composer receives the strongest elevation on the Console because it is the primary creation surface. Metric cards use compact visual hierarchy. Workflow state is quiet but legible and exposes the persisted execution plan rather than an inferred decorative stage history. Dataset tables remain high-density while sortable headers, evidence drill-downs, row hover, sticky headers and semantic badges improve scanability.
+| Semantic token | Role | Light value |
+| --- | --- | --- |
+| `--color-bg-app` | Frost application background | `#F7F9FC` |
+| `--color-bg-surface` | primary analytical surface | `#FFFFFF` |
+| `--color-text-primary` | primary Ink typography | `#101828` |
+| `--color-text-secondary` | supporting typography | `#475467` |
+| `--color-border` | cool structural separator | `#E4E9F0` |
+| `--color-action-primary` | decisive interaction / selected state | `#2F6BFF` |
+| `--color-live` | live, fresh, streaming, active research | `#18C3D6` |
+| `--color-intelligence` | interpretation, synthesis, advanced intelligence | `#685BF6` |
+| `--color-success` | verified, healthy, complete | `#11996F` |
+| `--color-error` | failures and destructive feedback | `#D92D20` |
 
-## Responsive behavior
+Components should consume **semantic tokens**, not scatter raw palette values through JSX.
 
-Desktop keeps the persistent left workspace rail. Tablet collapses to the main workspace and reduces the pipeline grid. Mobile prioritizes the prompt, workflow state and dataset content with single-column metric cards on narrow screens.
+## Color hierarchy
 
-## Guardrails
+Color is intentionally scarce. Most of the product remains white, slate and Ink. Azure is the primary interaction color. Aqua appears only for live/fresh states. Iris is reserved for intelligence/interpretation. Emerald means verified/healthy/complete. Error red is used only when failure matters.
 
-Do not reintroduce dark-theme-only colors, external font dependencies, neon gradients, excessive blur, glass effects that reduce contrast, or multiple competing brand colors. New components should reuse the existing CSS variables before introducing new tokens.
+The brand mark is one of the few permitted small gradient moments: Azure → Iris → Aqua. Page backgrounds, normal cards, buttons, tables and navigation must remain flat and restrained.
 
+## Sidebar
 
-## Interaction truthfulness
+The sidebar uses Deep Ink (`#08111F`) with layered navy surfaces. Active navigation is a quiet darker surface with a narrow Azure indicator rather than a large filled blue control. Recent research is compact and dense. Security status is a minimal footer treatment rather than a prominent card.
 
-Navigation labels that look actionable are real controls and change actual workspace views. Workflow presentation must use persisted task state and persisted plan data; do not infer a decorative completion history from a percentage. Dataset rows expose their persisted evidence metadata through a real inspector, and sortable column headers perform real sorting.
+## Workspace hierarchy
 
-Metrics must be derivable from persisted domain state. Do not display a provenance percentage, health state or quality percentage merely because it looks desirable.
+The working area uses Frost (`#F7F9FC`) and white analytical surfaces. Page titles remain around 26–32px rather than marketing-scale hero typography. Completed research prioritizes results; technical workflow internals live under collapsible **Run details**.
+
+The default information hierarchy is:
+
+1. page purpose / research question,
+2. useful outcome,
+3. results,
+4. evidence and source trust,
+5. secondary actions,
+6. technical execution detail.
+
+## Typography
+
+Use the application sans-serif stack for ordinary product text. Monospace is reserved for hashes, IDs, code, API fields and diagnostics.
+
+- Page titles: 26–32px
+- Section headings: 18px
+- Panel headings: 14–15px
+- Body: 13–14px
+- Table text: 12.5–13px
+- Metadata: 10–12px
+
+Avoid uppercase and letter-spaced monospace for ordinary labels.
+
+## Surfaces, borders and radii
+
+Normal panels rely on cool borders and spacing, not large shadows.
+
+- ordinary controls: 6px radius,
+- standard panels: 8px,
+- floating elements: 10px,
+- 12px is the upper limit for major shell elements.
+
+Avoid card nesting and do not wrap every section in a raised container.
+
+## Tables
+
+Tables are a primary NUMEN surface and should feel analytical and fast:
+
+- 40–44px rows,
+- 32–36px sticky headers,
+- cool separators,
+- subtle hover,
+- compact toolbars,
+- accurate numerical alignment,
+- accessible sortable controls.
+
+Selected rows use a restrained Azure-tinted surface rather than saturated fill.
+
+## Status language
+
+- **Azure** — interaction and selection
+- **Aqua** — live, searching, fresh
+- **Iris** — interpretation and review
+- **Emerald** — verified, source-backed, healthy, complete
+- **Crimson** — failure
+
+Do not rely on color alone; pair important states with text and/or icons.
+
+## Research composer
+
+The composer is a productivity surface, not a decorative AI hero. It uses a compact header, a clearly labeled research question, restrained Iris intelligence cue, meaningful example prompts and a simple Azure **Run research** action.
+
+## Run details
+
+Workflow state remains inspectable but is visually secondary. A completed run should summarize the published outcome and collapse timeline, execution plan and safeguards under **Run details**. Raw internal enum names should not dominate the primary UI.
+
+## Evidence inspector
+
+Record evidence opens in a right-side inspector on desktop. The inspector uses white surfaces, thin borders, compact sections, Azure links, Emerald verification cues, Aqua freshness and Iris transformation cues only when semantically relevant.
+
+## Motion
+
+Interaction motion should be 120–240ms and communicate cause/effect only. Avoid bounce, glow and decorative layout movement. Respect `prefers-reduced-motion`.
+
+## Accessibility
+
+Maintain appropriate WCAG contrast, visible Azure focus rings, keyboard navigation, semantic tables/forms and non-color status cues. Audit secondary slate text and accent text carefully.
+
+## Dark theme tokens
+
+Dark theme support is defined through `html[data-theme="dark"]`, using Deep Ink layered surfaces and softer accent values. Dark mode must remain calm and must never become neon.
+
+## Visual policy enforcement
+
+`scripts/quality/check-visual-policy.sh` blocks known legacy warm/orange palette values, prohibited warm color names in frontend source and selected decorative effects. CI runs this check with the other repository standards.
+
+## Anti-patterns
+
+Do not reintroduce:
+
+- orange or beige,
+- cream-heavy canvases,
+- oversized heroes,
+- giant type,
+- rounded cards everywhere,
+- card nesting,
+- heavy shadows,
+- background radial gradients,
+- glow,
+- rainbow badges,
+- decorative charts,
+- random icon colors,
+- monospace abuse,
+- generic blue-purple SaaS landing-page styling,
+- fake futuristic AI visuals.
+
+## Acceptance bar
+
+A NUMEN screen should feel fresh, precise and high-end within seconds. Users should immediately identify the page purpose, primary result, primary action and secondary technical detail. If all surfaces feel equally important, the hierarchy has failed.
+
+Aurora is not a recolor. It is the visual hierarchy of the product.
