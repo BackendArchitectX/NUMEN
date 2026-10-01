@@ -4,6 +4,7 @@ import { DatasetExplorer } from '../src/components/DatasetExplorer'
 import { PromptComposer } from '../src/components/PromptComposer'
 import { ResearchOutcome } from '../src/components/ResearchOutcome'
 import { Sidebar } from '../src/components/Sidebar'
+import { SourceExplorer } from '../src/components/SourceExplorer'
 import { WorkflowHistory } from '../src/components/WorkflowHistory'
 import { WorkflowPanel } from '../src/components/WorkflowPanel'
 import type { DatasetRecord, Task, TaskTimelineEvent } from '../src/model/types'
@@ -87,6 +88,7 @@ includes(populated, '95%', 'data-quality display should round the persisted scor
 includes(populated, 'target="_blank"', 'live provenance links should open separately')
 includes(populated, 'rel="noreferrer"', 'external provenance links must suppress referrer leakage')
 includes(populated, 'Data quality', 'quality terminology must be explicit rather than an unexplained percentage')
+includes(populated, 'aria-haspopup="dialog"', 'record rows must announce that evidence opens in a dialog')
 
 const activeTask: Task = {
   id: 'task-active',
@@ -102,7 +104,8 @@ const activeTask: Task = {
   }),
   recordCount: 0,
   averageQuality: 0,
-  createdAt: '2026-09-30T00:00:00Z'
+  createdAt: '2026-09-30T00:00:00Z',
+  startedAt: '2026-09-30T00:00:05Z'
 }
 
 const timeline: TaskTimelineEvent[] = [{
@@ -152,27 +155,45 @@ includes(outcome, '1 published result', 'outcome summary must be derived from ac
 includes(outcome, 'Evidence linked', 'outcome must foreground evidence coverage')
 includes(outcome, 'Export CSV', 'completed research must expose its export action')
 
+const zeroOutcome = renderToStaticMarkup(
+  <ResearchOutcome task={{ ...completedTask, recordCount: 0 }} records={[]} exportUrl="#" />
+)
+includes(zeroOutcome, 'Research complete', 'zero-result completion must not be labelled as ready')
+includes(zeroOutcome, 'No publishable results', 'zero-result completion must explain the outcome honestly')
+excludes(zeroOutcome, 'Export CSV', 'zero-result completion must not expose an empty export')
+
+const sources = renderToStaticMarkup(<SourceExplorer records={[record]} />)
+includes(sources, 'Sources', 'source workspace must be first-class')
+includes(sources, 'Example Careers', 'source workspace must aggregate contributing sources')
+includes(sources, '1/1', 'source workspace must expose evidence contribution')
+includes(sources, 'Open source', 'live sources must expose a real external-source action')
+
 const sidebar = renderToStaticMarkup(
   <Sidebar
     tasks={[completedTask]}
     selectedId={completedTask.id}
     totalRecords={1}
-    activeView="datasets"
+    activeView="sources"
     theme="light"
     onToggleTheme={noop}
+    onNewResearch={noop}
     onNavigate={noop}
     onSelect={noop}
   />
 )
 includes(sidebar, '>Research<', 'workspace navigation must use research terminology')
+includes(sidebar, '>Sources<', 'source evidence must have a first-class workspace destination')
+includes(sidebar, 'New research', 'sidebar must expose an explicit new-research action')
 includes(sidebar, 'aria-current="page"', 'active workspace destination must expose current-page semantics')
 includes(sidebar, 'Appearance', 'sidebar must expose the theme control without infrastructure marketing')
 
 const history = renderToStaticMarkup(
-  <WorkflowHistory tasks={[completedTask]} onOpen={noop} onOpenDataset={noop} />
+  <WorkflowHistory tasks={[completedTask]} onOpen={noop} onOpenDataset={noop} onOpenSources={noop} />
 )
 includes(history, 'Runs', 'history view must render persisted research runs')
-includes(history, 'Open run', 'history rows must expose a functional run action')
+includes(history, '>Open<', 'history rows must expose a functional run action')
+includes(history, '1 published record', 'run history must describe user outcomes instead of raw engine stages')
 includes(history, 'Dataset', 'completed runs with data must expose their dataset action')
+includes(history, 'Sources', 'completed runs with data must expose source coverage')
 
 console.log('[NUMEN] frontend component-state tests passed')
