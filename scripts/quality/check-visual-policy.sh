@@ -65,3 +65,8 @@ printf '[NUMEN] Aurora X visual policy OK\n'
 if grep -q 'className="primaryAction"' frontend/src/components/ResearchOutcome.tsx; then
   fail "completed outcome actions must not overpower results with a filled primary action"
 fi
+
+
+if grep -nEi '(experience|pricing|target[[:space:]_-]*customer|differentiator|required[[:space:]_-]*skills)' frontend/src/model/prompts.ts frontend/src/components/PromptComposer.tsx; then
+  fail "example research copy promises fields outside the shipped record contract"
+fi
