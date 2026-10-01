@@ -24,8 +24,8 @@ export function DatasetLibrary({ tasks, onOpen, onOpenSources, onNewResearch }: 
       <div className="resultsTitle">
         <Database size={18} aria-hidden="true"/>
         <div>
-          <h3 id="dataset-library-heading">Published datasets</h3>
-          <span>{tasks.length} reusable research {tasks.length === 1 ? 'output' : 'outputs'}</span>
+          <h3 id="dataset-library-heading">Recent published datasets</h3>
+          <span>Showing {tasks.length} recent reusable research {tasks.length === 1 ? 'output' : 'outputs'}</span>
         </div>
       </div>
     </div>
