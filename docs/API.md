@@ -33,11 +33,22 @@ Request:
 
 ```json
 {
-  "prompt": "Collect data from https://example.com and preserve source provenance"
+  "prompt": "Collect data from https://example.com and preserve source provenance",
+  "demoMode": false
 }
 ```
 
-The prompt is required and is bounded by backend validation.
+The prompt is required and is bounded by backend validation. `demoMode` defaults to `false` when omitted.
+
+### Explicit demo mode
+
+NUMEN does not silently replace source-less research with synthetic records.
+
+Normal research requires at least one permitted public HTTP(S) URL in the prompt. If no supported source URL is supplied and `demoMode=false`, the workflow fails with a user-visible explanation asking the caller to add permitted source URLs.
+
+Set `demoMode=true` only when sample data is intentionally requested. Demo-generated records are persisted with `sourceType=DEMO`, use `urn:numen:demo:...` provenance and remain visibly labelled by the UI.
+
+The idempotency contract includes demo intent: reusing an idempotency key with a different prompt **or a different `demoMode` value** returns `409 IDEMPOTENCY_CONFLICT`.
 
 Clients that may retry should send:
 
