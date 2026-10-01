@@ -2201,3 +2201,174 @@ td a:hover { text-decoration: underline; }
     forced-color-adjust: auto;
   }
 }
+
+
+/* Structured research source scope */
+.sourceScope {
+  margin-top: 9px;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: var(--color-bg-subtle);
+}
+
+.sourceScopeHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sourceScopeHeading > div { min-width: 0; }
+
+.sourceScopeHeading > div > span {
+  display: block;
+  color: var(--color-text-primary);
+  font-size: 10.5px;
+  font-weight: 650;
+}
+
+.sourceScopeHeading small {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-text-muted);
+  font-size: 9.5px;
+  line-height: 1.45;
+}
+
+.sourceCount {
+  flex: 0 0 auto;
+  color: var(--color-text-subtle);
+  font-size: 9.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sourceEntry {
+  min-height: 34px;
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  padding: 0 5px 0 9px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 6px;
+  background: var(--color-bg-surface);
+  color: var(--color-text-subtle);
+}
+
+.sourceEntry:focus-within {
+  border-color: var(--color-action-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-action-primary) 11%, transparent);
+}
+
+.sourceEntry input {
+  min-width: 0;
+  height: 32px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: 10.5px;
+}
+
+.sourceEntry input::placeholder { color: var(--color-text-subtle); }
+
+.sourceEntry button,
+.detectedSourceAction {
+  min-height: 27px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  background: var(--color-bg-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 9.5px;
+  font-weight: 600;
+}
+
+.sourceEntry button:hover:not(:disabled),
+.detectedSourceAction:hover {
+  color: var(--color-action-primary);
+  border-color: color-mix(in srgb, var(--color-action-primary) 26%, var(--color-border));
+  background: var(--color-action-subtle);
+}
+
+.sourceValidation {
+  margin: 6px 0 0;
+  color: var(--color-error);
+  font-size: 9.5px;
+}
+
+.sourceChips {
+  margin-top: 7px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.sourceChips > span {
+  min-width: 0;
+  max-width: min(100%, 300px);
+  min-height: 27px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 5px 4px 7px;
+  border: 1px solid color-mix(in srgb, var(--color-action-primary) 15%, var(--color-border));
+  border-radius: 6px;
+  background: var(--color-action-subtle);
+  color: var(--color-text-secondary);
+  font-size: 9.5px;
+}
+
+.sourceChips > span > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sourceChips svg {
+  flex: 0 0 auto;
+  color: var(--color-action-primary);
+}
+
+.sourceChips button {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text-subtle);
+  cursor: pointer;
+}
+
+.sourceChips button:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-error);
+}
+
+.detectedSourceAction {
+  margin-top: 7px;
+  color: var(--color-intelligence);
+  background: var(--color-intelligence-subtle);
+}
+
+@media (max-width: 680px) {
+  .sourceEntry {
+    grid-template-columns: 18px minmax(0, 1fr);
+    padding: 7px 9px;
+  }
+
+  .sourceEntry input { height: 30px; }
+  .sourceEntry button { grid-column: 1 / -1; width: 100%; }
+  .sourceScopeHeading { gap: 8px; }
+}
