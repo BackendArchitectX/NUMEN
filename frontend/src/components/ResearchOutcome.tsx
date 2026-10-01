@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Building2, CheckCircle2, Clock3, Database, Download, MapPin, Radio } from 'lucide-react'
+import { Building2, CheckCircle2, CircleAlert, Clock3, Database, Download, MapPin, Radio } from 'lucide-react'
 import type { DatasetSummary, LoadState, Task } from '../model/types'
 import { clip } from '../shared/text'
 
@@ -22,7 +22,11 @@ export function ResearchOutcome({ task, summary, summaryState, exportUrl }: Rese
     <div className="outcomeHeader">
       <div className="outcomeTitle">
         <span className={`outcomeState ${allDemo || mixedDemo ? 'demo' : limited ? 'limited' : hasResults ? 'ready' : 'empty'}`}>
-          {allDemo || mixedDemo ? <Database size={14} aria-hidden="true"/> : <CheckCircle2 size={14} aria-hidden="true"/>}
+          {allDemo || mixedDemo
+            ? <Database size={14} aria-hidden="true"/>
+            : limited
+              ? <CircleAlert size={14} aria-hidden="true"/>
+              : <CheckCircle2 size={14} aria-hidden="true"/>}
           {allDemo ? 'Demo dataset' : mixedDemo ? 'Mixed dataset' : limited ? 'Ready with limitations' : hasResults ? 'Research ready' : 'Research complete'}
         </span>
         <h2 id={`outcome-${task.id}`}>{clip(task.prompt, 120)}</h2>
