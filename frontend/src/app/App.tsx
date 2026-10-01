@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Activity, Database, History, Moon, Radio, Sun } from 'lucide-react'
+import { Activity, Database, History, Moon, Plus, Radio, Sun } from 'lucide-react'
 import { DatasetExplorer } from '../components/DatasetExplorer'
 import { PromptComposer } from '../components/PromptComposer'
 import { ResearchOutcome } from '../components/ResearchOutcome'
@@ -62,6 +62,13 @@ export default function App() {
   const startNewResearch = () => {
     workspace.startNewResearch()
     navigate('research')
+    focusResearchComposer()
+  }
+
+  const refineResearch = (task: Task) => {
+    workspace.refineTask(task)
+    navigate('research')
+    focusResearchComposer()
   }
 
   const publishedTasks = useMemo(
@@ -100,18 +107,46 @@ export default function App() {
         <button type="button" className={view === 'history' ? 'active' : ''} onClick={() => navigateWorkspace('history')}><History size={15} aria-hidden="true"/> Runs</button>
       </nav>
 
-      <WorkspaceHeader view={view} online={workspace.online} theme={theme} onToggleTheme={toggleTheme}/>
+      <WorkspaceHeader
+        view={view}
+        online={workspace.online}
+        theme={theme}
+        showNewResearch={view !== 'research' || Boolean(workspace.selected)}
+        onNewResearch={startNewResearch}
+        onToggleTheme={toggleTheme}
+      />
       {workspace.error && <div className="error" role="alert">{workspace.error}</div>}
 
       {view === 'research' && <>
-        <PromptComposer prompt={workspace.prompt} demoMode={workspace.demoMode} sourceUrls={workspace.sourceUrls} busy={workspace.busy} online={workspace.online === true}
-          onPromptChange={workspace.setPrompt} onDemoModeChange={workspace.setDemoMode} onSourceUrlsChange={workspace.setSourceUrls}
-          onRun={() => void workspace.createTask()}/>
+        {!workspace.selected && <PromptComposer
+          prompt={workspace.prompt}
+          demoMode={workspace.demoMode}
+          sourceUrls={workspace.sourceUrls}
+          busy={workspace.busy}
+          online={workspace.online === true}
+          onPromptChange={workspace.setPrompt}
+          onDemoModeChange={workspace.setDemoMode}
+          onSourceUrlsChange={workspace.setSourceUrls}
+          onRun={() => void workspace.createTask()}
+        />}
 
         {workspace.selected ? <>
           {selectedComplete
-            ? <ResearchOutcome task={workspace.selected} summary={workspace.summary} summaryState={workspace.summaryState} exportUrl={workspace.exportUrl}/>
-            : <WorkflowPanel task={workspace.selected} timeline={workspace.timeline} exportUrl={workspace.exportUrl} onCancel={id => void workspace.cancelTask(id)}/>}
+            ? <ResearchOutcome
+                task={workspace.selected}
+                summary={workspace.summary}
+                summaryState={workspace.summaryState}
+                exportUrl={workspace.exportUrl}
+                onRefine={() => refineResearch(workspace.selected!)}
+                onViewSources={() => selectAndOpen(workspace.selected!.id, 'sources')}
+              />
+            : <WorkflowPanel
+                task={workspace.selected}
+                timeline={workspace.timeline}
+                sources={workspace.sources}
+                sourcesState={workspace.sourcesState}
+                onCancel={id => void workspace.cancelTask(id)}
+              />}
 
           {selectedTerminalWithDiagnostics && <SourceExplorer
             sources={workspace.sources}
@@ -138,7 +173,13 @@ export default function App() {
             onPageChange={workspace.setPage}
             onPageSizeChange={workspace.setPageSize}/>
 
-          {selectedComplete && <WorkflowPanel task={workspace.selected} timeline={workspace.timeline} exportUrl={workspace.exportUrl} onCancel={id => void workspace.cancelTask(id)}/>}
+          {selectedComplete && <WorkflowPanel
+            task={workspace.selected}
+            timeline={workspace.timeline}
+            sources={workspace.sources}
+            sourcesState={workspace.sourcesState}
+            onCancel={id => void workspace.cancelTask(id)}
+          />}
         </> : <RecentResearch tasks={workspace.tasks} onOpen={id => selectAndOpen(id, 'research')}/>}
       </>}
 
@@ -150,7 +191,14 @@ export default function App() {
           selectedId={workspace.selectedId}
           onSelect={id => selectAndOpen(id, 'datasets')}/>
         {workspace.selected && workspace.selected.status === 'COMPLETED' && workspace.selected.recordCount > 0 ? <>
-          <ResearchOutcome task={workspace.selected} summary={workspace.summary} summaryState={workspace.summaryState} exportUrl={workspace.exportUrl}/>
+          <ResearchOutcome
+            task={workspace.selected}
+            summary={workspace.summary}
+            summaryState={workspace.summaryState}
+            exportUrl={workspace.exportUrl}
+            onRefine={() => refineResearch(workspace.selected!)}
+            onViewSources={() => selectAndOpen(workspace.selected!.id, 'sources')}
+          />
           <DatasetExplorer
             records={workspace.records}
             totalRecords={workspace.summary?.totalRecords ?? workspace.selected.recordCount}
@@ -195,7 +243,21 @@ export default function App() {
   </div>
 }
 
-function WorkspaceHeader({ view, online, theme, onToggleTheme }: { view: WorkspaceView; online: boolean | null; theme: Theme; onToggleTheme: () => void }) {
+function WorkspaceHeader({
+  view,
+  online,
+  theme,
+  showNewResearch,
+  onNewResearch,
+  onToggleTheme
+}: {
+  view: WorkspaceView
+  online: boolean | null
+  theme: Theme
+  showNewResearch: boolean
+  onNewResearch: () => void
+  onToggleTheme: () => void
+}) {
   const content = {
     research: {
       title: 'Research',
@@ -222,6 +284,7 @@ function WorkspaceHeader({ view, online, theme, onToggleTheme }: { view: Workspa
     </div>
     <div className="workspaceHeaderActions">
       {online === false && <div className="livePill offline" role="status" aria-live="polite"><span aria-hidden="true"/> Service unavailable</div>}
+      {showNewResearch && <button type="button" className="headerNewResearch secondaryAction" onClick={onNewResearch}><Plus size={14} aria-hidden="true"/> New research</button>}
       <button type="button" className="themeToggle" onClick={onToggleTheme} aria-label={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'} title={theme === 'light' ? 'Dark theme' : 'Light theme'}>
         {theme === 'light' ? <Moon size={16} aria-hidden="true"/> : <Sun size={16} aria-hidden="true"/>}
       </button>
@@ -318,4 +381,10 @@ function formatRelative(value: string): string {
   const hours = Math.round(minutes / 60)
   if (hours < 24) return `${hours}h ago`
   return `${Math.round(hours / 24)}d ago`
+}
+
+function focusResearchComposer() {
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => document.getElementById('research-question')?.focus())
+  })
 }
