@@ -4,8 +4,7 @@ CREATE TABLE collection_task_sources (
     source_url VARCHAR(2048) NOT NULL,
     CONSTRAINT pk_collection_task_sources PRIMARY KEY (task_id, position),
     CONSTRAINT fk_collection_task_sources_task
-        FOREIGN KEY (task_id) REFERENCES collection_tasks(id) ON DELETE CASCADE,
-    CONSTRAINT uk_collection_task_source_url UNIQUE (task_id, source_url)
+        FOREIGN KEY (task_id) REFERENCES collection_tasks(id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_collection_task_sources_task
