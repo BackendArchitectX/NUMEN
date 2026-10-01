@@ -1,61 +1,20 @@
 import { useMemo, useState } from 'react'
 import { ArrowUpRight, Radio, Search } from 'lucide-react'
-import type { DatasetRecord } from '../model/types'
+import type { SourceSummary } from '../model/types'
 
 interface SourceExplorerProps {
-  records: DatasetRecord[]
+  sources: SourceSummary[]
+  totalRecords: number
 }
 
-interface SourceSummary {
-  key: string
-  name: string
-  url: string
-  type: string
-  records: number
-  evidence: number
-  latest: string
-  demo: boolean
-}
-
-export function SourceExplorer({ records }: SourceExplorerProps) {
+export function SourceExplorer({ sources, totalRecords }: SourceExplorerProps) {
   const [query, setQuery] = useState('')
 
-  const sources = useMemo(() => {
-    const grouped = new Map<string, SourceSummary>()
-
-    for (const record of records) {
-      const key = record.sourceUrl || record.sourceName || record.sourceType || record.id
-      const existing = grouped.get(key)
-      const evidence = record.excerpt?.trim() ? 1 : 0
-      const collectedAt = record.collectedAt || ''
-
-      if (existing) {
-        existing.records += 1
-        existing.evidence += evidence
-        if (Date.parse(collectedAt) > Date.parse(existing.latest)) existing.latest = collectedAt
-        continue
-      }
-
-      grouped.set(key, {
-        key,
-        name: record.sourceName || record.sourceUrl || 'Unnamed source',
-        url: record.sourceUrl,
-        type: record.sourceType || 'Unknown',
-        records: 1,
-        evidence,
-        latest: collectedAt,
-        demo: record.sourceType === 'DEMO'
-      })
-    }
-
-    return [...grouped.values()].sort((left, right) => right.records - left.records || left.name.localeCompare(right.name))
-  }, [records])
-
-  const visible = sources.filter(source => {
+  const visible = useMemo(() => {
     const needle = query.trim().toLowerCase()
-    if (!needle) return true
-    return [source.name, source.url, source.type].some(value => value.toLowerCase().includes(needle))
-  })
+    if (!needle) return sources
+    return sources.filter(source => [source.name, source.url, source.type].some(value => value?.toLowerCase().includes(needle)))
+  }, [sources, query])
 
   const liveSources = sources.filter(source => !source.demo).length
   const evidenceLinked = sources.reduce((sum, source) => sum + source.evidence, 0)
@@ -64,7 +23,7 @@ export function SourceExplorer({ records }: SourceExplorerProps) {
     <div className="resultsHeader">
       <div className="resultsTitle">
         <Radio size={18} aria-hidden="true"/>
-        <div><h3 id="sources-heading">Sources</h3><span>{sources.length} contributing sources · {evidenceLinked}/{records.length} records with captured evidence</span></div>
+        <div><h3 id="sources-heading">Sources</h3><span>{sources.length} contributing sources · {evidenceLinked}/{totalRecords} records with captured evidence</span></div>
       </div>
       <label className="searchField">
         <span className="srOnly">Search sources</span>
@@ -80,21 +39,21 @@ export function SourceExplorer({ records }: SourceExplorerProps) {
     </div>}
 
     {visible.length ? <div className="sourceList">
-      {visible.map(source => <article className="sourceRow" key={source.key}>
+      {visible.map(source => <article className="sourceRow" key={source.url || `${source.type}:${source.name}`}>
         <div className="sourceIdentity">
           <span className={source.demo ? 'sourceDot demo' : 'sourceDot live'} aria-hidden="true"/>
           <div>
             <strong>{source.name}</strong>
-            <small>{source.demo ? 'Demo source' : source.type}</small>
+            <small>{source.demo ? 'Demo source' : source.type || 'Public source'}</small>
           </div>
         </div>
 
         <div className="sourceMetric"><span>Records</span><strong>{source.records}</strong></div>
         <div className="sourceMetric"><span>Evidence</span><strong>{source.evidence}/{source.records}</strong></div>
-        <div className="sourceMetric"><span>Latest</span><strong>{formatRelative(source.latest)}</strong></div>
+        <div className="sourceMetric"><span>Latest</span><strong>{formatRelative(source.latestCollectedAt)}</strong></div>
 
         <div className="sourceAction">
-          {source.url.startsWith('http')
+          {source.url?.startsWith('http')
             ? <a href={source.url} target="_blank" rel="noreferrer">Open source <ArrowUpRight size={13} aria-hidden="true"/></a>
             : <span className="sourceUnavailable">No external URL</span>}
         </div>
@@ -107,7 +66,8 @@ export function SourceExplorer({ records }: SourceExplorerProps) {
   </section>
 }
 
-function formatRelative(value: string): string {
+function formatRelative(value?: string | null): string {
+  if (!value) return '—'
   const time = Date.parse(value)
   if (!Number.isFinite(time)) return '—'
   const minutes = Math.max(0, Math.round((Date.now() - time) / 60_000))
