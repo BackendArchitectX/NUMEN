@@ -132,7 +132,7 @@ The right-side evidence inspector closes through its explicit close control, bac
 
 ## Automated enforcement
 
-`scripts/quality/check-visual-policy.sh` rejects known legacy warm/orange values, prohibited warm color names and selected decorative effects.
+`scripts/quality/check-visual-policy.sh` rejects known legacy warm/orange values, prohibited warm color names and selected decorative effects. `frontend/scripts/check-color-policy.mjs` additionally evaluates actual hex/RGB/HSL hue so a newly invented orange/tan literal cannot bypass the denylist.
 
 Visual acceptance should additionally verify:
 
@@ -198,3 +198,24 @@ Visual quality must survive:
 - dark mode without neon accents, glowing borders or washed-out slate text.
 
 Aurora X is considered successful only when product meaning remains obvious after removing all technical workflow terminology from the primary screen.
+
+
+## Progressive source setup
+
+The natural-language question remains the dominant creation surface. Exact public source URLs and Demo mode live inside a compact **Source scope** disclosure.
+
+The disclosure summary must still communicate one of:
+
+- source scope required,
+- N public sources configured,
+- Demo mode using labeled sample data.
+
+This keeps execution prerequisites understandable without turning the research composer into an operations form.
+
+## Research grouping and libraries
+
+Recent research groups repeated runs only when the normalized question, Demo/live mode and material source scope are equivalent. Every execution remains available in **Runs**.
+
+**Datasets** opens as a published-output library rather than inheriting an unrelated selection from another workspace. Opening a dataset deep-links into that specific output; returning to the top-level Datasets destination returns to the library.
+
+Navigation avoids bounded task-derived global counts. If an exact lifetime aggregate is not available, omit the badge rather than display a truncated total.
