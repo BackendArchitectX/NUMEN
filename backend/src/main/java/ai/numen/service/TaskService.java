@@ -15,9 +15,15 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class TaskService {
@@ -92,6 +98,107 @@ public class TaskService {
         return records.findByTaskIdOrderByQualityScoreDesc(id);
     }
 
+    @Transactional(readOnly = true)
+    public DatasetSummary summary(UUID id) {
+        get(id);
+        List<DatasetRecord> dataset = records.findByTaskIdOrderByQualityScoreDesc(id);
+
+        Set<String> organizations = dataset.stream()
+                .map(DatasetRecord::getOrganization)
+                .filter(TaskService::hasText)
+                .map(String::trim)
+                .collect(Collectors.toSet());
+
+        Set<String> locations = dataset.stream()
+                .map(DatasetRecord::getLocation)
+                .filter(TaskService::hasText)
+                .map(String::trim)
+                .collect(Collectors.toSet());
+
+        Set<String> sources = dataset.stream()
+                .map(TaskService::sourceKey)
+                .filter(TaskService::hasText)
+                .collect(Collectors.toSet());
+
+        int evidenceLinked = (int) dataset.stream()
+                .filter(record -> hasText(record.getSourceUrl()) && hasText(record.getExcerpt()))
+                .count();
+
+        int demoRecords = (int) dataset.stream()
+                .filter(record -> "DEMO".equalsIgnoreCase(record.getSourceType()))
+                .count();
+
+        Instant latestCollectedAt = dataset.stream()
+                .map(DatasetRecord::getCollectedAt)
+                .filter(java.util.Objects::nonNull)
+                .max(Comparator.naturalOrder())
+                .orElse(null);
+
+        Map<String, Long> locationCounts = dataset.stream()
+                .map(DatasetRecord::getLocation)
+                .filter(TaskService::hasText)
+                .map(String::trim)
+                .collect(Collectors.groupingBy(value -> value, Collectors.counting()));
+
+        List<ValueCount> topLocations = locationCounts.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed()
+                        .thenComparing(Map.Entry.comparingByKey()))
+                .limit(3)
+                .map(entry -> new ValueCount(entry.getKey(), entry.getValue()))
+                .toList();
+
+        return new DatasetSummary(
+                dataset.size(),
+                organizations.size(),
+                locations.size(),
+                sources.size(),
+                evidenceLinked,
+                demoRecords,
+                latestCollectedAt,
+                topLocations
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public List<SourceSummary> sources(UUID id) {
+        get(id);
+        List<DatasetRecord> dataset = records.findByTaskIdOrderByQualityScoreDesc(id);
+
+        Map<String, List<DatasetRecord>> grouped = dataset.stream()
+                .collect(Collectors.groupingBy(
+                        TaskService::sourceKey,
+                        LinkedHashMap::new,
+                        Collectors.toList()
+                ));
+
+        return grouped.values().stream()
+                .map(group -> {
+                    DatasetRecord first = group.get(0);
+                    int evidence = (int) group.stream()
+                            .filter(record -> hasText(record.getExcerpt()))
+                            .count();
+                    Instant latest = group.stream()
+                            .map(DatasetRecord::getCollectedAt)
+                            .filter(java.util.Objects::nonNull)
+                            .max(Comparator.naturalOrder())
+                            .orElse(null);
+                    boolean demo = group.stream().allMatch(record -> "DEMO".equalsIgnoreCase(record.getSourceType()));
+
+                    return new SourceSummary(
+                            hasText(first.getSourceName()) ? first.getSourceName().trim() : sourceKey(first),
+                            first.getSourceUrl(),
+                            first.getSourceType(),
+                            group.size(),
+                            evidence,
+                            latest,
+                            demo
+                    );
+                })
+                .sorted(Comparator.comparingInt(SourceSummary::records).reversed()
+                        .thenComparing(SourceSummary::name, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+    }
+
     public List<TaskTimelineEvent> timeline(UUID id) {
         return state.timeline(id);
     }
@@ -116,5 +223,37 @@ public class TaskService {
         return normalized.isEmpty() ? null : normalized;
     }
 
+    private static boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
+    }
+
+    private static String sourceKey(DatasetRecord record) {
+        if (hasText(record.getSourceUrl())) return record.getSourceUrl().trim();
+        if (hasText(record.getSourceName())) return record.getSourceName().trim();
+        if (hasText(record.getSourceType())) return record.getSourceType().trim();
+        return record.getId().toString();
+    }
+
     public record TaskCreation(CollectionTask task, boolean replayed) { }
+
+    public record ValueCount(String value, long count) { }
+
+    public record DatasetSummary(
+            int totalRecords,
+            int uniqueOrganizations,
+            int uniqueLocations,
+            int uniqueSources,
+            int evidenceLinkedRecords,
+            int demoRecords,
+            Instant latestCollectedAt,
+            List<ValueCount> topLocations) { }
+
+    public record SourceSummary(
+            String name,
+            String url,
+            String type,
+            int records,
+            int evidence,
+            Instant latestCollectedAt,
+            boolean demo) { }
 }
