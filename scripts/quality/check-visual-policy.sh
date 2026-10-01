@@ -60,3 +60,8 @@ grep -q "New research" frontend/src/components/Sidebar.tsx || fail "explicit new
 grep -q "Research complete" frontend/src/components/ResearchOutcome.tsx || fail "zero-result completion state is missing"
 
 printf '[NUMEN] Aurora X visual policy OK\n'
+
+
+if grep -q 'className="primaryAction"' frontend/src/components/ResearchOutcome.tsx; then
+  fail "completed outcome actions must not overpower results with a filled primary action"
+fi
