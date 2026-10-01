@@ -53,6 +53,7 @@ export default function App() {
   }
 
   const navigateWorkspace = (next: WorkspaceView) => {
+    if (next !== 'research') workspace.selectTask(undefined)
     navigate(next, next === 'research' ? workspace.selectedId : undefined)
   }
 
