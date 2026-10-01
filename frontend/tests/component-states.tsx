@@ -65,7 +65,7 @@ const sourceLessPrompt = renderToStaticMarkup(
     onRun={noop}
   />
 )
-includes(sourceLessPrompt, 'Source required.', 'composer must explain that live research requires supplied public sources')
+includes(sourceLessPrompt, 'Source scope required.', 'composer must explain that live research requires supplied public sources')
 includes(sourceLessPrompt, 'disabled=""', 'source-less live research must be disabled rather than silently generating demo data')
 
 const liveSourcePrompt = renderToStaticMarkup(
@@ -104,11 +104,22 @@ const emptyCompleted = renderToStaticMarkup(
   <DatasetExplorer
     records={[]}
     totalRecords={0}
+    matchedRecords={0}
+    demoRecords={0}
     status="COMPLETED"
+    loadState="ready"
     query=""
     minQuality={0}
+    page={0}
+    pageSize={50}
+    totalPages={0}
+    sortKey="qualityScore"
+    sortDirection="desc"
     onQueryChange={noop}
     onMinQualityChange={noop}
+    onSort={noop}
+    onPageChange={noop}
+    onPageSizeChange={noop}
   />
 )
 includes(emptyCompleted, 'completed without publishable records', 'completed empty datasets need an honest empty state')
@@ -134,11 +145,22 @@ const populated = renderToStaticMarkup(
   <DatasetExplorer
     records={[record]}
     totalRecords={1}
+    matchedRecords={1}
+    demoRecords={0}
     status="COMPLETED"
+    loadState="ready"
     query=""
     minQuality={0}
+    page={0}
+    pageSize={50}
+    totalPages={1}
+    sortKey="qualityScore"
+    sortDirection="desc"
     onQueryChange={noop}
     onMinQualityChange={noop}
+    onSort={noop}
+    onPageChange={noop}
+    onPageSizeChange={noop}
   />
 )
 includes(populated, 'Backend Engineer', 'dataset explorer must render returned records')
@@ -148,18 +170,30 @@ includes(populated, 'rel="noreferrer"', 'external provenance links must suppress
 includes(populated, 'Data quality', 'quality terminology must be explicit rather than an unexplained percentage')
 includes(populated, 'aria-haspopup="dialog"', 'record rows must announce that evidence opens in a dialog')
 
-const truncated = renderToStaticMarkup(
+const paged = renderToStaticMarkup(
   <DatasetExplorer
     records={[record]}
     totalRecords={2}
+    matchedRecords={2}
+    demoRecords={0}
     status="COMPLETED"
+    loadState="ready"
     query=""
     minQuality={0}
+    page={0}
+    pageSize={1}
+    totalPages={2}
+    sortKey="qualityScore"
+    sortDirection="desc"
     onQueryChange={noop}
     onMinQualityChange={noop}
+    onSort={noop}
+    onPageChange={noop}
+    onPageSizeChange={noop}
   />
 )
-includes(truncated, 'Showing the first 1 of 2 published rows', 'result windows must disclose truncation rather than implying completeness')
+includes(paged, '1–1 of 2 published', 'paged result ranges must state exactly what is visible')
+includes(paged, 'Page <strong>1</strong> of <strong>2</strong>', 'paged datasets must expose navigable page context')
 
 const activeTask: Task = {
   id: 'task-active',
