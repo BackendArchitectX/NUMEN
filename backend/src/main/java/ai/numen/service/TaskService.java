@@ -3,7 +3,7 @@ package ai.numen.service;
 import ai.numen.dto.TaskEventResponse;
 import ai.numen.entity.CollectionTask;
 import ai.numen.entity.DatasetRecord;
-import ai.numen.entity.TaskStatus;
+import ai.numen.entity.TaskTimelineEvent;
 import ai.numen.exception.IdempotencyConflictException;
 import ai.numen.exception.ResourceNotFoundException;
 import ai.numen.exception.WorkflowCapacityException;
@@ -25,12 +25,18 @@ public class TaskService {
     private final DatasetRecordRepository records;
     private final TaskRunner runner;
     private final TaskEventHub events;
+    private final WorkflowStateService state;
 
-    public TaskService(CollectionTaskRepository tasks, DatasetRecordRepository records, TaskRunner runner, TaskEventHub events) {
+    public TaskService(CollectionTaskRepository tasks,
+                       DatasetRecordRepository records,
+                       TaskRunner runner,
+                       TaskEventHub events,
+                       WorkflowStateService state) {
         this.tasks = tasks;
         this.records = records;
         this.runner = runner;
         this.events = events;
+        this.state = state;
     }
 
     public TaskCreation create(String prompt, String idempotencyKey) {
@@ -44,7 +50,7 @@ public class TaskService {
 
         CollectionTask task;
         try {
-            task = tasks.saveAndFlush(new CollectionTask(UUID.randomUUID(), normalizedPrompt, normalizedKey));
+            task = state.create(UUID.randomUUID(), normalizedPrompt, normalizedKey);
         } catch (DataIntegrityViolationException ex) {
             if (normalizedKey != null) {
                 var raced = tasks.findByIdempotencyKey(normalizedKey);
@@ -57,8 +63,8 @@ public class TaskService {
             runner.run(task.getId());
             return new TaskCreation(task, false);
         } catch (TaskRejectedException ex) {
-            task.fail("Workflow capacity is temporarily exhausted. Retry shortly.");
-            tasks.save(task);
+            CollectionTask failed = state.fail(task.getId(), "Workflow capacity is temporarily exhausted. Retry shortly.");
+            events.publish(task.getId(), TaskEventResponse.from(failed));
             throw new WorkflowCapacityException("Workflow capacity is temporarily exhausted. Retry shortly.", ex);
         }
     }
@@ -86,14 +92,13 @@ public class TaskService {
         return records.findByTaskIdOrderByQualityScoreDesc(id);
     }
 
-    @Transactional
+    public List<TaskTimelineEvent> timeline(UUID id) {
+        return state.timeline(id);
+    }
+
     public CollectionTask cancel(UUID id) {
-        CollectionTask task = get(id);
-        if (task.getStatus() != TaskStatus.COMPLETED && task.getStatus() != TaskStatus.FAILED && task.getStatus() != TaskStatus.CANCELLED) {
-            task.cancel();
-            task = tasks.save(task);
-            events.publish(id, TaskEventResponse.from(task));
-        }
+        CollectionTask task = state.cancel(id);
+        events.publish(id, TaskEventResponse.from(task));
         return task;
     }
 
