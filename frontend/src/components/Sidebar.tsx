@@ -20,7 +20,7 @@ export function Sidebar({ tasks, selectedId, activeView, theme, onToggleTheme, o
   return <aside className="sidebar" aria-label="NUMEN workspace">
     <div className="brand">
       <div className="brandMark" aria-hidden="true"><span>N</span></div>
-      <div className="brandCopy"><b>NUMEN</b><span>Traceable intelligence</span></div>
+      <div className="brandCopy"><b>NUMEN</b><span>Research intelligence</span></div>
     </div>
 
     <button type="button" className="newResearchAction" onClick={onNewResearch}>

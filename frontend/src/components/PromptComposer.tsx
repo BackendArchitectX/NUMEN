@@ -63,7 +63,8 @@ export function PromptComposer({
       <div className="composerTitle">
         <span className="composerIcon"><Search size={16} aria-hidden="true"/></span>
         <div>
-          <span id="prompt-label">New research</span>
+          <span className="composerEyebrow">New research</span>
+          <strong id="prompt-label">Ask NUMEN</strong>
           <small>Describe the outcome you need. NUMEN keeps the source scope and captured evidence attached to the resulting dataset.</small>
         </div>
       </div>
@@ -83,7 +84,7 @@ export function PromptComposer({
             onRun()
           }
         }}
-        placeholder="Example: Find Java backend engineering roles in India and return title, company, location, URL and source evidence."
+        placeholder="Ask a research question, then attach the public sources NUMEN should inspect…"
       />
       <button type="button" className="run" onClick={onRun} disabled={!runnable} aria-busy={busy}>
         {busy ? <LoaderCircle className="spin" size={16} aria-hidden="true"/> : <Play size={16} aria-hidden="true"/>}

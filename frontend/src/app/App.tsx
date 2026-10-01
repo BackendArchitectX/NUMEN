@@ -101,7 +101,7 @@ export default function App() {
       onSelect={id => selectAndOpen(id, 'research')}
     />
 
-    <main id="main-content">
+    <main id="main-content" className={`workspaceMain workspace-${view}`}>
       <nav className="mobileNav" aria-label="Workspace views">
         <button type="button" className={view === 'research' ? 'active' : ''} onClick={() => navigateWorkspace('research')}><Activity size={15} aria-hidden="true"/> Research</button>
         <button type="button" className={view === 'datasets' ? 'active' : ''} onClick={() => navigateWorkspace('datasets')}><Database size={15} aria-hidden="true"/> Datasets</button>
@@ -120,6 +120,7 @@ export default function App() {
       {workspace.error && <div className="error" role="alert">{workspace.error}</div>}
 
       {view === 'research' && <>
+        {!workspace.selected && <ResearchIntro />}
         {!workspace.selected && <PromptComposer
           prompt={workspace.prompt}
           demoMode={workspace.demoMode}
@@ -290,6 +291,7 @@ function WorkspaceHeader({
       <p>{content.description}</p>
     </div>
     <div className="workspaceHeaderActions">
+      {online === true && <div className="livePill connected" role="status" aria-live="polite"><span aria-hidden="true"/> Connected</div>}
       {online === false && <div className="livePill offline" role="status" aria-live="polite"><span aria-hidden="true"/> Service unavailable</div>}
       {showNewResearch && <button type="button" className="headerNewResearch secondaryAction" onClick={onNewResearch}><Plus size={14} aria-hidden="true"/> New research</button>}
       <button type="button" className="themeToggle" onClick={onToggleTheme} aria-label={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'} title={theme === 'light' ? 'Dark theme' : 'Light theme'}>
@@ -297,6 +299,21 @@ function WorkspaceHeader({
       </button>
     </div>
   </header>
+}
+
+function ResearchIntro() {
+  return <section className="researchIntro" aria-labelledby="research-intro-title">
+    <div>
+      <span className="eyebrow">Research intelligence workspace</span>
+      <h2 id="research-intro-title">Ask a question. Keep the evidence attached.</h2>
+      <p>Define the outcome, scope the public sources and turn the run into a structured dataset you can inspect, refine and export.</p>
+    </div>
+    <div className="researchIntroSignals" aria-label="NUMEN research capabilities">
+      <span>Explicit source scope</span>
+      <span>Evidence-linked results</span>
+      <span>Structured export</span>
+    </div>
+  </section>
 }
 
 function RecentResearch({ tasks, onOpen }: { tasks: Task[]; onOpen: (id: string) => void }) {

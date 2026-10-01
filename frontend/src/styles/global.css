@@ -211,7 +211,7 @@ a { color: inherit; }
   display: grid;
   place-items: center;
   border-radius: 8px;
-  background: linear-gradient(135deg, #2f6bff 0%, #685bf6 52%, #18c3d6 100%);
+  background: var(--color-sidebar-text);
   box-shadow: 0 7px 18px rgba(47, 107, 255, .16);
 }
 
@@ -2794,5 +2794,672 @@ td a:hover { text-decoration: underline; }
   .demoToggle small {
     width: 100%;
     margin-left: 18px;
+  }
+}
+
+/* Reference-corpus interface overhaul · 2026-10-01
+   Synthesizes workspace density, contextual AI, discovery, trust and developer ergonomics
+   from the approved reference corpus without cloning any single product. */
+
+.shell {
+  grid-template-columns: 248px minmax(0, 1fr);
+  background: var(--color-bg-workspace);
+}
+
+.sidebar {
+  padding: 14px 10px 12px;
+  background: var(--color-sidebar);
+  border-right-color: rgba(255, 255, 255, .07);
+}
+
+.brand {
+  min-height: 46px;
+  gap: 9px;
+  padding: 3px 8px 13px;
+}
+
+.brandMark {
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 7px;
+  background: var(--color-sidebar-text);
+  box-shadow: none;
+}
+
+.brandMark span {
+  color: var(--color-sidebar);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: -.035em;
+}
+
+.brandCopy b {
+  font-size: 12px;
+  font-weight: 760;
+  letter-spacing: .1em;
+}
+
+.brandCopy span {
+  margin-top: 1px;
+  font-size: 9.5px;
+}
+
+.newResearchAction {
+  min-height: 38px;
+  margin: 2px 0 10px;
+  padding: 8px 10px;
+  border-color: rgba(107, 156, 255, .32);
+  border-radius: 7px;
+  background: var(--color-action-primary);
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 660;
+}
+
+.newResearchAction:hover {
+  background: var(--color-action-primary-hover);
+  border-color: var(--color-action-primary-hover);
+}
+
+.navLabel {
+  padding: 10px 10px 5px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.nav {
+  min-height: 36px;
+  gap: 9px;
+  padding: 7px 9px;
+  border-radius: 6px;
+}
+
+.nav.active {
+  background: rgba(255, 255, 255, .085);
+}
+
+.nav.active::before {
+  left: -10px;
+  top: 7px;
+  bottom: 7px;
+  width: 2px;
+}
+
+.navText {
+  font-size: 11.75px;
+  font-weight: 590;
+}
+
+.recent {
+  min-height: 44px;
+  padding: 7px 9px;
+  border-radius: 6px;
+}
+
+.recent strong {
+  font-size: 10.5px;
+  font-weight: 580;
+}
+
+.recent small {
+  margin-top: 2px;
+  font-size: 9px;
+}
+
+.sidebarFooter {
+  padding: 10px 7px 1px;
+}
+
+.workspaceMain {
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 0 34px 64px;
+}
+
+.workspaceHeader {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-navigation);
+  min-height: 58px;
+  margin: 0 -2px 18px;
+  padding: 11px 2px 10px;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-workspace);
+}
+
+.workspaceHeaderCopy {
+  max-width: 820px;
+}
+
+.workspaceHeader h1 {
+  font-size: 17px;
+  font-weight: 690;
+  letter-spacing: -.018em;
+}
+
+.workspaceHeader p {
+  max-width: 760px;
+  margin-top: 3px;
+  font-size: 10.75px;
+  line-height: 1.4;
+}
+
+.workspaceHeaderActions {
+  gap: 6px;
+}
+
+.livePill {
+  min-height: 29px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  box-shadow: none;
+  font-size: 9.75px;
+}
+
+.livePill.connected > span {
+  background: var(--color-success);
+}
+
+.panel {
+  border-color: var(--color-border);
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.researchIntro {
+  width: min(940px, 100%);
+  margin: 34px auto 15px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+}
+
+.researchIntro > div:first-child {
+  min-width: 0;
+  max-width: 650px;
+}
+
+.researchIntro .eyebrow {
+  color: var(--color-text-muted);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: .075em;
+  text-transform: uppercase;
+}
+
+.researchIntro h2 {
+  max-width: 640px;
+  margin: 7px 0 0;
+  color: var(--color-text-primary);
+  font-size: clamp(24px, 3.2vw, 34px);
+  font-weight: 710;
+  line-height: 1.08;
+  letter-spacing: -.045em;
+}
+
+.researchIntro p {
+  max-width: 620px;
+  margin: 9px 0 0;
+  color: var(--color-text-muted);
+  font-size: 12.25px;
+  line-height: 1.55;
+}
+
+.researchIntroSignals {
+  flex: 0 0 auto;
+  display: grid;
+  gap: 5px;
+  padding-bottom: 2px;
+}
+
+.researchIntroSignals span {
+  position: relative;
+  padding-left: 13px;
+  color: var(--color-text-muted);
+  font-size: 9.75px;
+  white-space: nowrap;
+}
+
+.researchIntroSignals span::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-action-primary);
+  transform: translateY(-50%);
+}
+
+.workspace-research > .composer,
+.workspace-research > .recentResearch,
+.workspace-research > .emptyState {
+  width: min(940px, 100%);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.workspace-research:has(.researchOutcome) > .researchOutcome,
+.workspace-research:has(.researchOutcome) > .results,
+.workspace-research:has(.researchOutcome) > .technicalPanel {
+  width: 100%;
+}
+
+.composer {
+  margin-bottom: 18px;
+  padding: 16px;
+  border-color: var(--color-border-strong);
+  box-shadow: 0 8px 24px rgba(15, 23, 40, .055);
+}
+
+html[data-theme="dark"] .composer {
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .18);
+}
+
+.composerHeading {
+  min-height: 36px;
+  align-items: center;
+}
+
+.composerTitle {
+  align-items: center;
+}
+
+.composerIcon {
+  width: 31px;
+  height: 31px;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  color: var(--color-action-primary);
+  background: var(--color-bg-subtle);
+}
+
+.composerTitle > div > .composerEyebrow {
+  display: block;
+  color: var(--color-text-subtle);
+  font-size: 8.75px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.composerTitle > div > strong {
+  display: block;
+  margin-top: 1px;
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 690;
+}
+
+.composerTitle small {
+  max-width: 720px;
+  margin-top: 2px;
+  font-size: 10px;
+}
+
+.composerHint {
+  padding: 5px 7px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-muted);
+  font-size: 9px;
+}
+
+.composerInputShell {
+  margin-top: 12px;
+  border-color: var(--color-border-strong);
+  border-radius: 9px;
+  background: var(--color-bg-surface);
+}
+
+.composerInputShell:focus-within {
+  border-color: var(--color-action-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-action-primary) 10%, transparent);
+}
+
+.composer textarea {
+  min-height: 126px;
+  padding: 16px 156px 46px 16px;
+  font-size: 14px;
+  line-height: 1.62;
+}
+
+.composerInputShell > .run {
+  right: 9px;
+  bottom: 9px;
+}
+
+.run,
+.primaryAction {
+  min-height: 35px;
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+.composerAdvanced {
+  margin-top: 10px;
+  border-radius: 8px;
+  background: var(--color-bg-surface);
+}
+
+.composerAdvanced > summary {
+  min-height: 43px;
+  padding: 8px 11px;
+}
+
+.composerAdvanced.configured > summary,
+.composerAdvanced.needsSetup > summary {
+  background: transparent;
+}
+
+.composerAdvancedBody {
+  padding: 0 11px 11px;
+}
+
+.sourceScope {
+  border-radius: 7px;
+  background: var(--color-bg-subtle);
+}
+
+.sourceEntry {
+  border-radius: 6px;
+}
+
+.sourceChips > span {
+  border-radius: 5px;
+}
+
+.composerFooter {
+  margin-top: 10px;
+}
+
+.chips button {
+  border-radius: 5px;
+  background: var(--color-bg-subtle);
+}
+
+.recentResearch {
+  margin-bottom: 18px;
+}
+
+.recentResearch .resultsHeader {
+  min-height: 52px;
+}
+
+.recentResearchList > button {
+  min-height: 58px;
+  padding: 10px 14px;
+}
+
+.recentResearchCopy strong {
+  font-size: 11.75px;
+}
+
+.results,
+.researchOutcome,
+.runPanel,
+.technicalPanel,
+.datasetLibrary,
+.sourcesPanel,
+.historyPanel,
+.runSelector {
+  border-radius: 9px;
+}
+
+.resultsHeader {
+  min-height: 58px;
+  padding: 10px 14px;
+}
+
+.resultsTitle {
+  gap: 9px;
+}
+
+.resultsTitle > svg {
+  color: var(--color-action-primary);
+}
+
+.resultsTitle h3 {
+  font-size: 12.75px;
+  font-weight: 680;
+}
+
+.resultsTitle span {
+  margin-top: 3px;
+  font-size: 9.75px;
+}
+
+.filters {
+  gap: 7px;
+}
+
+.searchField,
+select,
+.clearFilters {
+  min-height: 33px;
+  border-radius: 6px;
+  background: var(--color-bg-surface);
+}
+
+.searchField {
+  width: 280px;
+}
+
+table {
+  font-size: 12px;
+}
+
+th {
+  height: 36px;
+  padding: 0 13px;
+  background: var(--color-bg-subtle);
+  font-size: 9.5px;
+  font-weight: 680;
+  letter-spacing: .015em;
+}
+
+td {
+  min-height: 44px;
+  padding: 10px 13px;
+}
+
+tbody tr:hover {
+  background: var(--color-bg-hover);
+}
+
+tbody tr.selectedRow {
+  background: var(--color-bg-selected);
+  box-shadow: inset 3px 0 0 var(--color-action-primary);
+}
+
+.recordTitleButton strong {
+  font-size: 11.75px;
+  font-weight: 620;
+}
+
+.recordTitleButton small {
+  font-size: 9.5px;
+}
+
+.researchOutcome {
+  overflow: hidden;
+}
+
+.outcomeHeader {
+  padding: 17px 18px 15px;
+}
+
+.outcomeState {
+  margin-bottom: 8px;
+  font-size: 9.5px;
+  letter-spacing: .01em;
+}
+
+.outcomeTitle h2 {
+  max-width: 900px;
+  font-size: clamp(19px, 2.2vw, 24px);
+  font-weight: 700;
+}
+
+.outcomeTitle p {
+  margin-top: 7px;
+  font-size: 11.25px;
+}
+
+.outcomeFacts {
+  padding: 0 18px 15px;
+  background: var(--color-bg-subtle);
+}
+
+.outcomeFact {
+  padding-top: 12px;
+}
+
+.outcomeFact > span {
+  font-size: 9px;
+  letter-spacing: .02em;
+}
+
+.outcomeFact strong {
+  font-size: 16px;
+}
+
+.outcomeContext {
+  border-top: 1px solid var(--color-border);
+}
+
+.datasetLibraryRow {
+  min-height: 70px;
+  padding: 11px 15px;
+}
+
+.datasetKind {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+}
+
+.sourceSummaryBar {
+  padding-left: 14px;
+  padding-right: 14px;
+  background: var(--color-bg-subtle);
+}
+
+.sourceRow {
+  min-height: 64px;
+  padding: 10px 14px;
+}
+
+.sourceIdentity strong {
+  font-size: 11.75px;
+  font-weight: 620;
+}
+
+.sourceIdentity small {
+  font-size: 9.5px;
+}
+
+.runSelector {
+  padding: 10px 13px;
+}
+
+.runPanel {
+  padding: 15px;
+}
+
+.activityPanel {
+  border-radius: 7px;
+  background: var(--color-bg-subtle);
+}
+
+.technicalPanel {
+  background: var(--color-bg-subtle);
+}
+
+.recordInspector {
+  width: min(480px, calc(100vw - 24px));
+  padding: 20px;
+}
+
+.inspectorHeader {
+  top: -20px;
+  margin: -20px -20px 16px;
+  padding: 18px 20px;
+}
+
+.mobileNav {
+  border-radius: 7px;
+  box-shadow: none;
+}
+
+@media (max-width: 1080px) {
+  .workspaceMain {
+    padding: 0 20px 52px;
+  }
+
+  .workspaceHeader {
+    position: relative;
+    margin-top: 0;
+  }
+
+  .researchIntro {
+    margin-top: 20px;
+  }
+}
+
+@media (max-width: 760px) {
+  .researchIntro {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 18px;
+  }
+
+  .researchIntro h2 {
+    font-size: clamp(23px, 8vw, 30px);
+  }
+
+  .researchIntroSignals {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px 14px;
+  }
+
+  .composer {
+    padding: 12px;
+  }
+
+  .composer textarea {
+    min-height: 118px;
+  }
+
+  .workspaceHeader p {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .workspaceMain {
+    padding: 0 10px 38px;
+  }
+
+  .researchIntro {
+    margin-top: 14px;
+  }
+
+  .researchIntro p {
+    font-size: 11.5px;
+  }
+
+  .researchIntroSignals span {
+    white-space: normal;
   }
 }
