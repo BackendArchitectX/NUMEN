@@ -12,7 +12,7 @@ export function useIntelligenceWorkspace() {
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [minQuality, setMinQuality] = useState(0)
   const [busy, setBusy] = useState(false)
-  const [online, setOnline] = useState(false)
+  const [online, setOnline] = useState<boolean | null>(null)
   const [error, setError] = useState('')
   const submitting = useRef(false)
 
