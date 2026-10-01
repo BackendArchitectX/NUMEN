@@ -3,6 +3,8 @@ package ai.numen.entity;
 import jakarta.persistence.*;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -13,6 +15,11 @@ public class CollectionTask {
     @Column(nullable = false, columnDefinition = "text") private String prompt;
     @Column(name = "idempotency_key", length = 128, unique = true) private String idempotencyKey;
     @Column(name = "demo_mode", nullable = false) private boolean demoMode;
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "collection_task_sources", joinColumns = @JoinColumn(name = "task_id"))
+    @OrderColumn(name = "position")
+    @Column(name = "source_url", nullable = false, length = 2048)
+    private List<String> sourceUrls = new ArrayList<>();
     @Enumerated(EnumType.STRING) @Column(nullable = false, length = 32) private TaskStatus status;
     @Column(nullable = false, length = 128) private String stage;
     @Column(nullable = false) private int progress;
@@ -35,10 +42,15 @@ public class CollectionTask {
     }
 
     public CollectionTask(UUID id, String prompt, String idempotencyKey, boolean demoMode) {
+        this(id, prompt, idempotencyKey, demoMode, List.of());
+    }
+
+    public CollectionTask(UUID id, String prompt, String idempotencyKey, boolean demoMode, List<String> sourceUrls) {
         this.id = id;
         this.prompt = prompt;
         this.idempotencyKey = idempotencyKey;
         this.demoMode = demoMode;
+        this.sourceUrls = new ArrayList<>(sourceUrls == null ? List.of() : sourceUrls);
         this.status = TaskStatus.QUEUED;
         this.stage = "Queued";
         this.progress = 0;
@@ -50,6 +62,7 @@ public class CollectionTask {
     public String getPrompt() { return prompt; }
     public String getIdempotencyKey() { return idempotencyKey; }
     public boolean isDemoMode() { return demoMode; }
+    public List<String> getSourceUrls() { return List.copyOf(sourceUrls); }
     public TaskStatus getStatus() { return status; }
     public String getStage() { return stage; }
     public int getProgress() { return progress; }
