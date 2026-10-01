@@ -474,8 +474,6 @@ const sidebar = renderToStaticMarkup(
     tasks={[completedTask]}
     selectedId={completedTask.id}
     activeView="sources"
-    theme="light"
-    onToggleTheme={noop}
     onNewResearch={noop}
     onNavigate={noop}
     onSelect={noop}
@@ -485,7 +483,9 @@ includes(sidebar, '>Research<', 'workspace navigation must use research terminol
 includes(sidebar, '>Sources<', 'source evidence must have a first-class workspace destination')
 includes(sidebar, 'New research', 'sidebar must expose an explicit new-research action')
 includes(sidebar, 'aria-current="page"', 'active workspace destination must expose current-page semantics')
-includes(sidebar, 'Appearance', 'sidebar must expose the theme control without infrastructure marketing')
+excludes(sidebar, 'Appearance', 'light-only NUMEN must not expose an appearance/theme switcher')
+excludes(sidebar, '>Dark<', 'light-only NUMEN must not expose a dark-theme action')
+includes(sidebar, 'Evidence-first research', 'sidebar footer should reinforce the workspace purpose instead of theme controls')
 
 const history = renderToStaticMarkup(
   <WorkflowHistory tasks={[completedTask]} onOpen={noop} onOpenDataset={noop} onOpenSources={noop} />

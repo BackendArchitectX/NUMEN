@@ -33,6 +33,36 @@ Observed/reviewed: 2026-10-01.
 | waymo.com | Evidence-led trust, calm confidence, safety/limitation communication and measurable proof |
 | x.ai | Direct AI access, integrated tools and a restrained bridge between assistant, platform and API use |
 
+## 2026-10-02 focused reference synthesis
+
+The current light-only interface deliberately emphasizes the subset explicitly selected for the latest redesign:
+
+| Reference | Concrete NUMEN design principle |
+| --- | --- |
+| elevenlabs.io | Editorial black-on-light hierarchy, direct product entry and one dominant interactive work surface |
+| faire.com | Browse-first list rhythm, calm catalog density, strong scanning and low-friction repeated actions |
+| moonshot.cn | Research-forward minimalism, low chrome and clear progression from question to deep work |
+| ramp.com | Task-oriented actions, operational density and concise state-to-next-action patterns |
+| sarvam.ai | Spacious platform storytelling, confident type scale and restrained AI presentation |
+| scale.com | High-contrast institutional confidence, evaluation/trust posture and strong section hierarchy |
+| stripe.com/in | Precise information architecture, structured controls and disciplined blue as a functional accent |
+| waymo.com | Calm evidence-led trust, generous whitespace and proof-first communication |
+| x.ai | Minimal black/white product framing, decisive CTAs and strong content hierarchy |
+| celonis.com | Enterprise research/process clarity, context-first language and dense operational legibility |
+| fish.audio | A large interactive workbench as the main object instead of a conventional dashboard-card wall |
+
+The goal is synthesis, not imitation. NUMEN must not copy any reference's logo, exact composition, proprietary asset, trade dress, copywriting, illustration or signature animation.
+
+For the product shell this means:
+- one continuous light workspace across sidebar, page background and header;
+- no dark theme, theme toggle or operating-system theme substitution;
+- deep ink used for typography and primary actions, not as a full-page dark region;
+- blue/aqua/iris used sparingly for focus, provenance, live state and intelligence semantics;
+- editorial hierarchy and whitespace on research entry screens;
+- denser, highly scannable lists/tables once the user enters datasets, sources and run history;
+- one dominant workbench/composer on Research rather than a collection of competing cards;
+- evidence and source state remain literal and inspectable.
+
 ## Synthesis applied to the product
 
 NUMEN should feel like a research operating workspace rather than a marketing site or generic SaaS dashboard.

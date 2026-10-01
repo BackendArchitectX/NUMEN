@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Activity, Database, History, Moon, Plus, Radio, Sun } from 'lucide-react'
+import { Activity, Database, History, Plus, Radio } from 'lucide-react'
 import { DatasetExplorer } from '../components/DatasetExplorer'
 import { DatasetLibrary } from '../components/DatasetLibrary'
 import { PromptComposer } from '../components/PromptComposer'
@@ -12,8 +12,6 @@ import { useIntelligenceWorkspace } from '../hooks/useIntelligenceWorkspace'
 import type { Task, WorkspaceView } from '../model/types'
 import { groupResearchTasks } from '../shared/research'
 
-type Theme = 'light' | 'dark'
-
 interface WorkspaceRoute {
   view: WorkspaceView
   taskId?: string
@@ -22,7 +20,6 @@ interface WorkspaceRoute {
 export default function App() {
   const workspace = useIntelligenceWorkspace()
   const [view, setView] = useState<WorkspaceView>(() => readRoute().view)
-  const [theme, setTheme] = useState<Theme>(() => readTheme())
 
   useEffect(() => {
     const syncFromHash = () => {
@@ -36,15 +33,13 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme
+    document.documentElement.removeAttribute('data-theme')
     try {
-      localStorage.setItem('numen-theme', theme)
+      localStorage.removeItem('numen-theme')
     } catch {
-      // Theme preference persistence is best-effort when browser storage is unavailable.
+      // Legacy theme preference cleanup is best-effort.
     }
-    const meta = document.querySelector('meta[name="theme-color"]')
-    meta?.setAttribute('content', theme === 'dark' ? '#050B14' : '#08111F')
-  }, [theme])
+  }, [])
 
   const navigate = (next: WorkspaceView, taskId?: string) => {
     setView(next)
@@ -87,15 +82,12 @@ export default function App() {
   )
   const selectedComplete = workspace.selected?.status === 'COMPLETED'
   const selectedTerminalWithDiagnostics = workspace.selected?.status === 'FAILED' || workspace.selected?.status === 'CANCELLED'
-  const toggleTheme = () => setTheme(currentTheme => currentTheme === 'light' ? 'dark' : 'light')
 
   return <div className="shell">
     <Sidebar
       tasks={workspace.tasks}
       selectedId={workspace.selectedId}
       activeView={view}
-      theme={theme}
-      onToggleTheme={toggleTheme}
       onNewResearch={startNewResearch}
       onNavigate={navigateWorkspace}
       onSelect={id => selectAndOpen(id, 'research')}
@@ -112,10 +104,8 @@ export default function App() {
       <WorkspaceHeader
         view={view}
         online={workspace.online}
-        theme={theme}
         showNewResearch={view !== 'research' || Boolean(workspace.selected)}
         onNewResearch={startNewResearch}
-        onToggleTheme={toggleTheme}
       />
       {workspace.error && <div className="error" role="alert">{workspace.error}</div>}
 
@@ -254,17 +244,13 @@ export default function App() {
 function WorkspaceHeader({
   view,
   online,
-  theme,
   showNewResearch,
-  onNewResearch,
-  onToggleTheme
+  onNewResearch
 }: {
   view: WorkspaceView
   online: boolean | null
-  theme: Theme
   showNewResearch: boolean
   onNewResearch: () => void
-  onToggleTheme: () => void
 }) {
   const content = {
     research: {
@@ -294,9 +280,6 @@ function WorkspaceHeader({
       {online === true && <div className="livePill connected" role="status" aria-live="polite"><span aria-hidden="true"/> Connected</div>}
       {online === false && <div className="livePill offline" role="status" aria-live="polite"><span aria-hidden="true"/> Service unavailable</div>}
       {showNewResearch && <button type="button" className="headerNewResearch secondaryAction" onClick={onNewResearch}><Plus size={14} aria-hidden="true"/> New research</button>}
-      <button type="button" className="themeToggle" onClick={onToggleTheme} aria-label={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'} title={theme === 'light' ? 'Dark theme' : 'Light theme'}>
-        {theme === 'light' ? <Moon size={16} aria-hidden="true"/> : <Sun size={16} aria-hidden="true"/>}
-      </button>
     </div>
   </header>
 }
@@ -365,17 +348,6 @@ function readRoute(): WorkspaceRoute {
 function buildHash(view: WorkspaceView, taskId?: string): string {
   const route = view === 'history' ? 'runs' : view
   return taskId && view !== 'history' ? `#${route}/${encodeURIComponent(taskId)}` : `#${route}`
-}
-
-function readTheme(): Theme {
-  if (typeof window === 'undefined') return 'light'
-  try {
-    const saved = localStorage.getItem('numen-theme')
-    if (saved === 'light' || saved === 'dark') return saved
-  } catch {
-    // Fall through to the operating-system preference.
-  }
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
 function researchMeta(task: Task, runs: number): string {

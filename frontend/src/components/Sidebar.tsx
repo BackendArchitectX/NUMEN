@@ -1,4 +1,4 @@
-import { Activity, Database, History, Moon, Plus, Radio, Sun } from 'lucide-react'
+import { Activity, Database, History, Plus, Radio } from 'lucide-react'
 import type { Task, WorkspaceView } from '../model/types'
 import { groupResearchTasks } from '../shared/research'
 import { clip } from '../shared/text'
@@ -7,14 +7,12 @@ interface SidebarProps {
   tasks: Task[]
   selectedId?: string
   activeView: WorkspaceView
-  theme: 'light' | 'dark'
-  onToggleTheme: () => void
   onNewResearch: () => void
   onNavigate: (view: WorkspaceView) => void
   onSelect: (id: string) => void
 }
 
-export function Sidebar({ tasks, selectedId, activeView, theme, onToggleTheme, onNewResearch, onNavigate, onSelect }: SidebarProps) {
+export function Sidebar({ tasks, selectedId, activeView, onNewResearch, onNavigate, onSelect }: SidebarProps) {
   const recentResearch = groupResearchTasks(tasks).slice(0, 7)
 
   return <aside className="sidebar" aria-label="NUMEN workspace">
@@ -56,12 +54,9 @@ export function Sidebar({ tasks, selectedId, activeView, theme, onToggleTheme, o
       {!recentResearch.length && <p className="sidebarEmpty">Your recent research will appear here.</p>}
     </div>
 
-    <div className="sidebarFooter">
-      <span>Appearance</span>
-      <button type="button" onClick={onToggleTheme} aria-label={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}>
-        {theme === 'light' ? <Moon size={15} aria-hidden="true"/> : <Sun size={15} aria-hidden="true"/>}
-        {theme === 'light' ? 'Dark' : 'Light'}
-      </button>
+    <div className="sidebarFooter" aria-label="NUMEN workspace principle">
+      <span>Evidence-first research</span>
+      <small>Light workspace</small>
     </div>
   </aside>
 }
