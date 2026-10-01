@@ -17,7 +17,7 @@ if grep -R -nEi '(orange|terracotta|copper|peach|warm[[:space:]_-]*beige)' "${SC
   fail "prohibited warm color names remain in frontend source"
 fi
 
-if grep -R -nEi 'radial-gradient|filter:[[:space:]]*drop-shadow|text-shadow:' frontend/src --include='*.css'; then
+if grep -R -nEi 'radial-gradient|filter:[[:space:]]*drop-shadow|text-shadow:|backdrop-filter:' frontend/src --include='*.css'; then
   fail "decorative glow/background effects violate Aurora X restraint"
 fi
 
@@ -28,5 +28,9 @@ done
 if [[ -f frontend/src/components/MetricsGrid.tsx ]]; then
   fail "generic KPI-card wall component was reintroduced; outcome-specific summaries are required"
 fi
+
+[[ -f frontend/src/components/SourceExplorer.tsx ]] || fail "first-class source coverage workspace is missing"
+grep -q "New research" frontend/src/components/Sidebar.tsx || fail "explicit new-research action is missing"
+grep -q "Research complete" frontend/src/components/ResearchOutcome.tsx || fail "zero-result completion state is missing"
 
 printf '[NUMEN] Aurora X visual policy OK\n'
