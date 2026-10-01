@@ -7,7 +7,7 @@ import { Sidebar } from '../src/components/Sidebar'
 import { SourceExplorer } from '../src/components/SourceExplorer'
 import { WorkflowHistory } from '../src/components/WorkflowHistory'
 import { WorkflowPanel } from '../src/components/WorkflowPanel'
-import type { DatasetRecord, Task, TaskTimelineEvent } from '../src/model/types'
+import type { DatasetRecord, DatasetSummary, SourceSummary, Task, TaskTimelineEvent } from '../src/model/types'
 
 const noop = () => undefined
 
@@ -147,8 +147,30 @@ excludes(completedWorkflow, '>Cancel<', 'terminal workflows must not expose canc
 includes(completedWorkflow, 'Run details', 'completed workflow mechanics must remain available behind disclosure')
 excludes(completedWorkflow, 'Research outcome', 'completed technical panel must not compete with the result outcome')
 
+
+const summary: DatasetSummary = {
+  totalRecords: 1,
+  uniqueOrganizations: 1,
+  uniqueLocations: 1,
+  uniqueSources: 1,
+  evidenceLinkedRecords: 1,
+  demoRecords: 0,
+  latestCollectedAt: record.collectedAt,
+  topLocations: [{ value: 'Remote', count: 1 }]
+}
+
+const sourceSummary: SourceSummary = {
+  name: 'Example Careers',
+  url: 'https://example.com/jobs/1',
+  type: 'WEB',
+  records: 1,
+  evidence: 1,
+  latestCollectedAt: record.collectedAt,
+  demo: false
+}
+
 const outcome = renderToStaticMarkup(
-  <ResearchOutcome task={completedTask} records={[record]} exportUrl="/api/v1/tasks/task-completed/export.csv" />
+  <ResearchOutcome task={completedTask} summary={summary} exportUrl="/api/v1/tasks/task-completed/export.csv" />
 )
 includes(outcome, 'Research ready', 'completed live research must foreground the outcome state')
 includes(outcome, '1 published result', 'outcome summary must be derived from actual persisted records')
@@ -156,13 +178,13 @@ includes(outcome, 'Evidence linked', 'outcome must foreground evidence coverage'
 includes(outcome, 'Export CSV', 'completed research must expose its export action')
 
 const zeroOutcome = renderToStaticMarkup(
-  <ResearchOutcome task={{ ...completedTask, recordCount: 0 }} records={[]} exportUrl="#" />
+  <ResearchOutcome task={{ ...completedTask, recordCount: 0 }} summary={{ ...summary, totalRecords: 0, uniqueOrganizations: 0, uniqueLocations: 0, uniqueSources: 0, evidenceLinkedRecords: 0, topLocations: [] }} exportUrl="#" />
 )
 includes(zeroOutcome, 'Research complete', 'zero-result completion must not be labelled as ready')
 includes(zeroOutcome, 'No publishable results', 'zero-result completion must explain the outcome honestly')
 excludes(zeroOutcome, 'Export CSV', 'zero-result completion must not expose an empty export')
 
-const sources = renderToStaticMarkup(<SourceExplorer records={[record]} />)
+const sources = renderToStaticMarkup(<SourceExplorer sources={[sourceSummary]} totalRecords={1} />)
 includes(sources, 'Sources', 'source workspace must be first-class')
 includes(sources, 'Example Careers', 'source workspace must aggregate contributing sources')
 includes(sources, '1/1', 'source workspace must expose evidence contribution')
