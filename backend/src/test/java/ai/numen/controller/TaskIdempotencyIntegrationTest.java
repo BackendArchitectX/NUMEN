@@ -103,6 +103,27 @@ class TaskIdempotencyIntegrationTest {
                 .andExpect(status().isConflict());
     }
 
+
+    @Test
+    void persistsExplicitSourcesAndRejectsIdempotencyReuseWithDifferentScope() throws Exception {
+        String key = "source-scope-conflict-key";
+        String firstBody = "{\"prompt\":\"Research the supplied public source with evidence\",\"sourceUrls\":[\"https://example.com/research\"]}";
+
+        mvc.perform(post("/api/v1/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Idempotency-Key", key)
+                        .content(firstBody))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.sourceUrls.length()").value(1))
+                .andExpect(jsonPath("$.sourceUrls[0]").value("https://example.com/research"));
+
+        mvc.perform(post("/api/v1/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Idempotency-Key", key)
+                        .content("{\"prompt\":\"Research the supplied public source with evidence\",\"sourceUrls\":[\"https://example.org/other\"]}"))
+                .andExpect(status().isConflict());
+    }
+
     private static String extractId(String json) {
         int start = json.indexOf("\"id\":\"") + 6;
         int end = json.indexOf('"', start);
