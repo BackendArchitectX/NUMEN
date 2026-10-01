@@ -18,7 +18,7 @@ export function WorkflowHistory({ tasks, onOpen, onOpenDataset, onOpenSources }:
       <caption className="srOnly">Persisted research run history</caption>
       <thead><tr><th scope="col">Research</th><th scope="col">Status</th><th scope="col">Outcome</th><th scope="col">Duration</th><th scope="col">Updated</th><th scope="col">Actions</th></tr></thead>
       <tbody>{tasks.map(task => <tr key={task.id}>
-        <td><strong>{clip(task.prompt, 72)}</strong><small>{task.id}</small></td>
+        <td><strong>{clip(task.prompt, 72)}</strong></td>
         <td><span className={`status ${task.status.toLowerCase()}`}>{statusLabel(task.status)}</span></td>
         <td>{outcomeLabel(task)}</td>
         <td>{durationLabel(task)}</td>
