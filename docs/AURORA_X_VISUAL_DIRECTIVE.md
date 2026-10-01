@@ -434,3 +434,150 @@ Both themes must feel deliberately designed.
 The interface must remain usable with keyboard-only navigation, reduced motion, forced colors, long strings, narrow screens and 200% zoom.
 
 NUMEN should feel premium because it is clear, precise, fast and trustworthy — not because it has more decoration.
+
+
+## 33. Navigation state must be durable
+
+Important research views need durable URLs.
+
+Use stable routes for:
+
+- research,
+- datasets,
+- sources,
+- runs,
+- selected research/run context.
+
+A refresh, browser back/forward action or copied deep link must restore the intended workspace context instead of silently selecting an unrelated latest run.
+
+Legacy route aliases may be preserved for compatibility, but the user-facing route vocabulary should match the product language.
+
+## 34. New research must be an explicit state
+
+Do not prefill the main composer with a sample prompt and make the application look as though the user already asked for something.
+
+A new-research state should:
+
+- clear the selected prior run,
+- clear dataset filters,
+- present an empty natural-language composer,
+- keep example prompts as optional suggestions,
+- avoid auto-selecting an old run behind the user's back.
+
+Starting new work and reopening old work are different user intents and must remain visually and behaviorally distinct.
+
+## 35. Published-data workspaces must not include non-published runs
+
+Datasets and Sources should list only research that actually produced published records.
+
+Do not make failed, cancelled, queued or still-running tasks look like datasets merely because they exist in workflow history.
+
+Runs is the operational history.
+Datasets is published output.
+Sources is published provenance.
+
+These concepts must remain separate.
+
+## 36. Sources are a first-class product surface
+
+Traceability is not complete if source evidence exists only inside a row drawer.
+
+Provide a first-class Sources workspace that shows actual persisted contribution:
+
+- source name,
+- source type,
+- records contributed,
+- evidence-linked records,
+- latest collection time,
+- explicit demo/live state,
+- source link when a real external URL exists.
+
+Do not reconstruct this view from whatever filtered rows happen to be visible in the dataset table.
+
+## 37. Outcome statistics must be filter-independent
+
+The research outcome summary is a statement about the published dataset, not the current table view.
+
+Searching for "Pune" or setting a minimum quality filter must never silently change the headline result count, source count, organization count or evidence-coverage count.
+
+Derive outcome metrics from the complete persisted dataset through a dedicated backend summary contract.
+
+Visible table counts and dataset-level counts must be clearly distinguishable.
+
+## 38. Source coverage must be filter-independent
+
+The Sources workspace must be derived from the complete persisted dataset or a dedicated persisted/aggregated source contract.
+
+Do not calculate source contribution from the currently searched or quality-filtered rows.
+
+A user should see the same source coverage regardless of the active dataset table filter.
+
+## 39. Healthy infrastructure should stay quiet
+
+Do not permanently advertise "Engine online" or similar infrastructure status when everything is normal.
+
+A healthy system should feel calm.
+
+Surface infrastructure status when it changes the user's ability to act:
+
+- service unavailable,
+- degraded collection,
+- failed source,
+- reconnecting.
+
+Avoid transient false outage indicators while the initial health request is still unresolved.
+
+## 40. Side drawers must behave like real dialogs
+
+An evidence inspector with a backdrop is effectively a modal interaction.
+
+It must:
+
+- move focus into the drawer,
+- trap keyboard focus while open,
+- close on Escape,
+- restore focus to the originating control,
+- prevent background scrolling where appropriate,
+- expose proper dialog semantics,
+- keep a visible explicit close action.
+
+Visual polish without correct focus behavior is not premium.
+
+## 41. Zero-result completion is not "ready"
+
+A successfully completed workflow with zero publishable records is a valid but different outcome.
+
+Use language such as:
+
+- Research complete
+- No publishable results were produced
+
+Do not label it:
+
+- Research ready
+- Verified dataset
+
+Do not expose an empty export action as though a useful dataset exists.
+
+## 42. Run history should describe outcomes, not engine stages
+
+The Runs workspace should answer:
+
+- what research ran,
+- whether it completed,
+- what outcome it produced,
+- how long it took,
+- when it was updated,
+- where the user can reopen the result.
+
+Do not foreground raw internal stages such as "Collecting permitted sources" in the primary run-history table.
+
+Technical stage history remains available after opening the run details.
+
+## 43. Exactness outranks visual convenience
+
+If the frontend cannot truthfully compute a dataset-wide metric from the data it has loaded, add the smallest trustworthy backend contract required.
+
+Never derive a product-level statement from a truncated or filtered page of rows merely because that data is already in memory.
+
+Premium intelligence software must protect semantic correctness as aggressively as visual correctness.
