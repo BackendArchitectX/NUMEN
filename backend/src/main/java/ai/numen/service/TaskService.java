@@ -12,7 +12,9 @@ import ai.numen.repository.CollectionTaskRepository;
 import ai.numen.repository.DatasetRecordRepository;
 import org.springframework.core.task.TaskRejectedException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -106,7 +108,32 @@ public class TaskService {
     public List<DatasetRecord> records(UUID id, String query, double minQuality, int limit) {
         get(id);
         String normalized = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
-        return records.search(id, normalized, minQuality, PageRequest.of(0, limit));
+        Sort sort = Sort.by(Sort.Order.desc("qualityScore"), Sort.Order.asc("id"));
+        return records.search(id, normalized, minQuality, PageRequest.of(0, limit, sort)).getContent();
+    }
+
+    @Transactional(readOnly = true)
+    public DatasetPage recordPage(UUID id,
+                                  String query,
+                                  double minQuality,
+                                  int page,
+                                  int pageSize,
+                                  String sortBy,
+                                  String direction) {
+        get(id);
+        String normalized = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+        String property = sortableProperty(sortBy);
+        Sort.Direction sortDirection = "asc".equalsIgnoreCase(direction) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Sort sort = Sort.by(new Sort.Order(sortDirection, property), Sort.Order.asc("id"));
+        Page<DatasetRecord> result = records.search(id, normalized, minQuality, PageRequest.of(page, pageSize, sort));
+
+        return new DatasetPage(
+                result.getContent(),
+                result.getTotalElements(),
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalPages()
+        );
     }
 
     @Transactional(readOnly = true)
@@ -255,6 +282,19 @@ public class TaskService {
         return List.copyOf(normalized);
     }
 
+    private static String sortableProperty(String value) {
+        if (value == null) return "qualityScore";
+        return switch (value) {
+            case "title" -> "title";
+            case "organization" -> "organization";
+            case "location" -> "location";
+            case "sourceName" -> "sourceName";
+            case "collectedAt" -> "collectedAt";
+            case "qualityScore" -> "qualityScore";
+            default -> "qualityScore";
+        };
+    }
+
     private static boolean hasText(String value) {
         return value != null && !value.trim().isEmpty();
     }
@@ -267,6 +307,13 @@ public class TaskService {
     }
 
     public record TaskCreation(CollectionTask task, boolean replayed) { }
+
+    public record DatasetPage(
+            List<DatasetRecord> records,
+            long totalMatched,
+            int page,
+            int pageSize,
+            int totalPages) { }
 
     public record ValueCount(String value, long count) { }
 
