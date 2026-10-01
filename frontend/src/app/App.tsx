@@ -105,8 +105,25 @@ export default function App() {
             ? <ResearchOutcome task={workspace.selected} summary={workspace.summary} summaryState={workspace.summaryState} exportUrl={workspace.exportUrl}/>
             : <WorkflowPanel task={workspace.selected} timeline={workspace.timeline} exportUrl={workspace.exportUrl} onCancel={id => void workspace.cancelTask(id)}/>}
 
-          <DatasetExplorer records={workspace.records} totalRecords={workspace.summary?.totalRecords ?? workspace.selected.recordCount} status={workspace.selected.status} query={workspace.query} minQuality={workspace.minQuality}
-            onQueryChange={workspace.setQuery} onMinQualityChange={workspace.setMinQuality}/>
+          <DatasetExplorer
+            records={workspace.records}
+            totalRecords={workspace.summary?.totalRecords ?? workspace.selected.recordCount}
+            matchedRecords={workspace.matchedRecords}
+            demoRecords={workspace.summary?.demoRecords ?? (workspace.selected.demoMode ? workspace.selected.recordCount : 0)}
+            status={workspace.selected.status}
+            loadState={workspace.recordsState}
+            query={workspace.query}
+            minQuality={workspace.minQuality}
+            page={workspace.page}
+            pageSize={workspace.pageSize}
+            totalPages={workspace.totalPages}
+            sortKey={workspace.sortBy}
+            sortDirection={workspace.sortDirection}
+            onQueryChange={workspace.setQuery}
+            onMinQualityChange={workspace.setMinQuality}
+            onSort={workspace.setSort}
+            onPageChange={workspace.setPage}
+            onPageSizeChange={workspace.setPageSize}/>
 
           {selectedComplete && <WorkflowPanel task={workspace.selected} timeline={workspace.timeline} exportUrl={workspace.exportUrl} onCancel={id => void workspace.cancelTask(id)}/>}
         </> : <RecentResearch tasks={workspace.tasks} onOpen={id => selectAndOpen(id, 'research')}/>}
@@ -116,8 +133,25 @@ export default function App() {
         <RunSelector label="Published dataset" tasks={publishedTasks} selectedId={workspace.selectedId} onSelect={id => selectAndOpen(id, 'datasets')}/>
         {workspace.selected && workspace.selected.status === 'COMPLETED' && workspace.selected.recordCount > 0 ? <>
           <ResearchOutcome task={workspace.selected} summary={workspace.summary} summaryState={workspace.summaryState} exportUrl={workspace.exportUrl}/>
-          <DatasetExplorer records={workspace.records} totalRecords={workspace.summary?.totalRecords ?? workspace.selected.recordCount} status={workspace.selected.status} query={workspace.query} minQuality={workspace.minQuality}
-            onQueryChange={workspace.setQuery} onMinQualityChange={workspace.setMinQuality}/>
+          <DatasetExplorer
+            records={workspace.records}
+            totalRecords={workspace.summary?.totalRecords ?? workspace.selected.recordCount}
+            matchedRecords={workspace.matchedRecords}
+            demoRecords={workspace.summary?.demoRecords ?? (workspace.selected.demoMode ? workspace.selected.recordCount : 0)}
+            status={workspace.selected.status}
+            loadState={workspace.recordsState}
+            query={workspace.query}
+            minQuality={workspace.minQuality}
+            page={workspace.page}
+            pageSize={workspace.pageSize}
+            totalPages={workspace.totalPages}
+            sortKey={workspace.sortBy}
+            sortDirection={workspace.sortDirection}
+            onQueryChange={workspace.setQuery}
+            onMinQualityChange={workspace.setMinQuality}
+            onSort={workspace.setSort}
+            onPageChange={workspace.setPage}
+            onPageSizeChange={workspace.setPageSize}/>
         </> : <section className="emptyState panel"><Database aria-hidden="true"/><h2>Select a published dataset</h2><p>Only completed research with published records appears here. Choose a dataset above or start new research.</p></section>}
       </>}
 
