@@ -47,7 +47,11 @@ export function ResearchOutcome({ task, summary, summaryState, exportUrl, onRefi
         <OutcomeFact label="Organizations" value={summary.uniqueOrganizations.toString()} detail="unique values"/>
         <OutcomeFact label="Sources" value={sourceCoverageValue(summary)} detail={summary.configuredSources > 0 ? 'contributing / configured' : 'contributing sources'}/>
         <OutcomeFact label="Locations" value={summary.uniqueLocations.toString()} detail="unique values"/>
-        <OutcomeFact label="Evidence linked" value={`${summary.evidenceLinkedRecords}/${summary.totalRecords}`} detail="records with captured evidence"/>
+        <OutcomeFact
+          label="Evidence linked"
+          value={summary.totalRecords > 0 ? `${summary.evidenceLinkedRecords}/${summary.totalRecords}` : '—'}
+          detail={summary.totalRecords > 0 ? 'records with captured evidence' : 'no published records'}
+        />
         <OutcomeFact label="Updated" value={formatRelative(updatedAt)} detail={formatDate(updatedAt)}/>
       </div>
 
