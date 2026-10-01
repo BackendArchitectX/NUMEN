@@ -918,6 +918,14 @@ main {
   font-weight: 650;
 }
 
+.outcomeLoading {
+  padding: 12px 18px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-subtle);
+  color: var(--color-text-muted);
+  font-size: 10px;
+}
+
 .results {
   position: relative;
   margin-bottom: 12px;
@@ -1986,9 +1994,8 @@ td a:hover { text-decoration: underline; }
 
 @media (max-width: 800px) {
   .planGrid { grid-template-columns: 1fr; }
-  .sourceRow { grid-template-columns: minmax(220px, 1fr) 80px 90px; }
-  .sourceRow .sourceMetric:nth-of-type(3) { display: none; }
-  .sourceAction { grid-column: 3; grid-row: 1; }
+  .sourceRow { grid-template-columns: minmax(220px, 1fr) repeat(3, 76px); }
+  .sourceAction { grid-column: 1 / -1; justify-content: flex-start; }
   .runSelector { align-items: stretch; flex-direction: column; }
   .runSelector select { width: 100%; }
   .outcomeStats { grid-template-columns: repeat(2, 1fr); }
