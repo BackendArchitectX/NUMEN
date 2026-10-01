@@ -63,7 +63,7 @@ export function SourceExplorer({ sources, totalRecords, state }: SourceExplorerP
           <span className={source.demo ? 'sourceDot demo' : 'sourceDot live'} aria-hidden="true"/>
           <div>
             <strong>{source.name}</strong>
-            <small>{source.demo ? 'Demo source' : source.type || 'Public source'}</small>
+            <small>{source.demo ? 'Demo source' : sourceTypeLabel(source.type)}</small>
           </div>
         </div>
 
@@ -95,4 +95,12 @@ function formatRelative(value?: string | null): string {
   const hours = Math.round(minutes / 60)
   if (hours < 24) return `${hours}h ago`
   return `${Math.round(hours / 24)}d ago`
+}
+
+
+function sourceTypeLabel(value: string): string {
+  const normalized = value.trim().toUpperCase()
+  if (!normalized) return 'Public source'
+  if (normalized === 'WEB' || normalized === 'HTTP' || normalized === 'HTTPS') return 'Public web'
+  return value.replaceAll('_', ' ').replaceAll('-', ' ').toLowerCase().replace(/^./, letter => letter.toUpperCase())
 }
