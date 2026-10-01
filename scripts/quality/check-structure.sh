@@ -74,6 +74,8 @@ required_files=(
   backend/src/main/java/ai/numen/exception/UserVisibleWorkflowException.java
   frontend/src/app/AppErrorBoundary.tsx
   frontend/src/components/WorkflowHistory.tsx
+  frontend/src/components/DatasetLibrary.tsx
+  frontend/src/shared/research.ts
   frontend/src/components/ResearchOutcome.tsx
   frontend/src/components/SourceExplorer.tsx
   backend/src/test/java/ai/numen/service/TaskSummaryIntegrationTest.java
