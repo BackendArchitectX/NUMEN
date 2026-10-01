@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Activity, Database, History, Moon, Plus, Radio, Sun } from 'lucide-react'
 import { DatasetExplorer } from '../components/DatasetExplorer'
+import { DatasetLibrary } from '../components/DatasetLibrary'
 import { PromptComposer } from '../components/PromptComposer'
 import { ResearchOutcome } from '../components/ResearchOutcome'
 import { Sidebar } from '../components/Sidebar'
@@ -9,6 +10,7 @@ import { WorkflowHistory } from '../components/WorkflowHistory'
 import { WorkflowPanel } from '../components/WorkflowPanel'
 import { useIntelligenceWorkspace } from '../hooks/useIntelligenceWorkspace'
 import type { Task, WorkspaceView } from '../model/types'
+import { groupResearchTasks } from '../shared/research'
 
 type Theme = 'light' | 'dark'
 
@@ -51,7 +53,7 @@ export default function App() {
   }
 
   const navigateWorkspace = (next: WorkspaceView) => {
-    navigate(next, next === 'history' ? undefined : workspace.selectedId)
+    navigate(next, next === 'research' ? workspace.selectedId : undefined)
   }
 
   const selectAndOpen = (id: string, destination: WorkspaceView) => {
@@ -90,7 +92,7 @@ export default function App() {
     <Sidebar
       tasks={workspace.tasks}
       selectedId={workspace.selectedId}
-      totalRecords={workspace.totalRecords}
+      publishedDatasets={publishedTasks.length}
       activeView={view}
       theme={theme}
       onToggleTheme={toggleTheme}
@@ -184,41 +186,46 @@ export default function App() {
       </>}
 
       {view === 'datasets' && <>
-        <RunSelector
-          label="Published dataset"
-          description="Select completed research with published records."
-          tasks={publishedTasks}
-          selectedId={workspace.selectedId}
-          onSelect={id => selectAndOpen(id, 'datasets')}/>
-        {workspace.selected && workspace.selected.status === 'COMPLETED' && workspace.selected.recordCount > 0 ? <>
-          <ResearchOutcome
-            task={workspace.selected}
-            summary={workspace.summary}
-            summaryState={workspace.summaryState}
-            exportUrl={workspace.exportUrl}
-            onRefine={() => refineResearch(workspace.selected!)}
-            onViewSources={() => selectAndOpen(workspace.selected!.id, 'sources')}
-          />
-          <DatasetExplorer
-            records={workspace.records}
-            totalRecords={workspace.summary?.totalRecords ?? workspace.selected.recordCount}
-            matchedRecords={workspace.matchedRecords}
-            demoRecords={workspace.summary?.demoRecords ?? (workspace.selected.demoMode ? workspace.selected.recordCount : 0)}
-            status={workspace.selected.status}
-            loadState={workspace.recordsState}
-            query={workspace.query}
-            minQuality={workspace.minQuality}
-            page={workspace.page}
-            pageSize={workspace.pageSize}
-            totalPages={workspace.totalPages}
-            sortKey={workspace.sortBy}
-            sortDirection={workspace.sortDirection}
-            onQueryChange={workspace.setQuery}
-            onMinQualityChange={workspace.setMinQuality}
-            onSort={workspace.setSort}
-            onPageChange={workspace.setPage}
-            onPageSizeChange={workspace.setPageSize}/>
-        </> : <section className="emptyState panel"><Database aria-hidden="true"/><h2>Select a published dataset</h2><p>Only completed research with published records appears here. Choose a dataset above or start new research.</p></section>}
+        {workspace.selected && workspace.selected.status === 'COMPLETED' && workspace.selected.recordCount > 0
+          ? <>
+              <div className="contextToolbar">
+                <button type="button" className="secondaryAction" onClick={() => { workspace.selectTask(undefined); navigate('datasets') }}>All datasets</button>
+                <span>Published dataset</span>
+              </div>
+              <ResearchOutcome
+                task={workspace.selected}
+                summary={workspace.summary}
+                summaryState={workspace.summaryState}
+                exportUrl={workspace.exportUrl}
+                onRefine={() => refineResearch(workspace.selected!)}
+                onViewSources={() => selectAndOpen(workspace.selected!.id, 'sources')}
+              />
+              <DatasetExplorer
+                records={workspace.records}
+                totalRecords={workspace.summary?.totalRecords ?? workspace.selected.recordCount}
+                matchedRecords={workspace.matchedRecords}
+                demoRecords={workspace.summary?.demoRecords ?? (workspace.selected.demoMode ? workspace.selected.recordCount : 0)}
+                status={workspace.selected.status}
+                loadState={workspace.recordsState}
+                query={workspace.query}
+                minQuality={workspace.minQuality}
+                page={workspace.page}
+                pageSize={workspace.pageSize}
+                totalPages={workspace.totalPages}
+                sortKey={workspace.sortBy}
+                sortDirection={workspace.sortDirection}
+                onQueryChange={workspace.setQuery}
+                onMinQualityChange={workspace.setMinQuality}
+                onSort={workspace.setSort}
+                onPageChange={workspace.setPage}
+                onPageSizeChange={workspace.setPageSize}/>
+            </>
+          : <DatasetLibrary
+              tasks={publishedTasks}
+              onOpen={id => selectAndOpen(id, 'datasets')}
+              onOpenSources={id => selectAndOpen(id, 'sources')}
+              onNewResearch={startNewResearch}
+            />}
       </>}
 
       {view === 'sources' && <>
@@ -293,18 +300,19 @@ function WorkspaceHeader({
 }
 
 function RecentResearch({ tasks, onOpen }: { tasks: Task[]; onOpen: (id: string) => void }) {
-  if (!tasks.length) {
+  const groups = groupResearchTasks(tasks).slice(0, 6)
+  if (!groups.length) {
     return <section className="emptyState panel"><Activity aria-hidden="true"/><h2>Your research workspace is ready</h2><p>Ask a question above. Results, sources and captured evidence will stay connected to the run that produced them.</p></section>
   }
 
   return <section className="recentResearch panel" aria-labelledby="recent-research-heading">
     <div className="resultsHeader">
-      <div className="resultsTitle"><History size={18} aria-hidden="true"/><div><h3 id="recent-research-heading">Recent research</h3><span>Continue from a previous outcome or start something new above.</span></div></div>
+      <div className="resultsTitle"><History size={18} aria-hidden="true"/><div><h3 id="recent-research-heading">Recent research</h3><span>Repeated runs are grouped so the latest outcome stays easy to find.</span></div></div>
     </div>
     <div className="recentResearchList">
-      {tasks.slice(0, 6).map(task => <button type="button" key={task.id} onClick={() => onOpen(task.id)}>
+      {groups.map(({ latest: task, runs }) => <button type="button" key={task.id} onClick={() => onOpen(task.id)}>
         <span className={`dot ${task.status.toLowerCase()}`} aria-hidden="true"/>
-        <span className="recentResearchCopy"><strong>{task.prompt}</strong><small>{researchMeta(task)}</small></span>
+        <span className="recentResearchCopy"><strong>{task.prompt}</strong><small>{researchMeta(task, runs)}</small></span>
         <span className="recentResearchStatus">{statusLabel(task.status)}</span>
       </button>)}
     </div>
@@ -353,11 +361,12 @@ function readTheme(): Theme {
   return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
-function researchMeta(task: Task): string {
-  if (task.status === 'COMPLETED') return `${task.demoMode ? 'Demo · ' : ''}${task.recordCount} published ${task.recordCount === 1 ? 'record' : 'records'} · ${formatRelative(task.completedAt || task.createdAt)}`
-  if (task.status === 'FAILED') return 'Stopped before a complete outcome was published'
-  if (task.status === 'CANCELLED') return 'Cancelled'
-  return `${statusLabel(task.status)} · ${formatRelative(task.startedAt || task.createdAt)}`
+function researchMeta(task: Task, runs: number): string {
+  const runCount = runs > 1 ? ` · ${runs} runs` : ''
+  if (task.status === 'COMPLETED') return `${task.demoMode ? 'Demo · ' : ''}${task.recordCount} published ${task.recordCount === 1 ? 'record' : 'records'}${runCount} · ${formatRelative(task.completedAt || task.createdAt)}`
+  if (task.status === 'FAILED') return `Stopped before a complete outcome was published${runCount}`
+  if (task.status === 'CANCELLED') return `Cancelled${runCount}`
+  return `${statusLabel(task.status)}${runCount} · ${formatRelative(task.startedAt || task.createdAt)}`
 }
 
 function statusLabel(status: Task['status']): string {
@@ -366,7 +375,7 @@ function statusLabel(status: Task['status']): string {
     case 'PLANNING': return 'Preparing'
     case 'COLLECTING': return 'Searching'
     case 'PROCESSING': return 'Validating'
-    case 'COMPLETED': return 'Ready'
+    case 'COMPLETED': return 'Complete'
     case 'CANCELLED': return 'Cancelled'
     case 'FAILED': return 'Needs attention'
   }
