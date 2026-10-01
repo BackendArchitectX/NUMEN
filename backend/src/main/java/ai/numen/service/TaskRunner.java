@@ -50,7 +50,7 @@ public class TaskRunner {
             if (state.isCancelled(taskId)) return;
 
             task = publish(state.advance(taskId, TaskStatus.COLLECTING, "Collecting permitted sources", 45));
-            List<DatasetRecord> collected = engine.collect(taskId, task.getPrompt(), plan);
+            List<DatasetRecord> collected = engine.collect(taskId, task.getPrompt(), plan, task.isDemoMode());
             if (state.isCancelled(taskId)) return;
 
             publish(state.advance(taskId, TaskStatus.PROCESSING, "Validating and deduplicating", 72));
