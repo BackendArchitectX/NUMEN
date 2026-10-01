@@ -74,6 +74,8 @@ export interface DatasetSummary {
   uniqueOrganizations: number
   uniqueLocations: number
   uniqueSources: number
+  configuredSources: number
+  failedSources: number
   evidenceLinkedRecords: number
   demoRecords: number
   latestCollectedAt?: string | null
@@ -87,5 +89,10 @@ export interface SourceSummary {
   records: number
   evidence: number
   latestCollectedAt?: string | null
+  collectionStatus: 'SUCCEEDED' | 'FAILED' | 'NOT_ATTEMPTED' | 'DEMO' | string
+  errorCode?: string | null
+  errorMessage?: string | null
+  lastAttemptedAt?: string | null
   demo: boolean
+  configured: boolean
 }
