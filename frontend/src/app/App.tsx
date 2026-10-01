@@ -68,7 +68,15 @@ export default function App() {
     () => workspace.tasks.filter(task => task.status === 'COMPLETED' && task.recordCount > 0),
     [workspace.tasks]
   )
+  const sourceTasks = useMemo(
+    () => workspace.tasks.filter(task =>
+      ['COMPLETED', 'FAILED', 'CANCELLED'].includes(task.status)
+      && (task.sourceUrls.length > 0 || task.demoMode || task.recordCount > 0)
+    ),
+    [workspace.tasks]
+  )
   const selectedComplete = workspace.selected?.status === 'COMPLETED'
+  const selectedTerminalWithDiagnostics = workspace.selected?.status === 'FAILED' || workspace.selected?.status === 'CANCELLED'
   const toggleTheme = () => setTheme(currentTheme => currentTheme === 'light' ? 'dark' : 'light')
 
   return <div className="shell">
@@ -105,6 +113,11 @@ export default function App() {
             ? <ResearchOutcome task={workspace.selected} summary={workspace.summary} summaryState={workspace.summaryState} exportUrl={workspace.exportUrl}/>
             : <WorkflowPanel task={workspace.selected} timeline={workspace.timeline} exportUrl={workspace.exportUrl} onCancel={id => void workspace.cancelTask(id)}/>}
 
+          {selectedTerminalWithDiagnostics && <SourceExplorer
+            sources={workspace.sources}
+            totalRecords={workspace.selected.recordCount}
+            state={workspace.sourcesState}/>}
+
           <DatasetExplorer
             records={workspace.records}
             totalRecords={workspace.summary?.totalRecords ?? workspace.selected.recordCount}
@@ -130,7 +143,12 @@ export default function App() {
       </>}
 
       {view === 'datasets' && <>
-        <RunSelector label="Published dataset" tasks={publishedTasks} selectedId={workspace.selectedId} onSelect={id => selectAndOpen(id, 'datasets')}/>
+        <RunSelector
+          label="Published dataset"
+          description="Select completed research with published records."
+          tasks={publishedTasks}
+          selectedId={workspace.selectedId}
+          onSelect={id => selectAndOpen(id, 'datasets')}/>
         {workspace.selected && workspace.selected.status === 'COMPLETED' && workspace.selected.recordCount > 0 ? <>
           <ResearchOutcome task={workspace.selected} summary={workspace.summary} summaryState={workspace.summaryState} exportUrl={workspace.exportUrl}/>
           <DatasetExplorer
@@ -156,10 +174,15 @@ export default function App() {
       </>}
 
       {view === 'sources' && <>
-        <RunSelector label="Research source set" tasks={publishedTasks} selectedId={workspace.selectedId} onSelect={id => selectAndOpen(id, 'sources')}/>
-        {workspace.selected && workspace.selected.status === 'COMPLETED' && workspace.selected.recordCount > 0
+        <RunSelector
+          label="Research source set"
+          description="Inspect configured sources and collection outcomes, including partial or failed research."
+          tasks={sourceTasks}
+          selectedId={workspace.selectedId}
+          onSelect={id => selectAndOpen(id, 'sources')}/>
+        {workspace.selected && ['COMPLETED', 'FAILED', 'CANCELLED'].includes(workspace.selected.status)
           ? <SourceExplorer sources={workspace.sources} totalRecords={workspace.summary?.totalRecords ?? workspace.selected.recordCount} state={workspace.sourcesState}/>
-          : <section className="emptyState panel"><Radio aria-hidden="true"/><h2>Select published research</h2><p>Source contribution and captured-evidence coverage are shown for completed research with published records.</p></section>}
+          : <section className="emptyState panel"><Radio aria-hidden="true"/><h2>Select research with source activity</h2><p>Configured sources, collection outcomes and evidence contribution are visible here even when a run could not publish results.</p></section>}
       </>}
 
       {view === 'history' && <WorkflowHistory
@@ -225,12 +248,12 @@ function RecentResearch({ tasks, onOpen }: { tasks: Task[]; onOpen: (id: string)
   </section>
 }
 
-function RunSelector({ label, tasks, selectedId, onSelect }: { label: string; tasks: Task[]; selectedId?: string; onSelect: (id: string) => void }) {
+function RunSelector({ label, description, tasks, selectedId, onSelect }: { label: string; description: string; tasks: Task[]; selectedId?: string; onSelect: (id: string) => void }) {
   if (!tasks.length) return null
   const selectedPublished = selectedId && tasks.some(task => task.id === selectedId) ? selectedId : ''
 
   return <section className="runSelector panel" aria-label={label}>
-    <div><span>{label}</span><strong>Select completed research with published records.</strong></div>
+    <div><span>{label}</span><strong>{description}</strong></div>
     <select aria-label={`Select ${label.toLowerCase()}`} value={selectedPublished} onChange={event => event.target.value && onSelect(event.target.value)}>
       <option value="">Choose research…</option>
       {tasks.map(task => <option value={task.id} key={task.id}>{task.demoMode ? 'Demo · ' : ''}{task.recordCount} {task.recordCount === 1 ? 'record' : 'records'} · {task.prompt.slice(0, 72)}</option>)}
