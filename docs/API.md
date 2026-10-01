@@ -19,6 +19,7 @@ http://localhost:5173/api/v1/openapi
 | `POST` | `/api/v1/tasks/{id}/cancel` | Cancel a non-terminal workflow |
 | `GET` | `/api/v1/tasks/{id}/events` | Subscribe to workflow progress with SSE |
 | `GET` | `/api/v1/tasks/{id}/records` | Read/search/filter dataset records |
+| `GET` | `/api/v1/tasks/{id}/timeline` | Read the persisted workflow lifecycle timeline |
 | `GET` | `/api/v1/tasks/{id}/export.csv` | Export the complete workflow dataset as CSV |
 | `GET` | `/api/v1/openapi` | OpenAPI JSON |
 
@@ -49,6 +50,12 @@ Idempotency-Replayed: false
 ```
 
 Repeating the same key with the same normalized prompt returns the original workflow and `Idempotency-Replayed: true`. Reusing the key with a different prompt returns `409 IDEMPOTENCY_CONFLICT`.
+
+## Persisted workflow timeline
+
+`GET /api/v1/tasks/{id}/timeline` returns the durable lifecycle snapshots recorded for a workflow. Events include the event type, persisted task status, stage, progress, optional detail and occurrence timestamp. The UI uses this endpoint for the run timeline rather than inferring a decorative stage history from a progress percentage.
+
+Creation, cancellation, failure, recovery and ordinary state transitions are recorded through the workflow-state service. Final completion is recorded inside the same publication transaction that replaces the dataset and moves the task to `COMPLETED`.
 
 ## Dataset query
 
