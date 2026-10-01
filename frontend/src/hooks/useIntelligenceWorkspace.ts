@@ -129,17 +129,13 @@ export function useIntelligenceWorkspace() {
   useEffect(() => {
     if (!selectedId || selected?.status !== 'COMPLETED') {
       setSummary(undefined)
-      setSources([])
       setSummaryState('idle')
-      setSourcesState('idle')
       return
     }
 
     let active = true
     setSummary(undefined)
-    setSources([])
     setSummaryState('loading')
-    setSourcesState('loading')
 
     void intelligenceApi.getSummary(selectedId)
       .then(nextSummary => {
@@ -152,6 +148,21 @@ export function useIntelligenceWorkspace() {
         setSummary(undefined)
         setSummaryState('error')
       })
+
+    return () => { active = false }
+  }, [selectedId, selected?.status])
+
+  useEffect(() => {
+    const terminal = selected?.status === 'COMPLETED' || selected?.status === 'FAILED' || selected?.status === 'CANCELLED'
+    if (!selectedId || !terminal) {
+      setSources([])
+      setSourcesState('idle')
+      return
+    }
+
+    let active = true
+    setSources([])
+    setSourcesState('loading')
 
     void intelligenceApi.getSources(selectedId)
       .then(nextSources => {
