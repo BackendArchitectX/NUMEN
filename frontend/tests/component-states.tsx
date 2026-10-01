@@ -258,7 +258,7 @@ const activeWorkflow = renderToStaticMarkup(
 includes(activeWorkflow, '>Cancel<', 'active research needs a cancellation control')
 includes(activeWorkflow, 'Current activity', 'active research must explain what NUMEN is doing')
 includes(activeWorkflow, 'Searching sources', 'active research must use user-facing status language')
-includes(activeWorkflow, 'Hiring intelligence', 'run details must retain the persisted plan')
+includes(activeWorkflow, 'Hiring Intelligence', 'run details must retain the persisted plan')
 includes(activeWorkflow, 'Run timeline', 'run details must retain persisted lifecycle evidence')
 excludes(activeWorkflow, 'role="progressbar"', 'fixed engine milestones must not be presented as precise user progress')
 excludes(activeWorkflow, '45%', 'primary active state must not expose decorative precision')
