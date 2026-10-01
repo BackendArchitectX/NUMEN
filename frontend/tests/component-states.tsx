@@ -376,6 +376,7 @@ const zeroOutcome = renderToStaticMarkup(
 includes(zeroOutcome, 'Research complete', 'zero-result completion must not be labelled as ready')
 includes(zeroOutcome, 'No publishable results', 'zero-result completion must explain the outcome honestly')
 excludes(zeroOutcome, 'Export CSV', 'zero-result completion must not expose an empty export')
+excludes(zeroOutcome, '0/0', 'zero-result outcome must not show a meaningless 0/0 evidence ratio')
 
 const summaryFailure = renderToStaticMarkup(
   <ResearchOutcome task={completedTask} summaryState="error" exportUrl="/api/v1/tasks/task-completed/export.csv" onRefine={noop} onViewSources={noop} />
