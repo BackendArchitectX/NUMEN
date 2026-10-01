@@ -49,6 +49,12 @@ required_files=(
   backend/src/main/resources/db/migration/V2__runtime_hardening.sql
   backend/src/main/resources/db/migration/V3__task_idempotency.sql
   backend/src/main/resources/db/migration/V4__domain_integrity.sql
+  backend/src/main/resources/db/migration/V5__workflow_timeline.sql
+  backend/src/main/java/ai/numen/entity/TaskTimelineEvent.java
+  backend/src/main/java/ai/numen/entity/TaskTimelineEventType.java
+  backend/src/main/java/ai/numen/repository/TaskTimelineEventRepository.java
+  backend/src/main/java/ai/numen/service/WorkflowStateService.java
+  backend/src/main/java/ai/numen/dto/TaskTimelineEventResponse.java
   backend/src/main/java/ai/numen/config/OpenApiConfig.java
   backend/src/main/java/ai/numen/service/DatasetExportService.java
   backend/src/main/java/ai/numen/service/WorkflowRecoveryService.java
@@ -56,6 +62,7 @@ required_files=(
   backend/src/main/java/ai/numen/exception/IdempotencyConflictException.java
   backend/src/main/java/ai/numen/exception/UserVisibleWorkflowException.java
   frontend/src/app/AppErrorBoundary.tsx
+  frontend/src/components/WorkflowHistory.tsx
   frontend/tests/component-states.tsx
 )
 
