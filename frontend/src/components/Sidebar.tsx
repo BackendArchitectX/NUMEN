@@ -68,13 +68,13 @@ function recentMeta(task: Task): string {
   if (task.status === 'COMPLETED') return `${task.demoMode ? 'Demo · ' : ''}${task.recordCount} ${recordLabel(task.recordCount)} · ready`
   if (task.status === 'FAILED') return 'Needs attention'
   if (task.status === 'CANCELLED') return 'Cancelled'
-  return humanize(task.stage)
+  if (task.status === 'QUEUED') return 'Queued'
+  if (task.status === 'PLANNING') return 'Preparing research'
+  if (task.status === 'COLLECTING') return 'Searching sources'
+  return 'Validating results'
 }
 
 function recordLabel(count: number): string {
   return count === 1 ? 'record' : 'records'
 }
 
-function humanize(value: string): string {
-  return value.replaceAll('_', ' ').toLowerCase().replace(/^./, letter => letter.toUpperCase())
-}
