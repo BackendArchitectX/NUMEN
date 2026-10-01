@@ -66,6 +66,7 @@ export function WorkflowPanel({ task, timeline, onCancel }: WorkflowPanelProps) 
 
 function TechnicalDetails({ task, timeline, plan }: { task: Task; timeline: TaskTimelineEvent[]; plan?: PersistedPlan }) {
   return <div className="runDetailsContent">
+    <div className="technicalMeta"><span>Run ID</span><code>{task.id}</code></div>
     <section className="timelineSection" aria-labelledby={`timeline-${task.id}`}>
       <div className="sectionTitle"><Clock3 size={16} aria-hidden="true"/><div><span>Run timeline</span><strong id={`timeline-${task.id}`}>{timeline.length} persisted events</strong></div></div>
       {timeline.length ? <ol className="timelineList">{timeline.map(event => <li key={event.id}>
