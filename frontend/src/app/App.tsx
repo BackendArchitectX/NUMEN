@@ -96,8 +96,9 @@ export default function App() {
       {workspace.error && <div className="error" role="alert">{workspace.error}</div>}
 
       {view === 'research' && <>
-        <PromptComposer prompt={workspace.prompt} demoMode={workspace.demoMode} busy={workspace.busy} online={workspace.online === true}
-          onPromptChange={workspace.setPrompt} onDemoModeChange={workspace.setDemoMode} onRun={() => void workspace.createTask()}/>
+        <PromptComposer prompt={workspace.prompt} demoMode={workspace.demoMode} sourceUrls={workspace.sourceUrls} busy={workspace.busy} online={workspace.online === true}
+          onPromptChange={workspace.setPrompt} onDemoModeChange={workspace.setDemoMode} onSourceUrlsChange={workspace.setSourceUrls}
+          onRun={() => void workspace.createTask()}/>
 
         {workspace.selected ? <>
           {selectedComplete
