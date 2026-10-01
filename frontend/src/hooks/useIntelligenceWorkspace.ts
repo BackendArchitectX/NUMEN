@@ -1,11 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { DatasetRecord, DatasetSummary, LoadState, SourceSummary, Task, TaskTimelineEvent } from '../model/types'
+import type { DatasetRecord, DatasetSortKey, DatasetSummary, LoadState, SortDirection, SourceSummary, Task, TaskTimelineEvent } from '../model/types'
 import { intelligenceApi } from '../services/intelligenceApi'
 
 export function useIntelligenceWorkspace() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [selectedId, setSelectedId] = useState<string>()
   const [records, setRecords] = useState<DatasetRecord[]>([])
+  const [recordsState, setRecordsState] = useState<LoadState>('idle')
+  const [matchedRecords, setMatchedRecords] = useState(0)
+  const [page, setPage] = useState(0)
+  const [pageSize, setPageSizeState] = useState(50)
+  const [totalPages, setTotalPages] = useState(0)
+  const [sortBy, setSortBy] = useState<DatasetSortKey>('qualityScore')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [timeline, setTimeline] = useState<TaskTimelineEvent[]>([])
   const [summary, setSummary] = useState<DatasetSummary>()
   const [sources, setSources] = useState<SourceSummary[]>([])
@@ -73,16 +80,37 @@ export function useIntelligenceWorkspace() {
   useEffect(() => {
     if (!selectedId) {
       setRecords([])
+      setMatchedRecords(0)
+      setTotalPages(0)
+      setRecordsState('idle')
       return
     }
 
     let active = true
-    void intelligenceApi.getRecords(selectedId, debouncedQuery, minQuality)
-      .then(rows => { if (active) setRecords(rows) })
-      .catch(() => { if (active) setRecords([]) })
+    setRecordsState('loading')
+
+    void intelligenceApi.getRecordPage(selectedId, debouncedQuery, minQuality, page, pageSize, sortBy, sortDirection)
+      .then(result => {
+        if (!active) return
+        setRecords(result.records)
+        setMatchedRecords(result.totalMatched)
+        setTotalPages(result.totalPages)
+        setRecordsState('ready')
+
+        if (result.totalPages > 0 && result.page >= result.totalPages) {
+          setPage(Math.max(0, result.totalPages - 1))
+        }
+      })
+      .catch(() => {
+        if (!active) return
+        setRecords([])
+        setMatchedRecords(0)
+        setTotalPages(0)
+        setRecordsState('error')
+      })
 
     return () => { active = false }
-  }, [selectedId, debouncedQuery, minQuality, selected?.status])
+  }, [selectedId, debouncedQuery, minQuality, page, pageSize, sortBy, sortDirection, selected?.status])
 
   useEffect(() => {
     if (!selectedId) {
@@ -151,6 +179,9 @@ export function useIntelligenceWorkspace() {
     setSelectedId(id)
     setQuery('')
     setMinQuality(0)
+    setPage(0)
+    setSortBy('qualityScore')
+    setSortDirection('desc')
     setError('')
   }
 
@@ -175,6 +206,9 @@ export function useIntelligenceWorkspace() {
       setSelectedId(task.id)
       setQuery('')
       setMinQuality(0)
+      setPage(0)
+      setSortBy('qualityScore')
+      setSortDirection('desc')
       setPrompt('')
       setDemoMode(false)
       setSourceUrls([])
@@ -185,6 +219,31 @@ export function useIntelligenceWorkspace() {
       submitting.current = false
       setBusy(false)
     }
+  }
+
+  const changeQuery = (value: string) => {
+    setQuery(value)
+    setPage(0)
+  }
+
+  const changeMinQuality = (value: number) => {
+    setMinQuality(value)
+    setPage(0)
+  }
+
+  const changeSort = (key: DatasetSortKey) => {
+    if (key === sortBy) {
+      setSortDirection(current => current === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortBy(key)
+      setSortDirection(key === 'qualityScore' || key === 'collectedAt' ? 'desc' : 'asc')
+    }
+    setPage(0)
+  }
+
+  const changePageSize = (value: number) => {
+    setPageSizeState(value)
+    setPage(0)
   }
 
   const cancelTask = async (id: string) => {
@@ -208,6 +267,13 @@ export function useIntelligenceWorkspace() {
     selected,
     selectedId,
     records,
+    recordsState,
+    matchedRecords,
+    page,
+    pageSize,
+    totalPages,
+    sortBy,
+    sortDirection,
     timeline,
     summary,
     sources,
@@ -229,8 +295,11 @@ export function useIntelligenceWorkspace() {
     setPrompt,
     setDemoMode,
     setSourceUrls,
-    setQuery,
-    setMinQuality,
+    setQuery: changeQuery,
+    setMinQuality: changeMinQuality,
+    setPage,
+    setPageSize: changePageSize,
+    setSort: changeSort,
     createTask,
     cancelTask,
     exportUrl: selectedId ? intelligenceApi.exportUrl(selectedId) : '#'
