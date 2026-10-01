@@ -1,5 +1,5 @@
 export const examplePrompts = [
-  'Collect and structure public information from https://spring.io/projects/spring-boot and preserve source evidence',
-  'Build a source-backed research record from https://www.postgresql.org/about/ with title, organization and evidence',
-  'Analyze https://kubernetes.io/docs/concepts/overview/ and preserve the source behind every published record'
+  'Find Java backend engineering roles in India and return role, company, location, experience and source evidence',
+  'Compare cloud data platforms by positioning, target customer and source-backed differentiators',
+  'Research companies adopting Kafka and preserve the public evidence behind every finding'
 ] as const
