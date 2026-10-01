@@ -22,9 +22,11 @@ function excludes(markup: string, fragment: string, message: string) {
 const offlinePrompt = renderToStaticMarkup(
   <PromptComposer
     prompt="Collect traceable public intelligence"
+    demoMode={false}
     busy={false}
     online={false}
     onPromptChange={noop}
+    onDemoModeChange={noop}
     onRun={noop}
   />
 )
@@ -35,14 +37,58 @@ includes(offlinePrompt, 'New research', 'composer must present plain-language re
 const busyPrompt = renderToStaticMarkup(
   <PromptComposer
     prompt="Collect traceable public intelligence"
+    demoMode={false}
     busy={true}
     online={true}
     onPromptChange={noop}
+    onDemoModeChange={noop}
     onRun={noop}
   />
 )
 includes(busyPrompt, 'aria-busy="true"', 'busy submission must expose aria-busy=true')
 includes(busyPrompt, 'disabled=""', 'busy submission must remain disabled')
+
+const sourceLessPrompt = renderToStaticMarkup(
+  <PromptComposer
+    prompt="Find Java backend engineering roles in India"
+    demoMode={false}
+    busy={false}
+    online={true}
+    onPromptChange={noop}
+    onDemoModeChange={noop}
+    onRun={noop}
+  />
+)
+includes(sourceLessPrompt, 'Source required.', 'composer must explain that live research requires supplied public sources')
+includes(sourceLessPrompt, 'disabled=""', 'source-less live research must be disabled rather than silently generating demo data')
+
+const liveSourcePrompt = renderToStaticMarkup(
+  <PromptComposer
+    prompt="Research https://example.com and preserve source evidence"
+    demoMode={false}
+    busy={false}
+    online={true}
+    onPromptChange={noop}
+    onDemoModeChange={noop}
+    onRun={noop}
+  />
+)
+includes(liveSourcePrompt, 'Public source detected.', 'composer must confirm when a permitted public source is present')
+excludes(liveSourcePrompt, 'disabled=""', 'valid public-source research must be runnable when the service is online')
+
+const explicitDemoPrompt = renderToStaticMarkup(
+  <PromptComposer
+    prompt="Find Java backend engineering roles in India"
+    demoMode={true}
+    busy={false}
+    online={true}
+    onPromptChange={noop}
+    onDemoModeChange={noop}
+    onRun={noop}
+  />
+)
+includes(explicitDemoPrompt, 'Demo mode', 'demo generation must require an explicit visible mode')
+excludes(explicitDemoPrompt, 'disabled=""', 'explicit demo research may run without external URLs')
 
 const emptyCompleted = renderToStaticMarkup(
   <DatasetExplorer
@@ -108,6 +154,7 @@ includes(truncated, 'Showing the first 1 of 2 published rows', 'result windows m
 const activeTask: Task = {
   id: 'task-active',
   prompt: 'Collect permitted public sources and return traceable records',
+  demoMode: false,
   status: 'COLLECTING',
   stage: 'Collecting permitted sources',
   progress: 45,
@@ -191,6 +238,16 @@ includes(outcome, 'Research ready', 'completed live research must foreground the
 includes(outcome, '1 published result', 'outcome summary must be derived from actual persisted records')
 includes(outcome, 'Evidence linked', 'outcome must foreground evidence coverage')
 includes(outcome, 'Export CSV', 'completed research must expose its export action')
+
+const demoOutcome = renderToStaticMarkup(
+  <ResearchOutcome
+    task={{ ...completedTask, demoMode: true }}
+    summary={{ ...summary, demoRecords: 1 }}
+    summaryState="ready"
+    exportUrl="/api/v1/tasks/task-completed/export.csv"
+  />
+)
+includes(demoOutcome, 'Demo dataset', 'demo tasks must remain visibly labeled after publication')
 
 const zeroOutcome = renderToStaticMarkup(
   <ResearchOutcome task={{ ...completedTask, recordCount: 0 }} summary={{ ...summary, totalRecords: 0, uniqueOrganizations: 0, uniqueLocations: 0, uniqueSources: 0, evidenceLinkedRecords: 0, topLocations: [] }} summaryState="ready" exportUrl="#" />
