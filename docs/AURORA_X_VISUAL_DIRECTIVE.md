@@ -629,3 +629,46 @@ Examples:
 - COLLECTING → Searching sources
 
 Raw enums remain acceptable in explicitly technical diagnostics.
+
+
+## 48. Demo generation must be opt-in
+
+Never interpret the absence of a public source URL as permission to fabricate sample intelligence.
+
+Normal research and demo research are separate modes.
+
+Normal research:
+
+- requires one or more supplied permitted HTTP(S) source URLs,
+- never silently falls back to synthetic rows,
+- explains the missing-source requirement before submission where possible,
+- fails with a useful user-visible explanation if the backend still receives a source-less live request.
+
+Demo research:
+
+- requires an explicit visible opt-in,
+- is persisted as task intent,
+- remains clearly labelled while running and after publication,
+- produces only clearly marked DEMO records,
+- must not be described as live or verified market intelligence.
+
+Example prompts shown in the product must reflect capabilities the shipped runtime actually has. Do not advertise autonomous internet-wide discovery when the implementation only collects explicitly supplied sources.
+
+## 49. Product copy must expose capability boundaries before execution
+
+Do not wait until a run fails to explain a fundamental product constraint.
+
+The research composer should communicate:
+
+- whether a supported public URL is present,
+- whether Demo mode is enabled,
+- why Run research is disabled when neither collection mode is valid,
+- that live collection is limited to the supplied permitted URLs.
+
+Trust is improved by making the boundary visible before work begins.
+
+## 50. Idempotency includes execution intent
+
+A repeated idempotency key represents the same research request only when both the normalized research prompt and execution mode match.
+
+Changing Demo mode while reusing the same idempotency key is a different request and must produce an idempotency conflict rather than silently replaying the original task.
