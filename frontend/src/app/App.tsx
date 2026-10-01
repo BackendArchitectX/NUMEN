@@ -96,7 +96,8 @@ export default function App() {
       {workspace.error && <div className="error" role="alert">{workspace.error}</div>}
 
       {view === 'research' && <>
-        <PromptComposer prompt={workspace.prompt} busy={workspace.busy} online={workspace.online === true} onPromptChange={workspace.setPrompt} onRun={() => void workspace.createTask()}/>
+        <PromptComposer prompt={workspace.prompt} demoMode={workspace.demoMode} busy={workspace.busy} online={workspace.online === true}
+          onPromptChange={workspace.setPrompt} onDemoModeChange={workspace.setDemoMode} onRun={() => void workspace.createTask()}/>
 
         {workspace.selected ? <>
           {selectedComplete
@@ -197,7 +198,7 @@ function RunSelector({ label, tasks, selectedId, onSelect }: { label: string; ta
     <div><span>{label}</span><strong>Select completed research with published records.</strong></div>
     <select aria-label={`Select ${label.toLowerCase()}`} value={selectedPublished} onChange={event => event.target.value && onSelect(event.target.value)}>
       <option value="">Choose research…</option>
-      {tasks.map(task => <option value={task.id} key={task.id}>{task.recordCount} {task.recordCount === 1 ? 'record' : 'records'} · {task.prompt.slice(0, 78)}</option>)}
+      {tasks.map(task => <option value={task.id} key={task.id}>{task.demoMode ? 'Demo · ' : ''}{task.recordCount} {task.recordCount === 1 ? 'record' : 'records'} · {task.prompt.slice(0, 72)}</option>)}
     </select>
   </section>
 }
@@ -232,7 +233,7 @@ function readTheme(): Theme {
 }
 
 function researchMeta(task: Task): string {
-  if (task.status === 'COMPLETED') return `${task.recordCount} published ${task.recordCount === 1 ? 'record' : 'records'} · ${formatRelative(task.completedAt || task.createdAt)}`
+  if (task.status === 'COMPLETED') return `${task.demoMode ? 'Demo · ' : ''}${task.recordCount} published ${task.recordCount === 1 ? 'record' : 'records'} · ${formatRelative(task.completedAt || task.createdAt)}`
   if (task.status === 'FAILED') return 'Stopped before a complete outcome was published'
   if (task.status === 'CANCELLED') return 'Cancelled'
   return `${statusLabel(task.status)} · ${formatRelative(task.startedAt || task.createdAt)}`
