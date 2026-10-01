@@ -67,8 +67,8 @@ NUMEN combines those steps into one managed workflow with explicit source proven
 - Idempotent workflow creation with payload-conflict detection.
 - Bounded asynchronous execution, overload rejection and interrupted-workflow restart recovery.
 - Bounded transient source retries with backoff and jitter.
-- Genuine SSE progress updates with reconnect hints and polling fallback.
-- Premium operational workspace UI with real Console/Datasets/History navigation, persisted execution-plan inspection, record evidence drill-downs, a documented design-token system, responsive layout and accessible focus/motion behavior.
+- Genuine SSE progress updates with reconnect hints and polling fallback.\n- Durable per-workflow timeline events for creation, state transitions, restart recovery, cancellation, failure and completion.
+- Premium operational workspace UI with real Console/Datasets/History navigation, persisted execution-plan and run-timeline inspection, record evidence drill-downs, a documented design-token system, responsive layout and accessible focus/motion behavior.
 - Search, sortable dataset exploration, quality filtering, record-level evidence inspection and spreadsheet-safe CSV export.
 - Stable API error codes and request correlation IDs.
 - Process-local gateway abuse controls for mutation bursts and excessive concurrent SSE streams, with deterministic HTTP 429 responses.
