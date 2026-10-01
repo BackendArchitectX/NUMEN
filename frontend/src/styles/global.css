@@ -2372,3 +2372,107 @@ td a:hover { text-decoration: underline; }
   .sourceEntry button { grid-column: 1 / -1; width: 100%; }
   .sourceScopeHeading { gap: 8px; }
 }
+
+
+/* Server-paged result navigation */
+.clearFilters {
+  min-height: 32px;
+  padding: 5px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.clearFilters:hover {
+  color: var(--color-action-primary);
+  border-color: color-mix(in srgb, var(--color-action-primary) 26%, var(--color-border));
+  background: var(--color-action-subtle);
+}
+
+.resultsPagination {
+  min-height: 44px;
+  padding: 7px 10px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg-subtle);
+}
+
+.pageSizeControl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-muted);
+  font-size: 9.5px;
+}
+
+.pageSizeControl select {
+  min-height: 28px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.pageControls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.pageControls button {
+  min-height: 29px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: 9.5px;
+  font-weight: 600;
+}
+
+.pageControls button:hover:not(:disabled) {
+  color: var(--color-action-primary);
+  border-color: color-mix(in srgb, var(--color-action-primary) 26%, var(--color-border));
+  background: var(--color-action-subtle);
+}
+
+.pageControls span {
+  color: var(--color-text-muted);
+  font-size: 9.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.pageControls strong {
+  color: var(--color-text-primary);
+  font-weight: 650;
+}
+
+.exportScopeNote {
+  justify-self: end;
+  color: var(--color-text-subtle);
+  font-size: 9px;
+  line-height: 1.35;
+  text-align: right;
+}
+
+@media (max-width: 680px) {
+  .resultsPagination {
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+  }
+
+  .pageSizeControl { justify-content: space-between; }
+  .pageControls { justify-content: space-between; }
+  .exportScopeNote { justify-self: start; text-align: left; }
+}
