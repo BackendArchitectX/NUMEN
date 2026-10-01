@@ -411,6 +411,16 @@ const partialSources = renderToStaticMarkup(<SourceExplorer sources={[sourceSumm
 includes(partialSources, '1</strong> unavailable', 'source workspace must count configured collection failures')
 includes(partialSources, 'Source could not be reached', 'source workspace must explain collection failure without hiding partial success')
 
+const zeroSourceCoverage = renderToStaticMarkup(
+  <SourceExplorer
+    sources={[{ ...sourceSummary, records: 0, evidence: 0, latestCollectedAt: null }]}
+    totalRecords={0}
+    state="ready"
+  />
+)
+includes(zeroSourceCoverage, 'no published records', 'zero-result source diagnostics must not present a meaningless 0/0 coverage fraction')
+excludes(zeroSourceCoverage, '0/0', 'zero-result source evidence must use not-applicable presentation rather than a ratio')
+
 const sidebar = renderToStaticMarkup(
   <Sidebar
     tasks={[completedTask]}
