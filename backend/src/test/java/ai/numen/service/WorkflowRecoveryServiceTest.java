@@ -23,6 +23,9 @@ class WorkflowRecoveryServiceTest {
     @Mock
     private TaskRunner runner;
 
+    @Mock
+    private WorkflowStateService state;
+
     @Test
     void redispatchesInterruptedWorkflowAfterRestart() {
         UUID taskId = UUID.randomUUID();
@@ -37,13 +40,17 @@ class WorkflowRecoveryServiceTest {
                 TaskStatus.COLLECTING,
                 TaskStatus.PROCESSING
         ))).thenReturn(List.of(task));
+        when(state.recover(taskId)).thenAnswer(invocation -> {
+            task.recoverForRestart();
+            return task;
+        });
 
-        new WorkflowRecoveryService(tasks, runner).recoverInterruptedWorkflows();
+        new WorkflowRecoveryService(tasks, runner, state).recoverInterruptedWorkflows();
 
         assertThat(task.getStatus()).isEqualTo(TaskStatus.PLANNING);
         assertThat(task.getStage()).isEqualTo("Recovering after restart");
         assertThat(task.getProgress()).isEqualTo(5);
-        verify(tasks).saveAndFlush(task);
+        verify(state).recover(taskId);
         verify(runner).run(taskId);
     }
 }
