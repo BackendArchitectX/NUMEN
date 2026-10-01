@@ -457,7 +457,11 @@ includes(datasetLibrary, 'Sources', 'published dataset library must keep provena
 const repeatedResearch = groupResearchTasks([
   completedTask,
   { ...completedTask, id: 'task-completed-older', createdAt: '2026-09-29T00:00:00Z' },
+  { ...completedTask, id: 'task-different-scope', sourceUrls: ['https://different.example/'], createdAt: '2026-09-28T12:00:00Z' },
   { ...completedTask, id: 'task-other', prompt: 'Compare cloud data platforms', createdAt: '2026-09-28T00:00:00Z' }
 ])
-assert.equal(repeatedResearch.length, 2, 'recent research must group repeated runs of the same normalized question')
+assert.equal(repeatedResearch.length, 3, 'recent research may group repeated runs only when question, mode and source scope are materially equivalent')
 assert.equal(repeatedResearch[0].runs, 2, 'grouped research must preserve the repeated-run count')
+assert.equal(repeatedResearch[1].runs, 1, 'a different source scope must remain a distinct research entry')
+
+console.log('[NUMEN] frontend component-state tests passed')
