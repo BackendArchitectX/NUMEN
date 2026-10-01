@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { DatasetRecord, DatasetSummary, SourceSummary, Task, TaskTimelineEvent } from '../model/types'
+import type { DatasetRecord, DatasetSummary, LoadState, SourceSummary, Task, TaskTimelineEvent } from '../model/types'
 import { intelligenceApi } from '../services/intelligenceApi'
 
 export function useIntelligenceWorkspace() {
@@ -9,6 +9,8 @@ export function useIntelligenceWorkspace() {
   const [timeline, setTimeline] = useState<TaskTimelineEvent[]>([])
   const [summary, setSummary] = useState<DatasetSummary>()
   const [sources, setSources] = useState<SourceSummary[]>([])
+  const [summaryState, setSummaryState] = useState<LoadState>('idle')
+  const [sourcesState, setSourcesState] = useState<LoadState>('idle')
   const [prompt, setPrompt] = useState('')
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
@@ -98,22 +100,40 @@ export function useIntelligenceWorkspace() {
     if (!selectedId || selected?.status !== 'COMPLETED') {
       setSummary(undefined)
       setSources([])
+      setSummaryState('idle')
+      setSourcesState('idle')
       return
     }
 
     let active = true
-    void Promise.all([
-      intelligenceApi.getSummary(selectedId),
-      intelligenceApi.getSources(selectedId)
-    ]).then(([nextSummary, nextSources]) => {
-      if (!active) return
-      setSummary(nextSummary)
-      setSources(nextSources)
-    }).catch(() => {
-      if (!active) return
-      setSummary(undefined)
-      setSources([])
-    })
+    setSummary(undefined)
+    setSources([])
+    setSummaryState('loading')
+    setSourcesState('loading')
+
+    void intelligenceApi.getSummary(selectedId)
+      .then(nextSummary => {
+        if (!active) return
+        setSummary(nextSummary)
+        setSummaryState('ready')
+      })
+      .catch(() => {
+        if (!active) return
+        setSummary(undefined)
+        setSummaryState('error')
+      })
+
+    void intelligenceApi.getSources(selectedId)
+      .then(nextSources => {
+        if (!active) return
+        setSources(nextSources)
+        setSourcesState('ready')
+      })
+      .catch(() => {
+        if (!active) return
+        setSources([])
+        setSourcesState('error')
+      })
 
     return () => { active = false }
   }, [selectedId, selected?.status])
@@ -185,6 +205,8 @@ export function useIntelligenceWorkspace() {
     timeline,
     summary,
     sources,
+    summaryState,
+    sourcesState,
     prompt,
     query,
     minQuality,
