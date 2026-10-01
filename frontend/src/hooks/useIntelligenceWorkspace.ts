@@ -12,6 +12,7 @@ export function useIntelligenceWorkspace() {
   const [summaryState, setSummaryState] = useState<LoadState>('idle')
   const [sourcesState, setSourcesState] = useState<LoadState>('idle')
   const [prompt, setPrompt] = useState('')
+  const [demoMode, setDemoMode] = useState(false)
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [minQuality, setMinQuality] = useState(0)
@@ -155,6 +156,7 @@ export function useIntelligenceWorkspace() {
   const startNewResearch = () => {
     selectTask(undefined)
     setPrompt('')
+    setDemoMode(false)
   }
 
   const createTask = async () => {
@@ -167,11 +169,12 @@ export function useIntelligenceWorkspace() {
     const idempotencyKey = crypto.randomUUID()
 
     try {
-      const task = await intelligenceApi.createTask(normalized, idempotencyKey)
+      const task = await intelligenceApi.createTask(normalized, demoMode, idempotencyKey)
       setSelectedId(task.id)
       setQuery('')
       setMinQuality(0)
       setPrompt('')
+      setDemoMode(false)
       await refresh()
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Failed to start research')
@@ -208,6 +211,7 @@ export function useIntelligenceWorkspace() {
     summaryState,
     sourcesState,
     prompt,
+    demoMode,
     query,
     minQuality,
     busy,
@@ -219,6 +223,7 @@ export function useIntelligenceWorkspace() {
     selectTask,
     startNewResearch,
     setPrompt,
+    setDemoMode,
     setQuery,
     setMinQuality,
     createTask,
