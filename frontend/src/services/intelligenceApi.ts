@@ -47,13 +47,13 @@ export const intelligenceApi = {
   getTimeline: (id: string) => request<TaskTimelineEvent[]>(`${API}/tasks/${id}/timeline`),
   getSummary: (id: string) => request<DatasetSummary>(`${API}/tasks/${id}/summary`),
   getSources: (id: string) => request<SourceSummary[]>(`${API}/tasks/${id}/sources`),
-  createTask: (prompt: string, demoMode: boolean, idempotencyKey: string) => request<Task>(`${API}/tasks`, {
+  createTask: (prompt: string, demoMode: boolean, sourceUrls: string[], idempotencyKey: string) => request<Task>(`${API}/tasks`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Idempotency-Key': idempotencyKey
     },
-    body: JSON.stringify({ prompt, demoMode })
+    body: JSON.stringify({ prompt, demoMode, sourceUrls })
   }),
   cancelTask: (id: string) => request<Task>(`${API}/tasks/${id}/cancel`, { method: 'POST' }),
   getRecords: (id: string, q = '', minQuality = 0) => {
