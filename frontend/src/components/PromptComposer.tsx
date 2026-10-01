@@ -1,5 +1,6 @@
-import { LoaderCircle, Play, Sparkles } from 'lucide-react'
+import { LoaderCircle, Play, Search } from 'lucide-react'
 import { examplePrompts } from '../model/prompts'
+import { clip } from '../shared/text'
 
 interface PromptComposerProps {
   prompt: string
@@ -15,10 +16,16 @@ export function PromptComposer({ prompt, busy, online, onPromptChange, onRun }: 
 
   return <section className="composer panel" aria-labelledby="prompt-label">
     <div className="composerTop">
-      <Sparkles size={18} aria-hidden="true"/>
-      <span id="prompt-label">Describe your business requirement</span>
-      <kbd>CTRL/⌘ + ENTER</kbd>
+      <div className="composerTitle">
+        <span className="composerIcon"><Search size={17} aria-hidden="true"/></span>
+        <div>
+          <span id="prompt-label">What do you want to research?</span>
+          <small>Describe the outcome you need. NUMEN will structure the request and preserve source evidence.</small>
+        </div>
+      </div>
+      <kbd>⌘ / Ctrl + Enter</kbd>
     </div>
+
     <textarea
       value={prompt}
       maxLength={4000}
@@ -30,17 +37,24 @@ export function PromptComposer({ prompt, busy, online, onPromptChange, onRun }: 
           onRun()
         }
       }}
-      placeholder="Example: Find 50 backend roles from permitted career pages and return company, title, location, URL and source..."
+      placeholder="Example: Find Java backend engineering roles in India and return company, title, location, experience, job URL and source."
     />
+
     <div className="composerFooter">
-      <div className="chips" aria-label="Example prompts">
-        {examplePrompts.map((example, index) => <button type="button" key={example} aria-label={`Use example prompt ${index + 1}`} onClick={() => onPromptChange(example)}>0{index + 1}</button>)}
+      <div className="chips" aria-label="Example research prompts">
+        {examplePrompts.slice(0, 3).map((example, index) => <button
+          type="button"
+          key={example}
+          aria-label={`Use example prompt ${index + 1}`}
+          title={example}
+          onClick={() => onPromptChange(example)}
+        >{clip(example, 30)}</button>)}
       </div>
       <div className="composerRun">
         <small id="prompt-help">{length}/4000</small>
         <button type="button" className="run" onClick={onRun} disabled={!runnable} aria-busy={busy}>
-          {busy ? <LoaderCircle className="spin" size={17} aria-hidden="true"/> : <Play size={17} aria-hidden="true"/>}
-          Run intelligence workflow
+          {busy ? <LoaderCircle className="spin" size={16} aria-hidden="true"/> : <Play size={16} aria-hidden="true"/>}
+          Run research
         </button>
       </div>
     </div>
