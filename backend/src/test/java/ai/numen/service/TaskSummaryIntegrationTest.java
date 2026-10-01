@@ -151,7 +151,7 @@ class TaskSummaryIntegrationTest {
                 .anySatisfy(source -> {
                     assertThat(source.url()).isEqualTo("https://failed.example/jobs");
                     assertThat(source.records()).isZero();
-                    assertThat(source.collectionStatus()).isEqualTo("FAILED");
+                    assertThat(source.collectionStatus()).isEqualTo("UNAVAILABLE");
                     assertThat(source.errorCode()).isEqualTo("SOURCE_UNREACHABLE");
                     assertThat(source.connectorId()).isEqualTo("http-page");
                     assertThat(source.capabilities()).contains("public-http", "partial-failure", "evidence-capture");
