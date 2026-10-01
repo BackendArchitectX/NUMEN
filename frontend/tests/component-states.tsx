@@ -238,7 +238,7 @@ const history = renderToStaticMarkup(
   <WorkflowHistory tasks={[completedTask]} onOpen={noop} onOpenDataset={noop} onOpenSources={noop} />
 )
 includes(history, 'Runs', 'history view must render persisted research runs')
-includes(history, '>Open<', 'history rows must expose a functional run action')
+includes(history, 'class="tableAction">Open ', 'history rows must expose a functional run action')
 includes(history, '1 published record', 'run history must describe user outcomes instead of raw engine stages')
 includes(history, 'Dataset', 'completed runs with data must expose their dataset action')
 includes(history, 'Sources', 'completed runs with data must expose source coverage')
