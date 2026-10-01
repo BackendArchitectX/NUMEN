@@ -10,7 +10,7 @@ export function groupResearchTasks(tasks: Task[]): ResearchGroup[] {
   const groups = new Map<string, ResearchGroup>()
 
   for (const task of ordered) {
-    const key = normalizeResearchQuestion(task.prompt)
+    const key = materialResearchKey(task)
     const existing = groups.get(key)
     if (existing) {
       existing.runs += 1
@@ -22,6 +22,14 @@ export function groupResearchTasks(tasks: Task[]): ResearchGroup[] {
   return [...groups.values()]
 }
 
-function normalizeResearchQuestion(value: string): string {
-  return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase()
+function materialResearchKey(task: Task): string {
+  const question = task.prompt.trim().replace(/\s+/g, ' ').toLocaleLowerCase()
+  const mode = task.demoMode ? 'demo' : 'live'
+  const sourceScope = task.sourceUrls
+    .map(url => url.trim())
+    .filter(Boolean)
+    .sort((left, right) => left.localeCompare(right))
+    .join('|')
+
+  return `${question}\n${mode}\n${sourceScope}`
 }
