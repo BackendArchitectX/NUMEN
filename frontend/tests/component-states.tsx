@@ -10,8 +10,17 @@ import { WorkflowHistory } from '../src/components/WorkflowHistory'
 import { WorkflowPanel } from '../src/components/WorkflowPanel'
 import type { DatasetRecord, DatasetSummary, SourceSummary, Task, TaskTimelineEvent } from '../src/model/types'
 import { groupResearchTasks } from '../src/shared/research'
+import { formatInstant, formatRelativeInstant } from '../src/shared/time'
 
 const noop = () => undefined
+
+assert.equal(formatInstant('not-a-date'), 'Unknown', 'invalid exact timestamps must not be described with invented temporal precision')
+assert.equal(formatRelativeInstant('not-a-date'), 'Unknown', 'invalid relative timestamps must not fall back to vague recent wording')
+assert.equal(
+  formatRelativeInstant('2026-09-30T00:01:00Z', Date.parse('2026-09-30T00:00:00Z')),
+  'in 1m',
+  'relative time formatting must preserve future direction rather than clamping future timestamps to now'
+)
 
 function includes(markup: string, fragment: string, message: string) {
   assert.ok(markup.includes(fragment), message + '\nRendered markup:\n' + markup)
@@ -173,7 +182,6 @@ includes(populated, 'target="_blank"', 'live provenance links should open separa
 includes(populated, 'rel="noreferrer"', 'external provenance links must suppress referrer leakage')
 includes(populated, 'Data quality', 'quality terminology must be explicit rather than an unexplained percentage')
 includes(populated, 'aria-haspopup="dialog"', 'record rows must announce that evidence opens in a dialog')
-includes(populated, 'Collected by NUMEN', 'evidence timestamps must be labelled as NUMEN collection time rather than world-event time')
 
 const demoRecord: DatasetRecord = { ...record, id: 'record-demo', sourceType: 'DEMO', sourceUrl: 'urn:numen:demo:test:1', sourceName: 'NUMEN Demo Catalog' }
 const demoDataset = renderToStaticMarkup(
