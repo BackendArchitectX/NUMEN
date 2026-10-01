@@ -34,6 +34,7 @@ required_files=(
   docs/ARCHITECTURE.md
   docs/DEVELOPMENT.md
   docs/DESIGN_SYSTEM.md
+  docs/AURORA_X_VISUAL_DIRECTIVE.md
   docs/ENGINEERING_STANDARDS.md
   docs/RUNBOOK.md
   docs/RECOVERY.md
@@ -65,6 +66,7 @@ required_files=(
   frontend/src/app/AppErrorBoundary.tsx
   frontend/src/components/WorkflowHistory.tsx
   frontend/src/components/ResearchOutcome.tsx
+  frontend/public/theme-init.js
   frontend/tests/component-states.tsx
 )
 
