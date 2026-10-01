@@ -1,21 +1,29 @@
 import { Activity, Database, Layers3, ShieldCheck } from 'lucide-react'
-import type { Task } from '../model/types'
+import type { Task, WorkspaceView } from '../model/types'
 import { clip } from '../shared/text'
 
 interface SidebarProps {
   tasks: Task[]
   selectedId?: string
   totalRecords: number
+  activeView: WorkspaceView
+  onNavigate: (view: WorkspaceView) => void
   onSelect: (id: string) => void
 }
 
-export function Sidebar({ tasks, selectedId, totalRecords, onSelect }: SidebarProps) {
+export function Sidebar({ tasks, selectedId, totalRecords, activeView, onNavigate, onSelect }: SidebarProps) {
   return <aside className="sidebar" aria-label="NUMEN workspace">
     <div className="brand"><div className="brandMark" aria-hidden="true">N</div><div><b>NUMEN</b><span>DATA INTELLIGENCE</span></div></div>
     <div className="navLabel">WORKSPACE</div>
-    <div className="nav active"><Activity size={16} aria-hidden="true"/> Intelligence Console</div>
-    <div className="nav"><Database size={16} aria-hidden="true"/> Datasets <span>{totalRecords}</span></div>
-    <div className="nav"><Layers3 size={16} aria-hidden="true"/> Workflow History <span>{tasks.length}</span></div>
+    <button type="button" className={`nav ${activeView === 'console' ? 'active' : ''}`} aria-current={activeView === 'console' ? 'page' : undefined} onClick={() => onNavigate('console')}>
+      <Activity size={16} aria-hidden="true"/> Intelligence Console
+    </button>
+    <button type="button" className={`nav ${activeView === 'datasets' ? 'active' : ''}`} aria-current={activeView === 'datasets' ? 'page' : undefined} onClick={() => onNavigate('datasets')}>
+      <Database size={16} aria-hidden="true"/> Datasets <span>{totalRecords}</span>
+    </button>
+    <button type="button" className={`nav ${activeView === 'history' ? 'active' : ''}`} aria-current={activeView === 'history' ? 'page' : undefined} onClick={() => onNavigate('history')}>
+      <Layers3 size={16} aria-hidden="true"/> Workflow History <span>{tasks.length}</span>
+    </button>
     <div className="navLabel">RECENT RUNS</div>
     <div className="recentList">
       {tasks.slice(0, 7).map(task => <button
