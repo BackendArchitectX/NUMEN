@@ -53,8 +53,14 @@ required_files=(
   backend/src/main/resources/db/migration/V4__domain_integrity.sql
   backend/src/main/resources/db/migration/V5__workflow_timeline.sql
   backend/src/main/resources/db/migration/V6__explicit_demo_mode.sql
+  backend/src/main/resources/db/migration/V7__task_source_urls.sql
+  backend/src/main/resources/db/migration/V8__source_collection_attempts.sql
   backend/src/main/java/ai/numen/entity/TaskTimelineEvent.java
   backend/src/main/java/ai/numen/entity/TaskTimelineEventType.java
+  backend/src/main/java/ai/numen/entity/SourceCollectionAttempt.java
+  backend/src/main/java/ai/numen/repository/SourceCollectionAttemptRepository.java
+  backend/src/main/java/ai/numen/service/SourceCollectionAttemptService.java
+  backend/src/main/java/ai/numen/dto/DatasetPageResponse.java
   backend/src/main/java/ai/numen/repository/TaskTimelineEventRepository.java
   backend/src/main/java/ai/numen/service/WorkflowStateService.java
   backend/src/main/java/ai/numen/dto/TaskTimelineEventResponse.java
