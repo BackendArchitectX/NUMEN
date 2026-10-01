@@ -36,7 +36,7 @@ export function WorkflowHistory({ tasks, onOpen, onOpenDataset, onOpenSources }:
 }
 
 function outcomeLabel(task: Task): string {
-  if (task.status === 'COMPLETED') return task.recordCount > 0 ? `${task.recordCount} published ${task.recordCount === 1 ? 'record' : 'records'}` : 'No publishable records'
+  if (task.status === 'COMPLETED') return task.recordCount > 0 ? `${task.demoMode ? 'Demo · ' : ''}${task.recordCount} published ${task.recordCount === 1 ? 'record' : 'records'}` : 'No publishable records'
   if (task.status === 'FAILED') return 'Stopped before completion'
   if (task.status === 'CANCELLED') return 'Cancelled before completion'
   return statusLabel(task.status)
