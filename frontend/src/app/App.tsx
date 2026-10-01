@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
-import { Activity, Database, History, Moon, Sun } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Activity, Database, History, Moon, Radio, Sun } from 'lucide-react'
 import { DatasetExplorer } from '../components/DatasetExplorer'
 import { PromptComposer } from '../components/PromptComposer'
 import { ResearchOutcome } from '../components/ResearchOutcome'
 import { Sidebar } from '../components/Sidebar'
+import { SourceExplorer } from '../components/SourceExplorer'
 import { WorkflowHistory } from '../components/WorkflowHistory'
 import { WorkflowPanel } from '../components/WorkflowPanel'
 import { useIntelligenceWorkspace } from '../hooks/useIntelligenceWorkspace'
@@ -11,14 +12,24 @@ import type { Task, WorkspaceView } from '../model/types'
 
 type Theme = 'light' | 'dark'
 
+interface WorkspaceRoute {
+  view: WorkspaceView
+  taskId?: string
+}
+
 export default function App() {
   const workspace = useIntelligenceWorkspace()
-  const [view, setView] = useState<WorkspaceView>(() => readView())
+  const [view, setView] = useState<WorkspaceView>(() => readRoute().view)
   const [theme, setTheme] = useState<Theme>(() => readTheme())
 
   useEffect(() => {
-    const syncFromHash = () => setView(readView())
+    const syncFromHash = () => {
+      const route = readRoute()
+      setView(route.view)
+      if (route.view !== 'history') workspace.selectTask(route.taskId)
+    }
     window.addEventListener('hashchange', syncFromHash)
+    syncFromHash()
     return () => window.removeEventListener('hashchange', syncFromHash)
   }, [])
 
@@ -33,19 +44,30 @@ export default function App() {
     meta?.setAttribute('content', theme === 'dark' ? '#050B14' : '#08111F')
   }, [theme])
 
-  const navigate = (next: WorkspaceView) => {
+  const navigate = (next: WorkspaceView, taskId?: string) => {
     setView(next)
-    if (typeof window !== 'undefined') {
-      const nextHash = `#${next}`
-      if (window.location.hash !== nextHash) window.location.hash = next
-    }
+    const hash = buildHash(next, taskId)
+    if (window.location.hash !== hash) window.location.hash = hash
+  }
+
+  const navigateWorkspace = (next: WorkspaceView) => {
+    navigate(next, next === 'history' ? undefined : workspace.selectedId)
   }
 
   const selectAndOpen = (id: string, destination: WorkspaceView) => {
-    workspace.setSelectedId(id)
-    navigate(destination)
+    workspace.selectTask(id)
+    navigate(destination, id)
   }
 
+  const startNewResearch = () => {
+    workspace.startNewResearch()
+    navigate('research')
+  }
+
+  const publishedTasks = useMemo(
+    () => workspace.tasks.filter(task => task.status === 'COMPLETED' && task.recordCount > 0),
+    [workspace.tasks]
+  )
   const selectedComplete = workspace.selected?.status === 'COMPLETED'
   const toggleTheme = () => setTheme(currentTheme => currentTheme === 'light' ? 'dark' : 'light')
 
@@ -57,21 +79,23 @@ export default function App() {
       activeView={view}
       theme={theme}
       onToggleTheme={toggleTheme}
-      onNavigate={navigate}
-      onSelect={id => selectAndOpen(id, 'console')}
+      onNewResearch={startNewResearch}
+      onNavigate={navigateWorkspace}
+      onSelect={id => selectAndOpen(id, 'research')}
     />
 
     <main id="main-content">
       <nav className="mobileNav" aria-label="Workspace views">
-        <button type="button" className={view === 'console' ? 'active' : ''} onClick={() => navigate('console')}><Activity size={15} aria-hidden="true"/> Research</button>
-        <button type="button" className={view === 'datasets' ? 'active' : ''} onClick={() => navigate('datasets')}><Database size={15} aria-hidden="true"/> Datasets</button>
-        <button type="button" className={view === 'history' ? 'active' : ''} onClick={() => navigate('history')}><History size={15} aria-hidden="true"/> Runs</button>
+        <button type="button" className={view === 'research' ? 'active' : ''} onClick={() => navigateWorkspace('research')}><Activity size={15} aria-hidden="true"/> Research</button>
+        <button type="button" className={view === 'datasets' ? 'active' : ''} onClick={() => navigateWorkspace('datasets')}><Database size={15} aria-hidden="true"/> Datasets</button>
+        <button type="button" className={view === 'sources' ? 'active' : ''} onClick={() => navigateWorkspace('sources')}><Radio size={15} aria-hidden="true"/> Sources</button>
+        <button type="button" className={view === 'history' ? 'active' : ''} onClick={() => navigateWorkspace('history')}><History size={15} aria-hidden="true"/> Runs</button>
       </nav>
 
       <WorkspaceHeader view={view} online={workspace.online} theme={theme} onToggleTheme={toggleTheme}/>
       {workspace.error && <div className="error" role="alert">{workspace.error}</div>}
 
-      {view === 'console' && <>
+      {view === 'research' && <>
         <PromptComposer prompt={workspace.prompt} busy={workspace.busy} online={workspace.online} onPromptChange={workspace.setPrompt} onRun={() => void workspace.createTask()}/>
 
         {workspace.selected ? <>
@@ -83,22 +107,30 @@ export default function App() {
             onQueryChange={workspace.setQuery} onMinQualityChange={workspace.setMinQuality}/>
 
           {selectedComplete && <WorkflowPanel task={workspace.selected} timeline={workspace.timeline} exportUrl={workspace.exportUrl} onCancel={id => void workspace.cancelTask(id)}/>}
-        </> : <section className="emptyState panel"><Activity aria-hidden="true"/><h2>Your research workspace is ready</h2><p>Ask a question above. Results, sources and captured evidence will stay connected to the run that produced them.</p></section>}
+        </> : <RecentResearch tasks={workspace.tasks} onOpen={id => selectAndOpen(id, 'research')}/>}
       </>}
 
       {view === 'datasets' && <>
-        <RunSelector tasks={workspace.tasks} selectedId={workspace.selectedId} onSelect={workspace.setSelectedId}/>
-        {workspace.selected ? <>
-          {workspace.selected.status === 'COMPLETED' && <ResearchOutcome task={workspace.selected} records={workspace.records} exportUrl={workspace.exportUrl}/>}
+        <RunSelector label="Published dataset" tasks={publishedTasks} selectedId={workspace.selectedId} onSelect={id => selectAndOpen(id, 'datasets')}/>
+        {workspace.selected && workspace.selected.status === 'COMPLETED' && workspace.selected.recordCount > 0 ? <>
+          <ResearchOutcome task={workspace.selected} records={workspace.records} exportUrl={workspace.exportUrl}/>
           <DatasetExplorer records={workspace.records} status={workspace.selected.status} query={workspace.query} minQuality={workspace.minQuality}
             onQueryChange={workspace.setQuery} onMinQualityChange={workspace.setMinQuality}/>
-        </> : <section className="emptyState panel"><Database aria-hidden="true"/><h2>No dataset available</h2><p>Run research first. Published records will be inspectable here with their source evidence.</p></section>}
+        </> : <section className="emptyState panel"><Database aria-hidden="true"/><h2>Select a published dataset</h2><p>Only completed research with published records appears here. Choose a dataset above or start new research.</p></section>}
+      </>}
+
+      {view === 'sources' && <>
+        <RunSelector label="Research source set" tasks={publishedTasks} selectedId={workspace.selectedId} onSelect={id => selectAndOpen(id, 'sources')}/>
+        {workspace.selected && workspace.selected.status === 'COMPLETED' && workspace.selected.recordCount > 0
+          ? <SourceExplorer records={workspace.records}/>
+          : <section className="emptyState panel"><Radio aria-hidden="true"/><h2>Select published research</h2><p>Source contribution and captured-evidence coverage are shown for completed research with published records.</p></section>}
       </>}
 
       {view === 'history' && <WorkflowHistory
         tasks={workspace.tasks}
-        onOpen={id => selectAndOpen(id, 'console')}
+        onOpen={id => selectAndOpen(id, 'research')}
         onOpenDataset={id => selectAndOpen(id, 'datasets')}
+        onOpenSources={id => selectAndOpen(id, 'sources')}
       />}
     </main>
   </div>
@@ -106,7 +138,7 @@ export default function App() {
 
 function WorkspaceHeader({ view, online, theme, onToggleTheme }: { view: WorkspaceView; online: boolean; theme: Theme; onToggleTheme: () => void }) {
   const content = {
-    console: {
+    research: {
       title: 'Research',
       description: 'Ask a question. NUMEN turns it into structured results with source evidence attached.'
     },
@@ -114,9 +146,13 @@ function WorkspaceHeader({ view, online, theme, onToggleTheme }: { view: Workspa
       title: 'Datasets',
       description: 'Explore published research outputs and inspect the evidence behind individual records.'
     },
+    sources: {
+      title: 'Sources',
+      description: 'See which sources contributed records, how much evidence they supplied and when they were last collected.'
+    },
     history: {
       title: 'Runs',
-      description: 'Review previous research activity, outcomes and technical details when you need them.'
+      description: 'Review research activity and reopen outcomes without exposing engine internals by default.'
     }
   }[view]
 
@@ -126,7 +162,7 @@ function WorkspaceHeader({ view, online, theme, onToggleTheme }: { view: Workspa
       <p>{content.description}</p>
     </div>
     <div className="workspaceHeaderActions">
-      <div className={`livePill ${online ? 'online' : 'offline'}`} role="status" aria-live="polite"><span aria-hidden="true"/> {online ? 'Engine online' : 'Engine offline'}</div>
+      {!online && <div className="livePill offline" role="status" aria-live="polite"><span aria-hidden="true"/> Service unavailable</div>}
       <button type="button" className="themeToggle" onClick={onToggleTheme} aria-label={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'} title={theme === 'light' ? 'Dark theme' : 'Light theme'}>
         {theme === 'light' ? <Moon size={16} aria-hidden="true"/> : <Sun size={16} aria-hidden="true"/>}
       </button>
@@ -134,20 +170,54 @@ function WorkspaceHeader({ view, online, theme, onToggleTheme }: { view: Workspa
   </header>
 }
 
-function RunSelector({ tasks, selectedId, onSelect }: { tasks: Task[]; selectedId?: string; onSelect: (id: string) => void }) {
+function RecentResearch({ tasks, onOpen }: { tasks: Task[]; onOpen: (id: string) => void }) {
+  if (!tasks.length) {
+    return <section className="emptyState panel"><Activity aria-hidden="true"/><h2>Your research workspace is ready</h2><p>Ask a question above. Results, sources and captured evidence will stay connected to the run that produced them.</p></section>
+  }
+
+  return <section className="recentResearch panel" aria-labelledby="recent-research-heading">
+    <div className="resultsHeader">
+      <div className="resultsTitle"><History size={18} aria-hidden="true"/><div><h3 id="recent-research-heading">Recent research</h3><span>Continue from a previous outcome or start something new above.</span></div></div>
+    </div>
+    <div className="recentResearchList">
+      {tasks.slice(0, 6).map(task => <button type="button" key={task.id} onClick={() => onOpen(task.id)}>
+        <span className={`dot ${task.status.toLowerCase()}`} aria-hidden="true"/>
+        <span className="recentResearchCopy"><strong>{task.prompt}</strong><small>{researchMeta(task)}</small></span>
+        <span className="recentResearchStatus">{statusLabel(task.status)}</span>
+      </button>)}
+    </div>
+  </section>
+}
+
+function RunSelector({ label, tasks, selectedId, onSelect }: { label: string; tasks: Task[]; selectedId?: string; onSelect: (id: string) => void }) {
   if (!tasks.length) return null
-  return <section className="runSelector panel" aria-label="Dataset run selector">
-    <div><span>Dataset source run</span><strong>Select the research run whose published records you want to inspect.</strong></div>
-    <select aria-label="Select research dataset" value={selectedId || ''} onChange={event => onSelect(event.target.value)}>
-      {tasks.map(task => <option value={task.id} key={task.id}>{statusLabel(task.status)} · {task.prompt.slice(0, 80)}</option>)}
+  const selectedPublished = selectedId && tasks.some(task => task.id === selectedId) ? selectedId : ''
+
+  return <section className="runSelector panel" aria-label={label}>
+    <div><span>{label}</span><strong>Select completed research with published records.</strong></div>
+    <select aria-label={`Select ${label.toLowerCase()}`} value={selectedPublished} onChange={event => event.target.value && onSelect(event.target.value)}>
+      <option value="">Choose research…</option>
+      {tasks.map(task => <option value={task.id} key={task.id}>{task.recordCount} records · {task.prompt.slice(0, 78)}</option>)}
     </select>
   </section>
 }
 
-function readView(): WorkspaceView {
-  if (typeof window === 'undefined') return 'console'
-  const value = window.location.hash.replace('#', '')
-  return value === 'datasets' || value === 'history' ? value : 'console'
+function readRoute(): WorkspaceRoute {
+  if (typeof window === 'undefined') return { view: 'research' }
+  const raw = window.location.hash.replace(/^#/, '')
+  const [routeValue, encodedTaskId] = raw.split('/')
+  const taskId = encodedTaskId ? decodeURIComponent(encodedTaskId) : undefined
+
+  if (routeValue === 'datasets') return { view: 'datasets', taskId }
+  if (routeValue === 'sources') return { view: 'sources', taskId }
+  if (routeValue === 'history' || routeValue === 'runs') return { view: 'history' }
+  if (routeValue === 'console') return { view: 'research', taskId }
+  return { view: 'research', taskId }
+}
+
+function buildHash(view: WorkspaceView, taskId?: string): string {
+  const route = view === 'history' ? 'runs' : view
+  return taskId && view !== 'history' ? `#${route}/${encodeURIComponent(taskId)}` : `#${route}`
 }
 
 function readTheme(): Theme {
@@ -161,6 +231,13 @@ function readTheme(): Theme {
   return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
+function researchMeta(task: Task): string {
+  if (task.status === 'COMPLETED') return `${task.recordCount} published records · ${formatRelative(task.completedAt || task.createdAt)}`
+  if (task.status === 'FAILED') return 'Stopped before a complete outcome was published'
+  if (task.status === 'CANCELLED') return 'Cancelled'
+  return `${statusLabel(task.status)} · ${formatRelative(task.startedAt || task.createdAt)}`
+}
+
 function statusLabel(status: Task['status']): string {
   switch (status) {
     case 'QUEUED': return 'Queued'
@@ -171,4 +248,15 @@ function statusLabel(status: Task['status']): string {
     case 'CANCELLED': return 'Cancelled'
     case 'FAILED': return 'Needs attention'
   }
+}
+
+function formatRelative(value: string): string {
+  const time = Date.parse(value)
+  if (!Number.isFinite(time)) return 'recently'
+  const minutes = Math.max(0, Math.round((Date.now() - time) / 60_000))
+  if (minutes < 1) return 'now'
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.round(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.round(hours / 24)}d ago`
 }
