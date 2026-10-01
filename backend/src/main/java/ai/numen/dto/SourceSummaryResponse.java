@@ -11,7 +11,12 @@ public record SourceSummaryResponse(
         int records,
         int evidence,
         Instant latestCollectedAt,
-        boolean demo) {
+        String collectionStatus,
+        String errorCode,
+        String errorMessage,
+        Instant lastAttemptedAt,
+        boolean demo,
+        boolean configured) {
 
     public static SourceSummaryResponse from(TaskService.SourceSummary source) {
         return new SourceSummaryResponse(
@@ -21,7 +26,12 @@ public record SourceSummaryResponse(
                 source.records(),
                 source.evidence(),
                 source.latestCollectedAt(),
-                source.demo()
+                source.collectionStatus(),
+                source.errorCode(),
+                source.errorMessage(),
+                source.lastAttemptedAt(),
+                source.demo(),
+                source.configured()
         );
     }
 }
