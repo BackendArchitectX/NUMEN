@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { DatasetRecord, Task, TaskTimelineEvent } from '../model/types'
+import type { DatasetRecord, DatasetSummary, SourceSummary, Task, TaskTimelineEvent } from '../model/types'
 import { intelligenceApi } from '../services/intelligenceApi'
 
 export function useIntelligenceWorkspace() {
@@ -7,6 +7,8 @@ export function useIntelligenceWorkspace() {
   const [selectedId, setSelectedId] = useState<string>()
   const [records, setRecords] = useState<DatasetRecord[]>([])
   const [timeline, setTimeline] = useState<TaskTimelineEvent[]>([])
+  const [summary, setSummary] = useState<DatasetSummary>()
+  const [sources, setSources] = useState<SourceSummary[]>([])
   const [prompt, setPrompt] = useState('')
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
@@ -93,6 +95,30 @@ export function useIntelligenceWorkspace() {
   }, [selectedId, selected?.status, selected?.stage, selected?.progress])
 
   useEffect(() => {
+    if (!selectedId || selected?.status !== 'COMPLETED') {
+      setSummary(undefined)
+      setSources([])
+      return
+    }
+
+    let active = true
+    void Promise.all([
+      intelligenceApi.getSummary(selectedId),
+      intelligenceApi.getSources(selectedId)
+    ]).then(([nextSummary, nextSources]) => {
+      if (!active) return
+      setSummary(nextSummary)
+      setSources(nextSources)
+    }).catch(() => {
+      if (!active) return
+      setSummary(undefined)
+      setSources([])
+    })
+
+    return () => { active = false }
+  }, [selectedId, selected?.status])
+
+  useEffect(() => {
     if (!selectedId) return
     const stream = new EventSource(intelligenceApi.eventsUrl(selectedId))
     stream.addEventListener('progress', () => void refresh().catch(() => undefined))
@@ -157,6 +183,8 @@ export function useIntelligenceWorkspace() {
     selectedId,
     records,
     timeline,
+    summary,
+    sources,
     prompt,
     query,
     minQuality,
