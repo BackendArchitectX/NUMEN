@@ -65,10 +65,14 @@ export function Sidebar({ tasks, selectedId, totalRecords, activeView, theme, on
 }
 
 function recentMeta(task: Task): string {
-  if (task.status === 'COMPLETED') return `${task.recordCount} records · ready`
+  if (task.status === 'COMPLETED') return `${task.recordCount} ${recordLabel(task.recordCount)} · ready`
   if (task.status === 'FAILED') return 'Needs attention'
   if (task.status === 'CANCELLED') return 'Cancelled'
   return humanize(task.stage)
+}
+
+function recordLabel(count: number): string {
+  return count === 1 ? 'record' : 'records'
 }
 
 function humanize(value: string): string {
