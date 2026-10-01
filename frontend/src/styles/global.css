@@ -720,6 +720,21 @@ main {
 
 .metricIcon svg { width: 15px; height: 15px; }
 
+.metric:nth-child(2) .metricIcon {
+  color: var(--color-success);
+  background: var(--color-success-subtle);
+}
+
+.metric:nth-child(3) .metricIcon {
+  color: var(--color-live-strong);
+  background: var(--color-live-subtle);
+}
+
+.metric:nth-child(4) .metricIcon {
+  color: var(--color-intelligence);
+  background: var(--color-intelligence-subtle);
+}
+
 .metric span {
   display: block;
   color: var(--color-text-muted);
@@ -873,7 +888,7 @@ th {
   height: 36px;
   padding: 0 12px;
   border-bottom: 1px solid var(--color-border-strong);
-  background: rgba(248, 250, 252, .97);
+  background: var(--color-bg-subtle);
   backdrop-filter: blur(6px);
   color: var(--color-text-muted);
   text-align: left;
@@ -1037,7 +1052,7 @@ td a:hover {
   justify-content: space-between;
   gap: 14px;
   border-bottom: 1px solid var(--color-border);
-  background: rgba(255, 255, 255, .97);
+  background: var(--color-bg-surface);
   backdrop-filter: blur(10px);
 }
 
