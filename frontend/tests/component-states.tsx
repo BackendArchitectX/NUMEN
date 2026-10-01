@@ -170,7 +170,7 @@ const sourceSummary: SourceSummary = {
 }
 
 const outcome = renderToStaticMarkup(
-  <ResearchOutcome task={completedTask} summary={summary} exportUrl="/api/v1/tasks/task-completed/export.csv" />
+  <ResearchOutcome task={completedTask} summary={summary} summaryState="ready" exportUrl="/api/v1/tasks/task-completed/export.csv" />
 )
 includes(outcome, 'Research ready', 'completed live research must foreground the outcome state')
 includes(outcome, '1 published result', 'outcome summary must be derived from actual persisted records')
@@ -178,13 +178,23 @@ includes(outcome, 'Evidence linked', 'outcome must foreground evidence coverage'
 includes(outcome, 'Export CSV', 'completed research must expose its export action')
 
 const zeroOutcome = renderToStaticMarkup(
-  <ResearchOutcome task={{ ...completedTask, recordCount: 0 }} summary={{ ...summary, totalRecords: 0, uniqueOrganizations: 0, uniqueLocations: 0, uniqueSources: 0, evidenceLinkedRecords: 0, topLocations: [] }} exportUrl="#" />
+  <ResearchOutcome task={{ ...completedTask, recordCount: 0 }} summary={{ ...summary, totalRecords: 0, uniqueOrganizations: 0, uniqueLocations: 0, uniqueSources: 0, evidenceLinkedRecords: 0, topLocations: [] }} summaryState="ready" exportUrl="#" />
 )
 includes(zeroOutcome, 'Research complete', 'zero-result completion must not be labelled as ready')
 includes(zeroOutcome, 'No publishable results', 'zero-result completion must explain the outcome honestly')
 excludes(zeroOutcome, 'Export CSV', 'zero-result completion must not expose an empty export')
 
-const sources = renderToStaticMarkup(<SourceExplorer sources={[sourceSummary]} totalRecords={1} />)
+const summaryFailure = renderToStaticMarkup(
+  <ResearchOutcome task={completedTask} summaryState="error" exportUrl="/api/v1/tasks/task-completed/export.csv" />
+)
+includes(summaryFailure, 'coverage is temporarily unavailable', 'summary failure must not masquerade as a zero-result dataset')
+
+const sourceFailure = renderToStaticMarkup(
+  <SourceExplorer sources={[]} totalRecords={1} state="error" />
+)
+includes(sourceFailure, 'Source coverage is temporarily unavailable', 'source-summary failure must be distinct from no contributing sources')
+
+const sources = renderToStaticMarkup(<SourceExplorer sources={[sourceSummary]} totalRecords={1} state="ready" />)
 includes(sources, 'Sources', 'source workspace must be first-class')
 includes(sources, 'Example Careers', 'source workspace must aggregate contributing sources')
 includes(sources, '1/1', 'source workspace must expose evidence contribution')
