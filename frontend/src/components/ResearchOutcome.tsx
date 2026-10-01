@@ -15,15 +15,16 @@ export function ResearchOutcome({ task, records, exportUrl }: ResearchOutcomePro
   const sources = uniqueCount(records.map(record => record.sourceName || record.sourceUrl))
   const evidenceLinked = records.filter(record => Boolean(record.sourceUrl && record.excerpt?.trim())).length
   const demo = records.some(record => record.sourceType === 'DEMO')
+  const hasResults = records.length > 0
   const updatedAt = newestDate(records.map(record => record.collectedAt)) || task.completedAt || task.createdAt
   const topLocations = topValues(records.map(record => record.location), 3)
 
   return <section className="researchOutcome panel" aria-labelledby={`outcome-${task.id}`}>
     <div className="outcomeHeader">
       <div className="outcomeTitle">
-        <span className={`outcomeState ${demo ? 'demo' : 'ready'}`}>
+        <span className={`outcomeState ${demo ? 'demo' : hasResults ? 'ready' : 'empty'}`}>
           {demo ? <Database size={14} aria-hidden="true"/> : <CheckCircle2 size={14} aria-hidden="true"/>}
-          {demo ? 'Demo dataset' : 'Research ready'}
+          {demo ? 'Demo dataset' : hasResults ? 'Research ready' : 'Research complete'}
         </span>
         <h2 id={`outcome-${task.id}`}>{clip(task.prompt, 120)}</h2>
         <p>{summary(records.length, organizations, sources, demo)}</p>
