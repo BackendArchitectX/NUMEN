@@ -47,6 +47,7 @@ includes(busyPrompt, 'disabled=""', 'busy submission must remain disabled')
 const emptyCompleted = renderToStaticMarkup(
   <DatasetExplorer
     records={[]}
+    totalRecords={0}
     status="COMPLETED"
     query=""
     minQuality={0}
@@ -76,6 +77,7 @@ const record: DatasetRecord = {
 const populated = renderToStaticMarkup(
   <DatasetExplorer
     records={[record]}
+    totalRecords={1}
     status="COMPLETED"
     query=""
     minQuality={0}
@@ -89,6 +91,19 @@ includes(populated, 'target="_blank"', 'live provenance links should open separa
 includes(populated, 'rel="noreferrer"', 'external provenance links must suppress referrer leakage')
 includes(populated, 'Data quality', 'quality terminology must be explicit rather than an unexplained percentage')
 includes(populated, 'aria-haspopup="dialog"', 'record rows must announce that evidence opens in a dialog')
+
+const truncated = renderToStaticMarkup(
+  <DatasetExplorer
+    records={[record]}
+    totalRecords={2}
+    status="COMPLETED"
+    query=""
+    minQuality={0}
+    onQueryChange={noop}
+    onMinQualityChange={noop}
+  />
+)
+includes(truncated, 'Showing the first 1 of 2 published rows', 'result windows must disclose truncation rather than implying completeness')
 
 const activeTask: Task = {
   id: 'task-active',
