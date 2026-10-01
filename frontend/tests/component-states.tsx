@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { DatasetExplorer } from '../src/components/DatasetExplorer'
 import { MetricsGrid } from '../src/components/MetricsGrid'
 import { PromptComposer } from '../src/components/PromptComposer'
-import { WorkflowPanel } from '../src/components/WorkflowPanel'
+import { WorkflowPanel } from '../src/components/WorkflowPanel'\nimport { Sidebar } from '../src/components/Sidebar'\nimport { WorkflowHistory } from '../src/components/WorkflowHistory'
 import type { DatasetRecord, Task } from '../src/model/types'
 
 const noop = () => undefined
@@ -100,7 +100,7 @@ const activeWorkflow = renderToStaticMarkup(
   <WorkflowPanel task={activeTask} exportUrl="#" onCancel={noop} />
 )
 includes(activeWorkflow, '>Cancel<', 'active workflows need a cancellation control')
-includes(activeWorkflow, 'aria-valuenow="45"', 'workflow progress must be exposed semantically')
+includes(activeWorkflow, 'aria-valuenow="45"', 'workflow progress must be exposed semantically')\nincludes(activeWorkflow, 'Hiring intelligence', 'workflow panel must expose the persisted plan rather than a fabricated pipeline')\nincludes(activeWorkflow, 'Preserve source provenance', 'workflow panel must expose persisted safeguards')
 excludes(activeWorkflow, 'Export CSV', 'empty in-progress workflows must not advertise an export')
 
 const completedTask: Task = {
@@ -129,3 +129,24 @@ includes(metrics, '12', 'metrics grid should expose record count')
 includes(metrics, '91%', 'metrics grid should expose measured quality')
 
 console.log('[NUMEN] frontend component-state tests passed')
+
+
+const sidebar = renderToStaticMarkup(
+  <Sidebar
+    tasks={[completedTask]}
+    selectedId={completedTask.id}
+    totalRecords={3}
+    activeView="datasets"
+    onNavigate={noop}
+    onSelect={noop}
+  />
+)
+includes(sidebar, '<button', 'workspace navigation must use real interactive controls')
+includes(sidebar, 'aria-current="page"', 'active workspace destination must expose current-page semantics')
+
+const history = renderToStaticMarkup(
+  <WorkflowHistory tasks={[completedTask]} onOpen={noop} onOpenDataset={noop} />
+)
+includes(history, 'Workflow history', 'history view must render persisted workflow history')
+includes(history, 'Open run', 'history rows must expose a functional run action')
+includes(history, 'Dataset', 'completed runs with data must expose their dataset action')
