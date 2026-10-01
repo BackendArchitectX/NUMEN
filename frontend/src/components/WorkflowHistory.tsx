@@ -12,7 +12,7 @@ interface WorkflowHistoryProps {
 export function WorkflowHistory({ tasks, onOpen, onOpenDataset, onOpenSources }: WorkflowHistoryProps) {
   return <section className="historyPanel panel" aria-labelledby="history-heading">
     <div className="resultsHeader">
-      <div className="resultsTitle"><History size={18} aria-hidden="true"/><div><h3 id="history-heading">Runs</h3><span>{tasks.length} persisted research {tasks.length === 1 ? 'run' : 'runs'}</span></div></div>
+      <div className="resultsTitle"><History size={18} aria-hidden="true"/><div><h3 id="history-heading">Runs</h3><span>Showing {tasks.length} recent persisted {tasks.length === 1 ? 'run' : 'runs'}</span></div></div>
     </div>
     {tasks.length ? <div className="tableWrap"><table className="historyTable">
       <caption className="srOnly">Persisted research run history</caption>
