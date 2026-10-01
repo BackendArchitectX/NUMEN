@@ -76,6 +76,7 @@ required_files=(
   frontend/src/components/WorkflowHistory.tsx
   frontend/src/components/DatasetLibrary.tsx
   frontend/src/shared/research.ts
+  frontend/scripts/check-color-policy.mjs
   frontend/src/components/ResearchOutcome.tsx
   frontend/src/components/SourceExplorer.tsx
   backend/src/test/java/ai/numen/service/TaskSummaryIntegrationTest.java
