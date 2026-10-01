@@ -5,6 +5,7 @@ import ai.numen.dto.TaskEventResponse;
 import ai.numen.entity.CollectionTask;
 import ai.numen.entity.DatasetRecord;
 import ai.numen.entity.TaskTimelineEvent;
+import ai.numen.entity.SourceCollectionAttempt;
 import ai.numen.exception.IdempotencyConflictException;
 import ai.numen.exception.ResourceNotFoundException;
 import ai.numen.exception.WorkflowCapacityException;
@@ -18,6 +19,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -37,19 +39,22 @@ public class TaskService {
     private final TaskEventHub events;
     private final WorkflowStateService state;
     private final NumenProperties properties;
+    private final SourceCollectionAttemptService sourceAttempts;
 
     public TaskService(CollectionTaskRepository tasks,
                        DatasetRecordRepository records,
                        TaskRunner runner,
                        TaskEventHub events,
                        WorkflowStateService state,
-                       NumenProperties properties) {
+                       NumenProperties properties,
+                       SourceCollectionAttemptService sourceAttempts) {
         this.tasks = tasks;
         this.records = records;
         this.runner = runner;
         this.events = events;
         this.state = state;
         this.properties = properties;
+        this.sourceAttempts = sourceAttempts;
     }
 
     public TaskCreation create(String prompt, boolean demoMode, String idempotencyKey) {
@@ -144,8 +149,9 @@ public class TaskService {
 
     @Transactional(readOnly = true)
     public DatasetSummary summary(UUID id) {
-        get(id);
+        CollectionTask task = get(id);
         List<DatasetRecord> dataset = records.findByTaskIdOrderByQualityScoreDesc(id);
+        List<SourceCollectionAttempt> attempts = sourceAttempts.forTask(id);
 
         Set<String> organizations = dataset.stream()
                 .map(DatasetRecord::getOrganization)
@@ -191,11 +197,17 @@ public class TaskService {
                 .map(entry -> new ValueCount(entry.getKey(), entry.getValue()))
                 .toList();
 
+        Set<String> configuredSourceUrls = new java.util.LinkedHashSet<>(task.getSourceUrls());
+        attempts.stream().map(SourceCollectionAttempt::getSourceUrl).filter(TaskService::hasText).forEach(configuredSourceUrls::add);
+        int failedSources = (int) attempts.stream().filter(attempt -> "FAILED".equals(attempt.getStatus())).count();
+
         return new DatasetSummary(
                 dataset.size(),
                 organizations.size(),
                 locations.size(),
                 sources.size(),
+                configuredSourceUrls.size(),
+                failedSources,
                 evidenceLinked,
                 demoRecords,
                 latestCollectedAt,
@@ -205,8 +217,9 @@ public class TaskService {
 
     @Transactional(readOnly = true)
     public List<SourceSummary> sources(UUID id) {
-        get(id);
+        CollectionTask task = get(id);
         List<DatasetRecord> dataset = records.findByTaskIdOrderByQualityScoreDesc(id);
+        List<SourceCollectionAttempt> attempts = sourceAttempts.forTask(id);
 
         Map<String, List<DatasetRecord>> grouped = dataset.stream()
                 .collect(Collectors.groupingBy(
@@ -215,33 +228,85 @@ public class TaskService {
                         Collectors.toList()
                 ));
 
-        return grouped.values().stream()
-                .map(group -> {
-                    DatasetRecord first = group.get(0);
-                    int evidence = (int) group.stream()
-                            .filter(record -> hasText(record.getSourceUrl()) && hasText(record.getExcerpt()))
-                            .count();
-                    Instant latest = group.stream()
-                            .map(DatasetRecord::getCollectedAt)
-                            .filter(java.util.Objects::nonNull)
-                            .max(Comparator.naturalOrder())
-                            .orElse(null);
-                    boolean demo = group.stream().allMatch(record -> "DEMO".equalsIgnoreCase(record.getSourceType()));
+        Map<String, SourceCollectionAttempt> attemptByUrl = attempts.stream()
+                .collect(Collectors.toMap(
+                        SourceCollectionAttempt::getSourceUrl,
+                        attempt -> attempt,
+                        (left, right) -> right,
+                        LinkedHashMap::new
+                ));
 
-                    return new SourceSummary(
-                            hasText(first.getSourceName()) ? first.getSourceName().trim() : sourceKey(first),
-                            first.getSourceUrl(),
-                            first.getSourceType(),
-                            group.size(),
-                            evidence,
-                            latest,
-                            demo
-                    );
-                })
+        java.util.LinkedHashSet<String> configuredUrls = new java.util.LinkedHashSet<>(task.getSourceUrls());
+        configuredUrls.addAll(attemptByUrl.keySet());
+
+        List<SourceSummary> summaries = new ArrayList<>();
+
+        for (String url : configuredUrls) {
+            List<DatasetRecord> group = grouped.remove(url);
+            SourceCollectionAttempt attempt = attemptByUrl.get(url);
+
+            if (group == null || group.isEmpty()) {
+                summaries.add(new SourceSummary(
+                        sourceNameFromUrl(url),
+                        url,
+                        "WEB",
+                        0,
+                        0,
+                        null,
+                        attempt == null ? "NOT_ATTEMPTED" : attempt.getStatus(),
+                        attempt == null ? null : attempt.getErrorCode(),
+                        attempt == null ? null : attempt.getErrorMessage(),
+                        attempt == null ? null : attempt.getAttemptedAt(),
+                        false,
+                        true
+                ));
+                continue;
+            }
+
+            summaries.add(sourceSummary(group, attempt, true));
+        }
+
+        for (List<DatasetRecord> group : grouped.values()) {
+            summaries.add(sourceSummary(group, attemptByUrl.get(sourceKey(group.get(0))), false));
+        }
+
+        return summaries.stream()
                 .sorted(Comparator.comparingInt(SourceSummary::records).reversed()
                         .thenComparing(SourceSummary::name, String.CASE_INSENSITIVE_ORDER))
                 .toList();
     }
+
+    private static SourceSummary sourceSummary(List<DatasetRecord> group,
+                                               SourceCollectionAttempt attempt,
+                                               boolean configured) {
+        DatasetRecord first = group.get(0);
+        int evidence = (int) group.stream()
+                .filter(record -> hasText(record.getSourceUrl()) && hasText(record.getExcerpt()))
+                .count();
+        Instant latest = group.stream()
+                .map(DatasetRecord::getCollectedAt)
+                .filter(java.util.Objects::nonNull)
+                .max(Comparator.naturalOrder())
+                .orElse(null);
+        boolean demo = group.stream().allMatch(record -> "DEMO".equalsIgnoreCase(record.getSourceType()));
+        String status = demo ? "DEMO" : attempt != null ? attempt.getStatus() : "SUCCEEDED";
+
+        return new SourceSummary(
+                hasText(first.getSourceName()) ? first.getSourceName().trim() : sourceKey(first),
+                first.getSourceUrl(),
+                first.getSourceType(),
+                group.size(),
+                evidence,
+                latest,
+                status,
+                attempt == null ? null : attempt.getErrorCode(),
+                attempt == null ? null : attempt.getErrorMessage(),
+                attempt == null ? latest : attempt.getAttemptedAt(),
+                demo,
+                configured
+        );
+    }
+
 
     public List<TaskTimelineEvent> timeline(UUID id) {
         return state.timeline(id);
@@ -299,6 +364,15 @@ public class TaskService {
         return value != null && !value.trim().isEmpty();
     }
 
+    private static String sourceNameFromUrl(String value) {
+        try {
+            String host = URI.create(value).getHost();
+            return host == null ? value : host;
+        } catch (IllegalArgumentException ex) {
+            return value;
+        }
+    }
+
     private static String sourceKey(DatasetRecord record) {
         if (hasText(record.getSourceUrl())) return record.getSourceUrl().trim();
         if (hasText(record.getSourceName())) return record.getSourceName().trim();
@@ -322,6 +396,8 @@ public class TaskService {
             int uniqueOrganizations,
             int uniqueLocations,
             int uniqueSources,
+            int configuredSources,
+            int failedSources,
             int evidenceLinkedRecords,
             int demoRecords,
             Instant latestCollectedAt,
@@ -334,5 +410,10 @@ public class TaskService {
             int records,
             int evidence,
             Instant latestCollectedAt,
-            boolean demo) { }
+            String collectionStatus,
+            String errorCode,
+            String errorMessage,
+            Instant lastAttemptedAt,
+            boolean demo,
+            boolean configured) { }
 }
