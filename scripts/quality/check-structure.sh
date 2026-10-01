@@ -64,6 +64,7 @@ required_files=(
   backend/src/main/java/ai/numen/exception/UserVisibleWorkflowException.java
   frontend/src/app/AppErrorBoundary.tsx
   frontend/src/components/WorkflowHistory.tsx
+  frontend/src/components/ResearchOutcome.tsx
   frontend/tests/component-states.tsx
 )
 
