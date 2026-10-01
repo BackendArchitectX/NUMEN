@@ -37,7 +37,7 @@ export function ResearchOutcome({ task, summary, summaryState, exportUrl, onRefi
       <div className="outcomeActions" aria-label="Research actions">
         <button type="button" className="secondaryAction" onClick={onRefine}><RefreshCw size={14} aria-hidden="true"/> Refine research</button>
         {(task.sourceUrls.length > 0 || task.demoMode || hasResults) && <button type="button" className="secondaryAction" onClick={onViewSources}><Radio size={14} aria-hidden="true"/> View sources</button>}
-        {hasResults && <a className="primaryAction" href={exportUrl}><Download size={15} aria-hidden="true"/> Export CSV</a>}
+        {hasResults && <a className="secondaryAction" href={exportUrl}><Download size={15} aria-hidden="true"/> Export CSV</a>}
       </div>
     </div>
 
