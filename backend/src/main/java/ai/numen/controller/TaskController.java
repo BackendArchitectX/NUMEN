@@ -1,6 +1,7 @@
 package ai.numen.controller;
 
 import ai.numen.dto.CreateTaskRequest;
+import ai.numen.dto.DatasetPageResponse;
 import ai.numen.dto.DatasetRecordResponse;
 import ai.numen.dto.DatasetSummaryResponse;
 import ai.numen.dto.SourceSummaryResponse;
@@ -82,6 +83,20 @@ public class TaskController {
         return service.records(id, q, minQuality, limit).stream()
                 .map(DatasetRecordResponse::from)
                 .toList();
+    }
+
+    @GetMapping("/{id}/records/page")
+    public DatasetPageResponse recordPage(
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "") @Size(max = 128) String q,
+            @RequestParam(defaultValue = "0") @DecimalMin("0.0") @DecimalMax("100.0") double minQuality,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "50") @Min(1) @Max(100) int pageSize,
+            @RequestParam(defaultValue = "qualityScore")
+            @Pattern(regexp = "title|organization|location|qualityScore|sourceName|collectedAt") String sortBy,
+            @RequestParam(defaultValue = "desc")
+            @Pattern(regexp = "asc|desc") String direction) {
+        return DatasetPageResponse.from(service.recordPage(id, q, minQuality, page, pageSize, sortBy, direction));
     }
 
     @GetMapping("/{id}/summary")
