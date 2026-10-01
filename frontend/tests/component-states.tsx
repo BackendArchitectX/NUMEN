@@ -32,7 +32,7 @@ const offlinePrompt = renderToStaticMarkup(
     onRun={noop}
   />
 )
-includes(offlinePrompt, 'disabled=""', 'offline research submission must be disabled')
+includes(offlinePrompt, 'class="run" disabled=""', 'offline research submission must disable the Run research action')
 includes(offlinePrompt, 'aria-busy="false"', 'idle submission must expose aria-busy=false')
 includes(offlinePrompt, 'New research', 'composer must present plain-language research terminology')
 
@@ -50,7 +50,7 @@ const busyPrompt = renderToStaticMarkup(
   />
 )
 includes(busyPrompt, 'aria-busy="true"', 'busy submission must expose aria-busy=true')
-includes(busyPrompt, 'disabled=""', 'busy submission must remain disabled')
+includes(busyPrompt, 'class="run" disabled=""', 'busy submission must keep the Run research action disabled')
 
 const sourceLessPrompt = renderToStaticMarkup(
   <PromptComposer
@@ -66,7 +66,7 @@ const sourceLessPrompt = renderToStaticMarkup(
   />
 )
 includes(sourceLessPrompt, 'Source scope required.', 'composer must explain that live research requires supplied public sources')
-includes(sourceLessPrompt, 'disabled=""', 'source-less live research must be disabled rather than silently generating demo data')
+includes(sourceLessPrompt, 'class="run" disabled=""', 'source-less live research must disable Run research rather than silently generating demo data')
 
 const liveSourcePrompt = renderToStaticMarkup(
   <PromptComposer
@@ -82,7 +82,7 @@ const liveSourcePrompt = renderToStaticMarkup(
   />
 )
 includes(liveSourcePrompt, '1 public source configured.', 'composer must confirm the explicit live source scope')
-excludes(liveSourcePrompt, 'disabled=""', 'valid explicit-source research must be runnable when the service is online')
+excludes(liveSourcePrompt, 'class="run" disabled=""', 'valid explicit-source research must enable the Run research action when the service is online')
 
 const explicitDemoPrompt = renderToStaticMarkup(
   <PromptComposer
@@ -98,7 +98,7 @@ const explicitDemoPrompt = renderToStaticMarkup(
   />
 )
 includes(explicitDemoPrompt, 'Demo mode', 'demo generation must require an explicit visible mode')
-excludes(explicitDemoPrompt, 'disabled=""', 'explicit demo research may run without external URLs')
+excludes(explicitDemoPrompt, 'class="run" disabled=""', 'explicit demo research may enable Run research without external URLs')
 
 const emptyCompleted = renderToStaticMarkup(
   <DatasetExplorer
