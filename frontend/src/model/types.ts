@@ -1,5 +1,7 @@
 export type TaskStatus = 'QUEUED' | 'PLANNING' | 'COLLECTING' | 'PROCESSING' | 'COMPLETED' | 'CANCELLED' | 'FAILED'
 
+export type WorkspaceView = 'console' | 'datasets' | 'history'
+
 export interface Task {
   id: string
   prompt: string
