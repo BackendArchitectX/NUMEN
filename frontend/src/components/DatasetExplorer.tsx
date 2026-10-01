@@ -30,6 +30,7 @@ export function DatasetExplorer({ records, status, query, minQuality, onQueryCha
   }), [records, sortKey, sortDirection])
 
   const selectedRecord = records.find(record => record.id === selectedRecordId)
+  const containsDemoData = records.some(record => record.sourceType === 'DEMO')
 
   const sortBy = (key: SortKey) => {
     if (key === sortKey) {
@@ -42,23 +43,26 @@ export function DatasetExplorer({ records, status, query, minQuality, onQueryCha
 
   return <section className="results panel" aria-labelledby="dataset-heading">
     <div className="resultsHeader">
-      <div><FileSearch size={18} aria-hidden="true"/><h3 id="dataset-heading">Dataset explorer</h3><span>{records.length} visible rows</span></div>
+      <div className="resultsTitle"><FileSearch size={18} aria-hidden="true"/><div><h3 id="dataset-heading">Results</h3><span>{records.length} visible rows</span></div></div>
       <div className="filters">
-        <label><span className="srOnly">Search records</span><Search size={15} aria-hidden="true"/><input value={query} onChange={event => onQueryChange(event.target.value)} placeholder="Search records"/></label>
+        <label><span className="srOnly">Search records</span><Search size={15} aria-hidden="true"/><input value={query} onChange={event => onQueryChange(event.target.value)} placeholder="Search results"/></label>
         <label className="srOnly" htmlFor="quality-filter">Minimum quality</label>
         <select id="quality-filter" aria-label="Minimum quality" value={minQuality} onChange={event => onMinQualityChange(Number(event.target.value))}>
           <option value={0}>All quality</option><option value={80}>80%+</option><option value={90}>90%+</option>
         </select>
       </div>
     </div>
+
+    {containsDemoData && <div className="demoNotice" role="note"><strong>Demo data</strong><span>These sample records are for product evaluation and are not live market intelligence.</span></div>}
+
     <div className="tableWrap"><table>
       <caption className="srOnly">Collected intelligence records and source provenance</caption>
       <thead><tr>
-        <SortableHeader label="INTELLIGENCE" column="title" active={sortKey} direction={sortDirection} onSort={sortBy}/>
-        <SortableHeader label="ORGANIZATION" column="organization" active={sortKey} direction={sortDirection} onSort={sortBy}/>
-        <SortableHeader label="LOCATION" column="location" active={sortKey} direction={sortDirection} onSort={sortBy}/>
-        <SortableHeader label="QUALITY" column="qualityScore" active={sortKey} direction={sortDirection} onSort={sortBy}/>
-        <SortableHeader label="SOURCE" column="sourceName" active={sortKey} direction={sortDirection} onSort={sortBy}/>
+        <SortableHeader label="Intelligence" column="title" active={sortKey} direction={sortDirection} onSort={sortBy}/>
+        <SortableHeader label="Organization" column="organization" active={sortKey} direction={sortDirection} onSort={sortBy}/>
+        <SortableHeader label="Location" column="location" active={sortKey} direction={sortDirection} onSort={sortBy}/>
+        <SortableHeader label="Quality" column="qualityScore" active={sortKey} direction={sortDirection} onSort={sortBy}/>
+        <SortableHeader label="Source" column="sourceName" active={sortKey} direction={sortDirection} onSort={sortBy}/>
       </tr></thead>
       <tbody>
         {sortedRecords.map(record => <tr key={record.id}>
@@ -75,7 +79,7 @@ export function DatasetExplorer({ records, status, query, minQuality, onQueryCha
 
     {selectedRecord && <aside className="recordInspector" aria-labelledby="record-inspector-title">
       <div className="inspectorHeader">
-        <div><span>RECORD EVIDENCE</span><h4 id="record-inspector-title">{selectedRecord.title}</h4></div>
+        <div><span>Record evidence</span><h4 id="record-inspector-title">{selectedRecord.title}</h4></div>
         <button type="button" className="iconAction" onClick={() => setSelectedRecordId(undefined)} aria-label="Close record evidence"><X size={17} aria-hidden="true"/></button>
       </div>
       <div className="inspectorGrid">
@@ -121,7 +125,7 @@ function formatDate(value: string): string {
 
 function emptyMessage(status: TaskStatus): string {
   if (status === 'COMPLETED') return 'No records match the current filters.'
-  if (status === 'FAILED') return 'Collection failed. Review the workflow message above.'
-  if (status === 'CANCELLED') return 'This workflow was cancelled before a publishable dataset was available.'
-  return 'Records will appear here as the workflow completes.'
+  if (status === 'FAILED') return 'Research failed. Review the run details above.'
+  if (status === 'CANCELLED') return 'This research run was cancelled before a publishable dataset was available.'
+  return 'Results will appear here as the research run completes.'
 }
