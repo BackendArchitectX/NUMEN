@@ -24,10 +24,12 @@ public class WorkflowRecoveryService {
 
     private final CollectionTaskRepository tasks;
     private final TaskRunner runner;
+    private final WorkflowStateService state;
 
-    public WorkflowRecoveryService(CollectionTaskRepository tasks, TaskRunner runner) {
+    public WorkflowRecoveryService(CollectionTaskRepository tasks, TaskRunner runner, WorkflowStateService state) {
         this.tasks = tasks;
         this.runner = runner;
+        this.state = state;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -39,12 +41,10 @@ public class WorkflowRecoveryService {
 
         for (CollectionTask task : interrupted) {
             try {
-                task.recoverForRestart();
-                tasks.saveAndFlush(task);
+                state.recover(task.getId());
                 runner.run(task.getId());
             } catch (TaskRejectedException ex) {
-                task.fail("Workflow could not be recovered because execution capacity was exhausted. Submit it again.");
-                tasks.save(task);
+                state.fail(task.getId(), "Workflow could not be recovered because execution capacity was exhausted. Submit it again.");
                 log.warn("workflow_recovery_rejected taskId={}", task.getId());
             }
         }
