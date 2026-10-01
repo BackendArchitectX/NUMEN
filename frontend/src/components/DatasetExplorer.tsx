@@ -1,40 +1,58 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowDown, ArrowUp, ArrowUpRight, FileSearch, Search, X } from 'lucide-react'
-import type { DatasetRecord, TaskStatus } from '../model/types'
+import { useEffect, useRef, useState } from 'react'
+import { ArrowDown, ArrowUp, ArrowUpRight, ChevronLeft, ChevronRight, FileSearch, Search, X } from 'lucide-react'
+import type { DatasetRecord, DatasetSortKey, LoadState, SortDirection, TaskStatus } from '../model/types'
 import { clip } from '../shared/text'
 
 interface DatasetExplorerProps {
   records: DatasetRecord[]
   totalRecords: number
+  matchedRecords: number
+  demoRecords?: number
   status: TaskStatus
+  loadState: LoadState
   query: string
   minQuality: number
+  page: number
+  pageSize: number
+  totalPages: number
+  sortKey: DatasetSortKey
+  sortDirection: SortDirection
   onQueryChange: (value: string) => void
   onMinQualityChange: (value: number) => void
+  onSort: (key: DatasetSortKey) => void
+  onPageChange: (page: number) => void
+  onPageSizeChange: (pageSize: number) => void
 }
 
-type SortKey = 'title' | 'organization' | 'location' | 'qualityScore' | 'sourceName'
-type SortDirection = 'asc' | 'desc'
-
-export function DatasetExplorer({ records, totalRecords, status, query, minQuality, onQueryChange, onMinQualityChange }: DatasetExplorerProps) {
-  const [sortKey, setSortKey] = useState<SortKey>('qualityScore')
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
+export function DatasetExplorer({
+  records,
+  totalRecords,
+  matchedRecords,
+  demoRecords = 0,
+  status,
+  loadState,
+  query,
+  minQuality,
+  page,
+  pageSize,
+  totalPages,
+  sortKey,
+  sortDirection,
+  onQueryChange,
+  onMinQualityChange,
+  onSort,
+  onPageChange,
+  onPageSizeChange
+}: DatasetExplorerProps) {
   const [selectedRecordId, setSelectedRecordId] = useState<string>()
   const inspectorRef = useRef<HTMLElement>(null)
 
-  const sortedRecords = useMemo(() => [...records].sort((left, right) => {
-    const leftValue = left[sortKey]
-    const rightValue = right[sortKey]
-    const comparison = typeof leftValue === 'number' && typeof rightValue === 'number'
-      ? leftValue - rightValue
-      : String(leftValue ?? '').localeCompare(String(rightValue ?? ''), undefined, { sensitivity: 'base' })
-    return sortDirection === 'asc' ? comparison : -comparison
-  }), [records, sortKey, sortDirection])
-
   const selectedRecord = records.find(record => record.id === selectedRecordId)
-  const containsDemoData = records.some(record => record.sourceType === 'DEMO')
   const filtered = Boolean(query.trim()) || minQuality > 0
-  const mayBeTruncated = status === 'COMPLETED' && (filtered ? records.length >= 500 : totalRecords > records.length)
+  const pageStart = matchedRecords > 0 ? page * pageSize + 1 : 0
+  const pageEnd = matchedRecords > 0 ? Math.min(page * pageSize + records.length, matchedRecords) : 0
+  const allDemo = totalRecords > 0 && demoRecords === totalRecords
+  const mixedDemo = demoRecords > 0 && demoRecords < totalRecords
 
   useEffect(() => {
     if (!selectedRecord) return
@@ -80,56 +98,88 @@ export function DatasetExplorer({ records, totalRecords, status, query, minQuali
     }
   }, [selectedRecord])
 
-  const sortBy = (key: SortKey) => {
-    if (key === sortKey) {
-      setSortDirection(current => current === 'asc' ? 'desc' : 'asc')
-      return
+  useEffect(() => {
+    if (selectedRecordId && !records.some(record => record.id === selectedRecordId)) {
+      setSelectedRecordId(undefined)
     }
-    setSortKey(key)
-    setSortDirection(key === 'qualityScore' ? 'desc' : 'asc')
+  }, [records, selectedRecordId])
+
+  const clearFilters = () => {
+    onQueryChange('')
+    onMinQualityChange(0)
   }
 
-  return <section className="results panel" aria-labelledby="dataset-heading">
+  return <section className="results panel" aria-labelledby="dataset-heading" aria-busy={loadState === 'loading'}>
     <div className="resultsHeader">
-      <div className="resultsTitle"><FileSearch size={18} aria-hidden="true"/><div><h3 id="dataset-heading">Results</h3><span>{records.length} visible rows{status === 'COMPLETED' ? ` · ${totalRecords} published` : ''}</span></div></div>
+      <div className="resultsTitle">
+        <FileSearch size={18} aria-hidden="true"/>
+        <div>
+          <h3 id="dataset-heading">Results</h3>
+          <span>{resultRangeText(loadState, filtered, pageStart, pageEnd, matchedRecords, totalRecords)}</span>
+        </div>
+      </div>
+
       <div className="filters">
-        <label className="searchField"><span className="srOnly">Search records</span><Search size={15} aria-hidden="true"/><input value={query} onChange={event => onQueryChange(event.target.value)} placeholder="Search results"/></label>
+        <label className="searchField">
+          <span className="srOnly">Search records</span>
+          <Search size={15} aria-hidden="true"/>
+          <input value={query} onChange={event => onQueryChange(event.target.value)} placeholder="Search results"/>
+        </label>
         <label className="srOnly" htmlFor="quality-filter">Minimum data quality</label>
         <select id="quality-filter" aria-label="Minimum data quality" value={minQuality} onChange={event => onMinQualityChange(Number(event.target.value))}>
-          <option value={0}>All records</option><option value={80}>Quality 80%+</option><option value={90}>Quality 90%+</option>
+          <option value={0}>All records</option>
+          <option value={80}>Quality 80%+</option>
+          <option value={90}>Quality 90%+</option>
         </select>
+        {filtered && <button type="button" className="clearFilters" onClick={clearFilters}>Clear</button>}
       </div>
     </div>
 
-    {containsDemoData && <div className="demoNotice" role="note"><strong>Demo dataset</strong><span>These sample records are for product evaluation and are not live market intelligence.</span></div>}
-    {mayBeTruncated && <div className="resultLimitNotice" role="note">
-      {filtered
-        ? 'Showing the first 500 matching rows. Refine the filters for a narrower view; CSV export contains the complete published dataset.'
-        : `Showing the first ${records.length} of ${totalRecords} published rows. CSV export contains the complete dataset.`}
-    </div>}
+    {allDemo && <div className="demoNotice" role="note"><strong>Demo dataset</strong><span>These sample records are for product evaluation and are not live market intelligence.</span></div>}
+    {mixedDemo && <div className="demoNotice" role="note"><strong>Mixed dataset</strong><span>{demoRecords} of {totalRecords} published records are explicitly labeled demo content.</span></div>}
 
     <div className="tableWrap"><table>
       <caption className="srOnly">Collected intelligence records and source provenance</caption>
       <thead><tr>
-        <SortableHeader label="Result" column="title" active={sortKey} direction={sortDirection} onSort={sortBy}/>
-        <SortableHeader label="Organization" column="organization" active={sortKey} direction={sortDirection} onSort={sortBy}/>
-        <SortableHeader label="Location" column="location" active={sortKey} direction={sortDirection} onSort={sortBy}/>
-        <SortableHeader label="Data quality" column="qualityScore" active={sortKey} direction={sortDirection} onSort={sortBy}/>
-        <SortableHeader label="Source" column="sourceName" active={sortKey} direction={sortDirection} onSort={sortBy}/>
+        <SortableHeader label="Result" column="title" active={sortKey} direction={sortDirection} onSort={onSort}/>
+        <SortableHeader label="Organization" column="organization" active={sortKey} direction={sortDirection} onSort={onSort}/>
+        <SortableHeader label="Location" column="location" active={sortKey} direction={sortDirection} onSort={onSort}/>
+        <SortableHeader label="Data quality" column="qualityScore" active={sortKey} direction={sortDirection} onSort={onSort}/>
+        <SortableHeader label="Source" column="sourceName" active={sortKey} direction={sortDirection} onSort={onSort}/>
       </tr></thead>
       <tbody>
-        {sortedRecords.map(record => <tr key={record.id} className={record.id === selectedRecordId ? 'selectedRow' : undefined}>
-          <td><button type="button" className="recordTitleButton" aria-haspopup="dialog" onClick={() => setSelectedRecordId(record.id)}><strong>{record.title}</strong><small>{clip(record.excerpt, 78)}</small></button></td>
-          <td>{record.organization || '—'}</td>
-          <td>{record.location || '—'}</td>
-          <td><span className="quality" title="Persisted data-quality score">{Math.round(record.qualityScore)}%</span></td>
-          <td>{record.sourceUrl.startsWith('http')
-            ? <a href={record.sourceUrl} target="_blank" rel="noreferrer" aria-label={`Open source ${record.sourceName} in a new tab`}>{record.sourceName}<ArrowUpRight size={13} aria-hidden="true"/></a>
-            : <span className="demoSource">{record.sourceName || 'Demo source'}</span>}</td>
-        </tr>)}
-        {!records.length && <tr><td colSpan={5} className="empty">{emptyMessage(status, query, minQuality)}</td></tr>}
+        {loadState === 'error'
+          ? <tr><td colSpan={5} className="empty errorState">Results are temporarily unavailable. The research run remains persisted; retry by refreshing or reopening this dataset.</td></tr>
+          : records.map(record => <tr key={record.id} className={record.id === selectedRecordId ? 'selectedRow' : undefined}>
+            <td><button type="button" className="recordTitleButton" aria-haspopup="dialog" onClick={() => setSelectedRecordId(record.id)}><strong>{record.title}</strong><small>{clip(record.excerpt, 78)}</small></button></td>
+            <td>{record.organization || '—'}</td>
+            <td>{record.location || '—'}</td>
+            <td><span className="quality" title="Persisted data-quality score">{Math.round(record.qualityScore)}%</span></td>
+            <td>{record.sourceUrl.startsWith('http')
+              ? <a href={record.sourceUrl} target="_blank" rel="noreferrer" aria-label={`Open source ${record.sourceName} in a new tab`}>{record.sourceName}<ArrowUpRight size={13} aria-hidden="true"/></a>
+              : <span className="demoSource">{record.sourceName || 'Demo source'}</span>}</td>
+          </tr>)}
+        {loadState !== 'error' && loadState !== 'loading' && !records.length && <tr><td colSpan={5} className="empty">{emptyMessage(status, query, minQuality)}</td></tr>}
+        {loadState === 'loading' && !records.length && <tr><td colSpan={5} className="empty">Loading results…</td></tr>}
       </tbody>
     </table></div>
+
+    {(matchedRecords > 0 || loadState === 'loading') && <footer className="resultsPagination">
+      <div className="pageSizeControl">
+        <label htmlFor="page-size">Rows</label>
+        <select id="page-size" value={pageSize} onChange={event => onPageSizeChange(Number(event.target.value))}>
+          <option value={25}>25</option>
+          <option value={50}>50</option>
+          <option value={100}>100</option>
+        </select>
+      </div>
+      <div className="pageControls" aria-label="Result pages">
+        <button type="button" onClick={() => onPageChange(Math.max(0, page - 1))} disabled={page <= 0 || loadState === 'loading'} aria-label="Previous result page"><ChevronLeft size={14} aria-hidden="true"/> Previous</button>
+        <span>Page <strong>{totalPages ? page + 1 : 0}</strong> of <strong>{totalPages}</strong></span>
+        <button type="button" onClick={() => onPageChange(Math.min(Math.max(0, totalPages - 1), page + 1))} disabled={page + 1 >= totalPages || loadState === 'loading'} aria-label="Next result page">Next <ChevronRight size={14} aria-hidden="true"/></button>
+      </div>
+      {filtered && <span className="exportScopeNote">CSV export includes the full published dataset.</span>}
+    </footer>}
 
     {selectedRecord && <>
       <div className="inspectorBackdrop" aria-hidden="true" onClick={() => setSelectedRecordId(undefined)}/>
@@ -173,19 +223,30 @@ export function DatasetExplorer({ records, totalRecords, status, query, minQuali
 
 function SortableHeader({ label, column, active, direction, onSort }: {
   label: string
-  column: SortKey
-  active: SortKey
+  column: DatasetSortKey
+  active: DatasetSortKey
   direction: SortDirection
-  onSort: (key: SortKey) => void
+  onSort: (key: DatasetSortKey) => void
 }) {
   const selected = active === column
-  return <th scope="col" aria-sort={selected ? direction === 'asc' ? 'ascending' : 'descending' : 'none'}><button type="button" className="sortButton" onClick={() => onSort(column)} aria-label={`Sort by ${label.toLowerCase()}`}>
-    {label}{selected ? direction === 'asc' ? <ArrowUp size={12} aria-hidden="true"/> : <ArrowDown size={12} aria-hidden="true"/> : null}
-  </button></th>
+  return <th scope="col" aria-sort={selected ? direction === 'asc' ? 'ascending' : 'descending' : 'none'}>
+    <button type="button" className="sortButton" onClick={() => onSort(column)} aria-label={`Sort by ${label.toLowerCase()}`}>
+      {label}{selected ? direction === 'asc' ? <ArrowUp size={12} aria-hidden="true"/> : <ArrowDown size={12} aria-hidden="true"/> : null}
+    </button>
+  </th>
 }
 
 function Detail({ label, value, code = false }: { label: string; value: string; code?: boolean }) {
   return <div><span>{label}</span>{code ? <code className="codeValue">{value}</code> : <strong>{value}</strong>}</div>
+}
+
+function resultRangeText(state: LoadState, filtered: boolean, start: number, end: number, matched: number, total: number): string {
+  if (state === 'loading' && matched === 0) return 'Loading published results…'
+  if (state === 'error') return 'Published result view unavailable'
+  if (matched === 0) return filtered ? `0 matches · ${total} published` : `${total} published`
+  return filtered
+    ? `${start}–${end} of ${matched} matching · ${total} published`
+    : `${start}–${end} of ${total} published`
 }
 
 function formatDate(value: string): string {
