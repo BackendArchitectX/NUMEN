@@ -148,7 +148,7 @@ const outcome = renderToStaticMarkup(
   <ResearchOutcome task={completedTask} records={[record]} exportUrl="/api/v1/tasks/task-completed/export.csv" />
 )
 includes(outcome, 'Research ready', 'completed live research must foreground the outcome state')
-includes(outcome, '1 published results', 'outcome summary must be derived from actual persisted records')
+includes(outcome, '1 published result', 'outcome summary must be derived from actual persisted records')
 includes(outcome, 'Evidence linked', 'outcome must foreground evidence coverage')
 includes(outcome, 'Export CSV', 'completed research must expose its export action')
 
