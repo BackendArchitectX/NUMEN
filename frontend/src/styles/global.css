@@ -926,6 +926,12 @@ main {
   font-size: 10px;
 }
 
+.outcomeLoading.errorState,
+.sourceStateNotice.errorState {
+  color: var(--color-error);
+  background: var(--color-error-subtle);
+}
+
 .results {
   position: relative;
   margin-bottom: 12px;
@@ -1736,6 +1742,13 @@ td a:hover { text-decoration: underline; }
 .sourcesPanel {
   margin-bottom: 12px;
   overflow: hidden;
+}
+
+.sourceStateNotice {
+  padding: 16px 12px;
+  color: var(--color-text-muted);
+  font-size: 10.5px;
+  line-height: 1.55;
 }
 
 .sourceSummaryBar {
