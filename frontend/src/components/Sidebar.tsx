@@ -1,11 +1,12 @@
 import { Activity, Database, History, Moon, Plus, Radio, Sun } from 'lucide-react'
 import type { Task, WorkspaceView } from '../model/types'
+import { groupResearchTasks } from '../shared/research'
 import { clip } from '../shared/text'
 
 interface SidebarProps {
   tasks: Task[]
   selectedId?: string
-  totalRecords: number
+  publishedDatasets: number
   activeView: WorkspaceView
   theme: 'light' | 'dark'
   onToggleTheme: () => void
@@ -14,7 +15,9 @@ interface SidebarProps {
   onSelect: (id: string) => void
 }
 
-export function Sidebar({ tasks, selectedId, totalRecords, activeView, theme, onToggleTheme, onNewResearch, onNavigate, onSelect }: SidebarProps) {
+export function Sidebar({ tasks, selectedId, publishedDatasets, activeView, theme, onToggleTheme, onNewResearch, onNavigate, onSelect }: SidebarProps) {
+  const recentResearch = groupResearchTasks(tasks).slice(0, 7)
+
   return <aside className="sidebar" aria-label="NUMEN workspace">
     <div className="brand">
       <div className="brandMark" aria-hidden="true"><span>N</span></div>
@@ -30,7 +33,7 @@ export function Sidebar({ tasks, selectedId, totalRecords, activeView, theme, on
       <Activity size={17} aria-hidden="true"/> <span className="navText">Research</span>
     </button>
     <button type="button" className={`nav ${activeView === 'datasets' ? 'active' : ''}`} aria-current={activeView === 'datasets' ? 'page' : undefined} onClick={() => onNavigate('datasets')}>
-      <Database size={17} aria-hidden="true"/> <span className="navText">Datasets</span><span className="navCount">{totalRecords}</span>
+      <Database size={17} aria-hidden="true"/> <span className="navText">Datasets</span><span className="navCount" aria-label={`${publishedDatasets} published datasets`}>{publishedDatasets}</span>
     </button>
     <button type="button" className={`nav ${activeView === 'sources' ? 'active' : ''}`} aria-current={activeView === 'sources' ? 'page' : undefined} onClick={() => onNavigate('sources')}>
       <Radio size={17} aria-hidden="true"/> <span className="navText">Sources</span>
@@ -41,7 +44,7 @@ export function Sidebar({ tasks, selectedId, totalRecords, activeView, theme, on
 
     <div className="navLabel recentLabel">Recent research</div>
     <div className="recentList">
-      {tasks.slice(0, 7).map(task => <button
+      {recentResearch.map(({ latest: task, runs }) => <button
         type="button"
         key={task.id}
         className={`recent ${task.id === selectedId ? 'selected' : ''}`}
@@ -49,9 +52,9 @@ export function Sidebar({ tasks, selectedId, totalRecords, activeView, theme, on
         onClick={() => onSelect(task.id)}
       >
         <span className={`dot ${task.status.toLowerCase()}`} aria-hidden="true"/>
-        <div><strong>{clip(task.prompt, 31)}</strong><small>{recentMeta(task)}</small></div>
+        <div><strong>{clip(task.prompt, 31)}</strong><small>{recentMeta(task, runs)}</small></div>
       </button>)}
-      {!tasks.length && <p className="sidebarEmpty">Your recent research will appear here.</p>}
+      {!recentResearch.length && <p className="sidebarEmpty">Your recent research will appear here.</p>}
     </div>
 
     <div className="sidebarFooter">
@@ -64,17 +67,17 @@ export function Sidebar({ tasks, selectedId, totalRecords, activeView, theme, on
   </aside>
 }
 
-function recentMeta(task: Task): string {
-  if (task.status === 'COMPLETED') return `${task.demoMode ? 'Demo · ' : ''}${task.recordCount} ${recordLabel(task.recordCount)} · ready`
-  if (task.status === 'FAILED') return 'Needs attention'
-  if (task.status === 'CANCELLED') return 'Cancelled'
-  if (task.status === 'QUEUED') return 'Queued'
-  if (task.status === 'PLANNING') return 'Preparing research'
-  if (task.status === 'COLLECTING') return 'Searching sources'
-  return 'Validating results'
+function recentMeta(task: Task, runs: number): string {
+  const runCount = runs > 1 ? ` · ${runs} runs` : ''
+  if (task.status === 'COMPLETED') return `${task.demoMode ? 'Demo · ' : ''}${task.recordCount} ${recordLabel(task.recordCount)}${runCount} · complete`
+  if (task.status === 'FAILED') return `Needs attention${runCount}`
+  if (task.status === 'CANCELLED') return `Cancelled${runCount}`
+  if (task.status === 'QUEUED') return `Queued${runCount}`
+  if (task.status === 'PLANNING') return `Preparing research${runCount}`
+  if (task.status === 'COLLECTING') return `Searching sources${runCount}`
+  return `Validating results${runCount}`
 }
 
 function recordLabel(count: number): string {
   return count === 1 ? 'record' : 'records'
 }
-
