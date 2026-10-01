@@ -44,7 +44,9 @@ grep -q 'sources checked' frontend/src/components/WorkflowPanel.tsx || fail "act
 grep -q 'Demo records · no quality filter' frontend/src/components/DatasetExplorer.tsx || fail "demo-only datasets must not expose misleading quality precision"
 grep -q 'composerAdvanced' frontend/src/components/PromptComposer.tsx || fail "source configuration must remain progressively disclosed"
 grep -q 'groupResearchTasks' frontend/src/components/Sidebar.tsx || fail "recent research must group repeated runs instead of showing duplicate task noise"
-grep -q 'publishedDatasets' frontend/src/components/Sidebar.tsx || fail "dataset navigation count must represent datasets rather than raw record count"
+if grep -q 'navCount' frontend/src/components/Sidebar.tsx; then
+  fail "bounded task data must not be presented as exact global navigation counts"
+fi
 grep -q 'Research complete' frontend/src/components/ResearchOutcome.tsx || fail "completed research must use explicit completed-outcome language"
 if grep -q 'Research ready' frontend/src/components/ResearchOutcome.tsx; then
   fail "ambiguous Research ready copy was reintroduced"
