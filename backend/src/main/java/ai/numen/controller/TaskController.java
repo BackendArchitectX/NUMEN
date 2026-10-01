@@ -2,6 +2,8 @@ package ai.numen.controller;
 
 import ai.numen.dto.CreateTaskRequest;
 import ai.numen.dto.DatasetRecordResponse;
+import ai.numen.dto.DatasetSummaryResponse;
+import ai.numen.dto.SourceSummaryResponse;
 import ai.numen.dto.TaskEventResponse;
 import ai.numen.dto.TaskResponse;
 import ai.numen.dto.TaskTimelineEventResponse;
@@ -79,6 +81,18 @@ public class TaskController {
             @RequestParam(defaultValue = "250") @Min(1) @Max(500) int limit) {
         return service.records(id, q, minQuality, limit).stream()
                 .map(DatasetRecordResponse::from)
+                .toList();
+    }
+
+    @GetMapping("/{id}/summary")
+    public DatasetSummaryResponse summary(@PathVariable UUID id) {
+        return DatasetSummaryResponse.from(service.summary(id));
+    }
+
+    @GetMapping("/{id}/sources")
+    public List<SourceSummaryResponse> sources(@PathVariable UUID id) {
+        return service.sources(id).stream()
+                .map(SourceSummaryResponse::from)
                 .toList();
     }
 
