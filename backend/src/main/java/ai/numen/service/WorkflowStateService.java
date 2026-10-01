@@ -31,8 +31,16 @@ public class WorkflowStateService {
 
     @Transactional
     public CollectionTask create(UUID id, String prompt, String idempotencyKey, boolean demoMode) {
-        CollectionTask task = tasks.saveAndFlush(new CollectionTask(id, prompt, idempotencyKey, demoMode));
-        record(task, TaskTimelineEventType.CREATED, demoMode ? "Demo research created" : "Research created");
+        return create(id, prompt, idempotencyKey, demoMode, List.of());
+    }
+
+    @Transactional
+    public CollectionTask create(UUID id, String prompt, String idempotencyKey, boolean demoMode, List<String> sourceUrls) {
+        CollectionTask task = tasks.saveAndFlush(new CollectionTask(id, prompt, idempotencyKey, demoMode, sourceUrls));
+        String detail = demoMode
+                ? "Demo research created"
+                : sourceUrls.isEmpty() ? "Research created" : "Research created with " + sourceUrls.size() + " explicit source(s)";
+        record(task, TaskTimelineEventType.CREATED, detail);
         return task;
     }
 
