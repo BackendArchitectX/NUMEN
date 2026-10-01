@@ -19,6 +19,8 @@ http://localhost:5173/api/v1/openapi
 | `POST` | `/api/v1/tasks/{id}/cancel` | Cancel a non-terminal workflow |
 | `GET` | `/api/v1/tasks/{id}/events` | Subscribe to workflow progress with SSE |
 | `GET` | `/api/v1/tasks/{id}/records` | Read/search/filter dataset records |
+| `GET` | `/api/v1/tasks/{id}/summary` | Read exact persisted dataset outcome statistics |
+| `GET` | `/api/v1/tasks/{id}/sources` | Read exact per-source contribution and evidence coverage |
 | `GET` | `/api/v1/tasks/{id}/timeline` | Read the persisted workflow lifecycle timeline |
 | `GET` | `/api/v1/tasks/{id}/export.csv` | Export the complete workflow dataset as CSV |
 | `GET` | `/api/v1/openapi` | OpenAPI JSON |
@@ -56,6 +58,14 @@ Repeating the same key with the same normalized prompt returns the original work
 `GET /api/v1/tasks/{id}/timeline` returns the durable lifecycle snapshots recorded for a workflow. Events include the event type, persisted task status, stage, progress, optional detail and occurrence timestamp. The UI uses this endpoint for the run timeline rather than inferring a decorative stage history from a progress percentage.
 
 Creation, cancellation, failure, recovery and ordinary state transitions are recorded through the workflow-state service. Final completion is recorded inside the same publication transaction that replaces the dataset and moves the task to `COMPLETED`.
+
+## Dataset outcome summary
+
+`GET /api/v1/tasks/{id}/summary` derives the completed research summary from the complete persisted dataset, independently of any UI search or quality filter. It returns exact persisted counts for total records, unique organizations, locations and sources, evidence-linked records, demo-record count, latest collection time and the top locations.
+
+`GET /api/v1/tasks/{id}/sources` groups the complete persisted dataset by source identity and returns each source's record contribution, captured-evidence count, latest collection time and explicit demo/live classification.
+
+These endpoints exist so the product summary and Sources workspace do not silently change when the user filters the visible result table.
 
 ## Dataset query
 
