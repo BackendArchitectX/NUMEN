@@ -9,6 +9,7 @@ export type TaskTimelineEventType = 'CREATED' | 'STATE_CHANGED' | 'RECOVERED' | 
 export interface Task {
   id: string
   prompt: string
+  demoMode: boolean
   status: TaskStatus
   stage: string
   progress: number
