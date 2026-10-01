@@ -52,6 +52,7 @@ required_files=(
   backend/src/main/resources/db/migration/V3__task_idempotency.sql
   backend/src/main/resources/db/migration/V4__domain_integrity.sql
   backend/src/main/resources/db/migration/V5__workflow_timeline.sql
+  backend/src/main/resources/db/migration/V6__explicit_demo_mode.sql
   backend/src/main/java/ai/numen/entity/TaskTimelineEvent.java
   backend/src/main/java/ai/numen/entity/TaskTimelineEventType.java
   backend/src/main/java/ai/numen/repository/TaskTimelineEventRepository.java
@@ -70,6 +71,7 @@ required_files=(
   frontend/src/components/ResearchOutcome.tsx
   frontend/src/components/SourceExplorer.tsx
   backend/src/test/java/ai/numen/service/TaskSummaryIntegrationTest.java
+  backend/src/test/java/ai/numen/service/CollectionEngineDemoModeTest.java
   frontend/public/theme-init.js
   frontend/tests/component-states.tsx
 )
