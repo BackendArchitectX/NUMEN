@@ -52,3 +52,17 @@ External HTTP(S) collection is deliberately not required for deterministic CI be
 ## Definition of done
 
 A change is not complete until repository checks, backend verification, frontend checks and the full-stack workflow smoke test pass on `main`.
+
+
+## Aurora X product/visual verification
+
+Frontend verification now protects product hierarchy as well as rendering correctness:
+
+- the warm-color denylist rejects known legacy values and prohibited color names,
+- the hue-based Aurora X check rejects newly introduced orange/tan/copper-like hex, RGB and HSL literals even when the exact value was never seen before,
+- component-state tests cover progressive source-scope disclosure,
+- repeated recent research is grouped only when question, Demo/live mode and source scope are materially equivalent,
+- published datasets are exposed through a library rather than a stale cross-workspace selection,
+- bounded recent-run/dataset collections do not masquerade as lifetime totals,
+- zero-result outcomes avoid meaningless evidence ratios,
+- completed outcome actions stay visually secondary to the results themselves.
