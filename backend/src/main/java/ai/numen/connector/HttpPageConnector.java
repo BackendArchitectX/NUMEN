@@ -4,6 +4,7 @@ import ai.numen.config.NumenProperties;
 import ai.numen.entity.DatasetRecord;
 import ai.numen.exception.UserVisibleWorkflowException;
 import ai.numen.security.UrlSafetyGuard;
+import ai.numen.service.SourceCollectionAttemptService;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -26,10 +27,14 @@ public class HttpPageConnector implements SourceConnector {
 
     private final UrlSafetyGuard safetyGuard;
     private final NumenProperties properties;
+    private final SourceCollectionAttemptService attempts;
 
-    public HttpPageConnector(UrlSafetyGuard safetyGuard, NumenProperties properties) {
+    public HttpPageConnector(UrlSafetyGuard safetyGuard,
+                             NumenProperties properties,
+                             SourceCollectionAttemptService attempts) {
         this.safetyGuard = safetyGuard;
         this.properties = properties;
+        this.attempts = attempts;
     }
 
     @Override
@@ -52,7 +57,9 @@ public class HttpPageConnector implements SourceConnector {
         for (String raw : request.urls()) {
             try {
                 records.add(fetchWithRetry(request.taskId(), raw));
+                attempts.succeeded(request.taskId(), raw);
             } catch (Exception ex) {
+                attempts.failed(request.taskId(), raw, errorCode(ex), publicFailureMessage(ex));
                 log.warn("source_collection_failed taskId={} sourceHost={} error={}",
                         request.taskId(), safeHost(raw), ex.getClass().getSimpleName());
             }
@@ -135,6 +142,21 @@ public class HttpPageConnector implements SourceConnector {
             Thread.currentThread().interrupt();
             throw new IOException("Source retry interrupted", ex);
         }
+    }
+
+
+    private static String errorCode(Exception ex) {
+        if (ex instanceof HttpStatusException http) return "HTTP_" + http.getStatusCode();
+        if (ex instanceof IllegalArgumentException) return "SOURCE_REJECTED";
+        if (ex instanceof IOException) return "SOURCE_UNREACHABLE";
+        return "SOURCE_COLLECTION_FAILED";
+    }
+
+    private static String publicFailureMessage(Exception ex) {
+        if (ex instanceof HttpStatusException http) return "Source returned HTTP " + http.getStatusCode();
+        if (ex instanceof IllegalArgumentException) return "Source was rejected by the public-source safety policy";
+        if (ex instanceof IOException) return "Source could not be reached after the configured retry policy";
+        return "Source could not be collected";
     }
 
     private static String safeHost(String raw) {
