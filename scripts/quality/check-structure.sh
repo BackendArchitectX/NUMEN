@@ -57,6 +57,8 @@ required_files=(
   backend/src/main/java/ai/numen/repository/TaskTimelineEventRepository.java
   backend/src/main/java/ai/numen/service/WorkflowStateService.java
   backend/src/main/java/ai/numen/dto/TaskTimelineEventResponse.java
+  backend/src/main/java/ai/numen/dto/DatasetSummaryResponse.java
+  backend/src/main/java/ai/numen/dto/SourceSummaryResponse.java
   backend/src/main/java/ai/numen/config/OpenApiConfig.java
   backend/src/main/java/ai/numen/service/DatasetExportService.java
   backend/src/main/java/ai/numen/service/WorkflowRecoveryService.java
@@ -67,6 +69,7 @@ required_files=(
   frontend/src/components/WorkflowHistory.tsx
   frontend/src/components/ResearchOutcome.tsx
   frontend/src/components/SourceExplorer.tsx
+  backend/src/test/java/ai/numen/service/TaskSummaryIntegrationTest.java
   frontend/public/theme-init.js
   frontend/tests/component-states.tsx
 )
