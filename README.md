@@ -58,11 +58,13 @@ NUMEN combines those steps into one managed workflow with explicit source proven
 
 ## Key Features
 
-- Natural-language workflow requests with deterministic planning.
+- Natural-language research intent with deterministic planning and a separately persisted public-source scope.
 - Explicit demo-mode opt-in: live research requires supplied permitted public URLs and never silently substitutes sample records.
 - Explicit permitted-source HTTP(S) collection behind a pluggable connector boundary.
 - SSRF and outbound URL policy, including reserved/private network, credential and non-standard-port rejection.
 - Source-backed records with fingerprints, collection timestamps and quality scores.
+- Persisted per-source collection outcomes so unavailable configured sources remain visible instead of disappearing from successful partial research.
+- Server-paged, globally sorted dataset browsing with exact matching counts rather than a misleading first-window-only sort.
 - Database-backed workflow history and dataset persistence.
 - Transactional result publication, optimistic locking and database constraints for domain invariants.
 - Idempotent workflow creation with payload-conflict detection.
