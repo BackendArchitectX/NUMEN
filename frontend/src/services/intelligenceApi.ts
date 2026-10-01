@@ -57,7 +57,7 @@ export const intelligenceApi = {
   }),
   cancelTask: (id: string) => request<Task>(`${API}/tasks/${id}/cancel`, { method: 'POST' }),
   getRecords: (id: string, q = '', minQuality = 0) => {
-    const params = new URLSearchParams({ q, minQuality: String(minQuality), limit: '250' })
+    const params = new URLSearchParams({ q, minQuality: String(minQuality), limit: '500' })
     return request<DatasetRecord[]>(`${API}/tasks/${id}/records?${params.toString()}`)
   },
   eventsUrl: (id: string) => `${API}/tasks/${id}/events`,
