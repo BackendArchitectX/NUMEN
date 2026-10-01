@@ -265,12 +265,17 @@ excludes(activeWorkflow, '45%', 'primary active state must not expose decorative
 
 
 const sourceProgress: SourceSummary[] = [{
-  ...sourceSummary,
+  name: 'Example Careers',
   url: 'https://example.com/',
+  type: 'WEB',
   records: 0,
   evidence: 0,
   latestCollectedAt: null,
   collectionStatus: 'SUCCEEDED',
+  errorCode: null,
+  errorMessage: null,
+  lastAttemptedAt: '2026-09-30T00:00:12Z',
+  demo: false,
   configured: true
 }]
 const sourceAwareWorkflow = renderToStaticMarkup(
