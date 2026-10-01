@@ -18,7 +18,8 @@ http://localhost:5173/api/v1/openapi
 | `GET` | `/api/v1/tasks/{id}` | Read one workflow |
 | `POST` | `/api/v1/tasks/{id}/cancel` | Cancel a non-terminal workflow |
 | `GET` | `/api/v1/tasks/{id}/events` | Subscribe to workflow progress with SSE |
-| `GET` | `/api/v1/tasks/{id}/records` | Read/search/filter dataset records |
+| `GET` | `/api/v1/tasks/{id}/records` | Read/search/filter a bounded legacy record window |
+| `GET` | `/api/v1/tasks/{id}/records/page` | Page, filter and globally sort published records |
 | `GET` | `/api/v1/tasks/{id}/summary` | Read exact persisted dataset outcome statistics |
 | `GET` | `/api/v1/tasks/{id}/sources` | Read exact per-source contribution and evidence coverage |
 | `GET` | `/api/v1/tasks/{id}/timeline` | Read the persisted workflow lifecycle timeline |
@@ -33,22 +34,30 @@ Request:
 
 ```json
 {
-  "prompt": "Collect data from https://example.com and preserve source provenance",
-  "demoMode": false
+  "prompt": "Research the supplied public sources and preserve evidence",
+  "demoMode": false,
+  "sourceUrls": [
+    "https://example.com/research",
+    "https://example.org/data"
+  ]
 }
 ```
 
-The prompt is required and is bounded by backend validation. `demoMode` defaults to `false` when omitted.
+The prompt is required and is bounded by backend validation. `demoMode` defaults to `false` when omitted. `sourceUrls` is optional at the JSON-contract level, is deduplicated and persisted separately from the natural-language intent, and is bounded by the deployment's configured maximum source count.
 
 ### Explicit demo mode
 
 NUMEN does not silently replace source-less research with synthetic records.
 
-Normal research requires at least one permitted public HTTP(S) URL in the prompt. If no supported source URL is supplied and `demoMode=false`, the workflow fails with a user-visible explanation asking the caller to add permitted source URLs.
+Normal research should provide permitted public HTTP(S) URLs through `sourceUrls`. Keeping source scope separate from the prompt makes the research question readable, makes restart recovery deterministic and makes the exact collection scope inspectable after submission.
+
+For backward compatibility, older clients that embedded URLs directly in the prompt still work when `sourceUrls` is empty. New clients should use the structured field.
+
+If no supported source URL is available and `demoMode=false`, the workflow fails with a user-visible explanation asking the caller to add permitted source URLs. Demo mode and explicit live source URLs cannot be combined in one request.
 
 Set `demoMode=true` only when sample data is intentionally requested. Demo-generated records are persisted with `sourceType=DEMO`, use `urn:numen:demo:...` provenance and remain visibly labelled by the UI.
 
-The idempotency contract includes demo intent: reusing an idempotency key with a different prompt **or a different `demoMode` value** returns `409 IDEMPOTENCY_CONFLICT`.
+The idempotency contract includes the complete research intent: reusing an idempotency key with a different prompt, a different `demoMode` value **or a different normalized `sourceUrls` list** returns `409 IDEMPOTENCY_CONFLICT`.
 
 Clients that may retry should send:
 
@@ -62,7 +71,7 @@ The first successful submission returns `202 Accepted`, a `Location` header and:
 Idempotency-Replayed: false
 ```
 
-Repeating the same key with the same normalized prompt returns the original workflow and `Idempotency-Replayed: true`. Reusing the key with a different prompt returns `409 IDEMPOTENCY_CONFLICT`.
+Repeating the same key with the same normalized prompt, demo intent and source scope returns the original workflow and `Idempotency-Replayed: true`. Reusing the key for different research intent returns `409 IDEMPOTENCY_CONFLICT`.
 
 ## Persisted workflow timeline
 
@@ -72,21 +81,32 @@ Creation, cancellation, failure, recovery and ordinary state transitions are rec
 
 ## Dataset outcome summary
 
-`GET /api/v1/tasks/{id}/summary` derives the completed research summary from the complete persisted dataset, independently of any UI search or quality filter. It returns exact persisted counts for total records, unique organizations, locations and sources, evidence-linked records, demo-record count, latest collection time and the top locations.
+`GET /api/v1/tasks/{id}/summary` derives the completed research summary from the complete persisted dataset, independently of any UI search or quality filter. It returns exact persisted counts for total records, unique organizations, locations and contributing sources, configured source count, failed source count, evidence-linked records, demo-record count, latest collection time and the top locations.
 
-`GET /api/v1/tasks/{id}/sources` groups the complete persisted dataset by source identity and returns each source's record contribution, captured-evidence count, latest collection time and explicit demo/live classification.
+`GET /api/v1/tasks/{id}/sources` combines the configured source scope, persisted per-source collection outcomes and published records. A configured source therefore remains visible even when it produced zero records. Each response exposes record/evidence contribution, latest collection time, collection status, sanitized failure diagnostics, last attempt time, demo classification and whether the source was explicitly configured.
+
+This distinction is intentional: provenance from successful records must not hide failed configured sources or make partial research look complete.
 
 These endpoints exist so the product summary and Sources workspace do not silently change when the user filters the visible result table.
 
 ## Dataset query
 
-`GET /api/v1/tasks/{id}/records` supports:
+`GET /api/v1/tasks/{id}/records/page` is the primary interactive browsing contract.
 
 | Parameter | Default | Bounds | Meaning |
 | --- | ---: | ---: | --- |
 | `q` | empty | max 128 chars | Case-insensitive search across title, organization, location, excerpt and source |
 | `minQuality` | `0` | 0-100 | Minimum quality score |
-| `limit` | `250` | 1-500 | Maximum rows returned |
+| `page` | `0` | >= 0 | Zero-based page index |
+| `pageSize` | `50` | 1-100 | Records per page |
+| `sortBy` | `qualityScore` | allowlisted field | Global sort field |
+| `direction` | `desc` | `asc` / `desc` | Global sort direction |
+
+Allowed sort fields are `title`, `organization`, `location`, `qualityScore`, `sourceName` and `collectedAt`.
+
+The response contains `records`, `totalMatched`, `page`, `pageSize` and `totalPages`. Sorting happens in the database across the matching result set, not only inside the visible page.
+
+`GET /api/v1/tasks/{id}/records` remains as a bounded list contract for compatibility. It supports `q`, `minQuality` and `limit` (1-500).
 
 Task listing supports `limit` from 1 to 100 and defaults to 50.
 
