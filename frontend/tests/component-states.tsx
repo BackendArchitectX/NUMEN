@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { DatasetExplorer } from '../src/components/DatasetExplorer'
+import { DatasetLibrary } from '../src/components/DatasetLibrary'
 import { PromptComposer } from '../src/components/PromptComposer'
 import { ResearchOutcome } from '../src/components/ResearchOutcome'
 import { Sidebar } from '../src/components/Sidebar'
@@ -8,6 +9,7 @@ import { SourceExplorer } from '../src/components/SourceExplorer'
 import { WorkflowHistory } from '../src/components/WorkflowHistory'
 import { WorkflowPanel } from '../src/components/WorkflowPanel'
 import type { DatasetRecord, DatasetSummary, SourceSummary, Task, TaskTimelineEvent } from '../src/model/types'
+import { groupResearchTasks } from '../src/shared/research'
 
 const noop = () => undefined
 
@@ -65,7 +67,9 @@ const sourceLessPrompt = renderToStaticMarkup(
     onRun={noop}
   />
 )
-includes(sourceLessPrompt, 'Source scope required.', 'composer must explain that live research requires supplied public sources')
+includes(sourceLessPrompt, 'Required before live research can run', 'composer must keep source setup visible without dominating the primary research surface')
+includes(sourceLessPrompt, 'class="composerAdvanced needsSetup"', 'source configuration must remain progressively disclosed')
+includes(sourceLessPrompt, 'Source scope required.', 'expanded source details must explain that live research requires supplied public sources')
 includes(sourceLessPrompt, 'class="run" disabled=""', 'source-less live research must disable Run research rather than silently generating demo data')
 
 const liveSourcePrompt = renderToStaticMarkup(
@@ -334,7 +338,7 @@ const sourceSummary: SourceSummary = {
 const outcome = renderToStaticMarkup(
   <ResearchOutcome task={completedTask} summary={summary} summaryState="ready" exportUrl="/api/v1/tasks/task-completed/export.csv" onRefine={noop} onViewSources={noop} />
 )
-includes(outcome, 'Research ready', 'completed live research must foreground the outcome state')
+includes(outcome, 'Research complete', 'completed live research must foreground an explicit completed outcome state')
 includes(outcome, '1 published result', 'outcome summary must be derived from actual persisted records')
 includes(outcome, 'Evidence linked', 'outcome must foreground evidence coverage')
 includes(outcome, 'Export CSV', 'completed research must expose its export action')
@@ -351,7 +355,7 @@ const limitedOutcome = renderToStaticMarkup(
     onViewSources={noop}
   />
 )
-includes(limitedOutcome, 'Ready with limitations', 'partial source failure must be visible in the completed outcome')
+includes(limitedOutcome, 'Complete with limitations', 'partial source failure must be visible in the completed outcome')
 includes(limitedOutcome, '1/2', 'outcome source coverage must distinguish contributing from configured sources')
 
 const demoOutcome = renderToStaticMarkup(
@@ -411,7 +415,7 @@ const sidebar = renderToStaticMarkup(
   <Sidebar
     tasks={[completedTask]}
     selectedId={completedTask.id}
-    totalRecords={1}
+    publishedDatasets={1}
     activeView="sources"
     theme="light"
     onToggleTheme={noop}
@@ -436,3 +440,25 @@ includes(history, 'Dataset', 'completed runs with data must expose their dataset
 includes(history, 'Sources', 'completed runs with data must expose source coverage')
 
 console.log('[NUMEN] frontend component-state tests passed')
+
+
+const datasetLibrary = renderToStaticMarkup(
+  <DatasetLibrary
+    tasks={[completedTask]}
+    onOpen={noop}
+    onOpenSources={noop}
+    onNewResearch={noop}
+  />
+)
+includes(datasetLibrary, 'Published datasets', 'published dataset library must expose reusable outputs')
+includes(datasetLibrary, '1', 'published dataset library must expose the persisted result count')
+includes(datasetLibrary, 'Open dataset', 'published dataset library must expose a real open action')
+includes(datasetLibrary, 'Sources', 'published dataset library must keep provenance one action away')
+
+const repeatedResearch = groupResearchTasks([
+  completedTask,
+  { ...completedTask, id: 'task-completed-older', createdAt: '2026-09-29T00:00:00Z' },
+  { ...completedTask, id: 'task-other', prompt: 'Compare cloud data platforms', createdAt: '2026-09-28T00:00:00Z' }
+])
+assert.equal(repeatedResearch.length, 2, 'recent research must group repeated runs of the same normalized question')
+assert.equal(repeatedResearch[0].runs, 2, 'grouped research must preserve the repeated-run count')
