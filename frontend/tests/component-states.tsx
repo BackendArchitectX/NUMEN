@@ -173,6 +173,7 @@ includes(populated, 'target="_blank"', 'live provenance links should open separa
 includes(populated, 'rel="noreferrer"', 'external provenance links must suppress referrer leakage')
 includes(populated, 'Data quality', 'quality terminology must be explicit rather than an unexplained percentage')
 includes(populated, 'aria-haspopup="dialog"', 'record rows must announce that evidence opens in a dialog')
+includes(populated, 'Collected by NUMEN', 'evidence timestamps must be labelled as NUMEN collection time rather than world-event time')
 
 const demoRecord: DatasetRecord = { ...record, id: 'record-demo', sourceType: 'DEMO', sourceUrl: 'urn:numen:demo:test:1', sourceName: 'NUMEN Demo Catalog' }
 const demoDataset = renderToStaticMarkup(
@@ -263,7 +264,7 @@ includes(activeWorkflow, '>Cancel<', 'active research needs a cancellation contr
 includes(activeWorkflow, 'Current activity', 'active research must explain what NUMEN is doing')
 includes(activeWorkflow, 'Searching sources', 'active research must use user-facing status language')
 includes(activeWorkflow, 'Hiring Intelligence', 'run details must retain the persisted plan')
-includes(activeWorkflow, 'Run timeline', 'run details must retain persisted lifecycle evidence')
+includes(activeWorkflow, 'Run lifecycle', 'run details must distinguish persisted run lifecycle events from world-event timelines')
 excludes(activeWorkflow, 'role="progressbar"', 'fixed engine milestones must not be presented as precise user progress')
 excludes(activeWorkflow, '45%', 'primary active state must not expose decorative precision')
 
@@ -275,6 +276,7 @@ const sourceProgress: SourceSummary[] = [{
   records: 0,
   evidence: 0,
   latestCollectedAt: null,
+  lastSuccessfulObservationAt: '2026-09-30T00:00:12Z',
   collectionStatus: 'SUCCEEDED',
   errorCode: null,
   errorMessage: null,
@@ -337,6 +339,7 @@ const sourceSummary: SourceSummary = {
   records: 1,
   evidence: 1,
   latestCollectedAt: record.collectedAt,
+  lastSuccessfulObservationAt: record.collectedAt,
   collectionStatus: 'SUCCEEDED',
   errorCode: null,
   errorMessage: null,
@@ -356,6 +359,8 @@ includes(outcome, 'Evidence linked', 'outcome must foreground evidence coverage'
 includes(outcome, 'Export CSV', 'completed research must expose its export action')
 includes(outcome, 'Refine research', 'completed research must expose a real refine action')
 includes(outcome, 'View sources', 'completed research must expose a real source-navigation action')
+includes(outcome, 'Last evidence collected', 'outcome must label dataset collection time explicitly instead of calling it a generic update')
+excludes(outcome, '<span>Updated</span>', 'outcome must not collapse collection, completion and update semantics into one timestamp label')
 
 const limitedOutcome = renderToStaticMarkup(
   <ResearchOutcome
@@ -413,6 +418,7 @@ includes(sources, 'Sources', 'source workspace must be first-class')
 includes(sources, 'Example Careers', 'source workspace must aggregate contributing sources')
 includes(sources, '1/1', 'source workspace must expose evidence contribution')
 includes(sources, 'Open source', 'live sources must expose a real external-source action')
+includes(sources, 'Last success', 'successful source collection must expose the last successful observation separately from attempts')
 
 const failedSource: SourceSummary = {
   name: 'Unavailable Careers',
@@ -421,6 +427,7 @@ const failedSource: SourceSummary = {
   records: 0,
   evidence: 0,
   latestCollectedAt: null,
+  lastSuccessfulObservationAt: null,
   collectionStatus: 'UNAVAILABLE',
   errorCode: 'SOURCE_UNREACHABLE',
   errorMessage: 'Source could not be reached after the configured retry policy',
@@ -432,6 +439,7 @@ const partialSources = renderToStaticMarkup(<SourceExplorer sources={[sourceSumm
 includes(partialSources, '1</strong> limited', 'source workspace must count configured collection limitations')
 includes(partialSources, 'Source unavailable', 'source workspace must distinguish source unavailability from a negative research result')
 includes(partialSources, 'Source could not be reached', 'source workspace must explain collection failure without hiding partial success')
+includes(partialSources, 'Last attempt', 'a failed source must label its recent timestamp as an attempt rather than a successful observation')
 
 const zeroSourceCoverage = renderToStaticMarkup(
   <SourceExplorer
@@ -469,6 +477,8 @@ includes(history, 'class="tableAction">Open ', 'history rows must expose a funct
 includes(history, '1 published record', 'run history must describe user outcomes instead of raw engine stages')
 includes(history, 'Dataset', 'completed runs with data must expose their dataset action')
 includes(history, 'Sources', 'completed runs with data must expose source coverage')
+includes(history, 'Run time', 'run history must label lifecycle time instead of using an ambiguous updated timestamp')
+includes(history, 'Completed', 'terminal run history must identify the lifecycle timestamp as completion time')
 
 console.log('[NUMEN] frontend component-state tests passed')
 
@@ -485,6 +495,7 @@ includes(datasetLibrary, 'Recent published datasets', 'published dataset library
 includes(datasetLibrary, '1', 'published dataset library must expose persisted result counts without claiming a global dataset total')
 includes(datasetLibrary, 'Open dataset', 'published dataset library must expose a real open action')
 includes(datasetLibrary, 'Sources', 'published dataset library must keep provenance one action away')
+includes(datasetLibrary, '<span>Completed</span>', 'published datasets must show completion time rather than an ambiguous updated timestamp')
 
 const repeatedResearch = groupResearchTasks([
   completedTask,

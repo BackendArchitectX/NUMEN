@@ -83,7 +83,7 @@ Creation, cancellation, failure, recovery and ordinary state transitions are rec
 
 `GET /api/v1/tasks/{id}/summary` derives the completed research summary from the complete persisted dataset, independently of any UI search or quality filter. It returns exact persisted counts for total records, unique organizations, locations and contributing sources, configured source count, failed source count, evidence-linked records, demo-record count, latest collection time and the top locations.
 
-`GET /api/v1/tasks/{id}/sources` combines the configured source scope, persisted per-source collection outcomes and published records. A configured source therefore remains visible even when it produced zero records. Each response exposes record/evidence contribution, latest collection time, collection status, sanitized failure diagnostics, last attempt time, demo classification and whether the source was explicitly configured.
+`GET /api/v1/tasks/{id}/sources` combines the configured source scope, persisted per-source collection outcomes and published records. A configured source therefore remains visible even when it produced zero records. Each response exposes record/evidence contribution, latest collection time, collection status, sanitized failure diagnostics, `lastSuccessfulObservationAt`, `lastAttemptedAt`, demo classification and whether the source was explicitly configured. A recent failed attempt therefore never masquerades as a fresh successful observation.
 
 This distinction is intentional: provenance from successful records must not hide failed configured sources or make partial research look complete.
 
@@ -178,3 +178,15 @@ sourceCoverageState is one of COMPLETE, PARTIAL, NONE, DEMO or NOT_APPLICABLE fo
 GET /api/v1/tasks/{id}/sources additionally exposes connectorId and capabilities for source provenance. Live-source collection statuses include SUCCEEDED, UNAVAILABLE, UNAUTHORIZED, REJECTED, RATE_LIMITED and FAILED; configured sources that have not reached a terminal collection outcome are represented as NOT_ATTEMPTED. Demo sources remain DEMO.
 
 These states are intentionally not interchangeable. In particular, UNAVAILABLE, UNAUTHORIZED, REJECTED and RATE_LIMITED never mean that the source contained zero matching records.
+
+## Aurora X²⁵ temporal contract
+
+NUMEN's current API distinguishes persisted workflow lifecycle time from source-observation time. These fields are intentionally not interchangeable:
+
+- task `createdAt`, `startedAt` and `completedAt` describe the workflow lifecycle;
+- timeline `occurredAt` describes when a persisted **run lifecycle event** was recorded;
+- record `collectedAt` describes when NUMEN collected/persisted that evidence record, not when the underlying world event occurred;
+- source `lastSuccessfulObservationAt` describes the most recent successful collection observation known for that source within the run;
+- source `lastAttemptedAt` describes the latest collection attempt regardless of outcome.
+
+The current implementation does **not** claim generic event-time extraction, effective-date modelling, point-in-time reconstruction, temporal backfill, entity-lifecycle history or live monitoring. Those capabilities require additional backend data and must not be inferred from collection timestamps.

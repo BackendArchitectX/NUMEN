@@ -1,6 +1,7 @@
 import { ArrowRight, Database, FlaskConical, Radio } from 'lucide-react'
 import type { Task } from '../model/types'
 import { clip } from '../shared/text'
+import { formatInstant, formatRelativeInstant } from '../shared/time'
 
 interface DatasetLibraryProps {
   tasks: Task[]
@@ -48,8 +49,10 @@ export function DatasetLibrary({ tasks, onOpen, onOpenSources, onNewResearch }: 
         </div>
 
         <div className="datasetLibraryMetric">
-          <span>Updated</span>
-          <strong>{formatRelative(task.completedAt || task.createdAt)}</strong>
+          <span>Completed</span>
+          <strong>{task.completedAt
+            ? <time dateTime={task.completedAt} title={formatInstant(task.completedAt)}>{formatRelativeInstant(task.completedAt)}</time>
+            : 'Unavailable'}</strong>
         </div>
 
         <div className="datasetLibraryActions">
@@ -63,15 +66,4 @@ export function DatasetLibrary({ tasks, onOpen, onOpenSources, onNewResearch }: 
       </article>)}
     </div>
   </section>
-}
-
-function formatRelative(value: string): string {
-  const time = Date.parse(value)
-  if (!Number.isFinite(time)) return 'Recently'
-  const minutes = Math.max(0, Math.round((Date.now() - time) / 60_000))
-  if (minutes < 1) return 'Now'
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.round(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  return `${Math.round(hours / 24)}d ago`
 }

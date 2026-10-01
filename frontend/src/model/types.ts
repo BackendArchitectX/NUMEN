@@ -109,6 +109,7 @@ export interface SourceSummary {
   records: number
   evidence: number
   latestCollectedAt?: string | null
+  lastSuccessfulObservationAt?: string | null
   collectionStatus: SourceCollectionStatus | string
   errorCode?: string | null
   errorMessage?: string | null

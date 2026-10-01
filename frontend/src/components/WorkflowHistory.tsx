@@ -1,6 +1,7 @@
 import { ArrowRight, Database, History, Radio } from 'lucide-react'
 import type { Task } from '../model/types'
 import { clip } from '../shared/text'
+import { formatInstant, formatRelativeInstant, taskTemporalReference } from '../shared/time'
 
 interface WorkflowHistoryProps {
   tasks: Task[]
@@ -16,13 +17,13 @@ export function WorkflowHistory({ tasks, onOpen, onOpenDataset, onOpenSources }:
     </div>
     {tasks.length ? <div className="tableWrap"><table className="historyTable">
       <caption className="srOnly">Persisted research run history</caption>
-      <thead><tr><th scope="col">Research</th><th scope="col">Status</th><th scope="col">Outcome</th><th scope="col">Duration</th><th scope="col">Updated</th><th scope="col">Actions</th></tr></thead>
+      <thead><tr><th scope="col">Research</th><th scope="col">Status</th><th scope="col">Outcome</th><th scope="col">Duration</th><th scope="col">Run time</th><th scope="col">Actions</th></tr></thead>
       <tbody>{tasks.map(task => <tr key={task.id}>
         <td><strong>{clip(task.prompt, 72)}</strong></td>
         <td><span className={`status ${task.status.toLowerCase()}`}>{statusLabel(task.status)}</span></td>
         <td>{outcomeLabel(task)}</td>
         <td>{durationLabel(task)}</td>
-        <td><time dateTime={task.completedAt || task.startedAt || task.createdAt}>{formatRelative(task.completedAt || task.startedAt || task.createdAt)}</time></td>
+        <td>{historyTime(task)}</td>
         <td><div className="historyActions">
           <button type="button" className="tableAction" onClick={() => onOpen(task.id)}>Open <ArrowRight size={13} aria-hidden="true"/></button>
           {task.status === 'COMPLETED' && task.recordCount > 0 &&
@@ -60,15 +61,12 @@ function durationLabel(task: Task): string {
   return remaining ? `${minutes}m ${remaining}s` : `${minutes}m`
 }
 
-function formatRelative(value: string): string {
-  const time = Date.parse(value)
-  if (!Number.isFinite(time)) return value
-  const minutes = Math.max(0, Math.round((Date.now() - time) / 60_000))
-  if (minutes < 1) return 'Now'
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.round(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  return `${Math.round(hours / 24)}d ago`
+function historyTime(task: Task) {
+  const reference = taskTemporalReference(task)
+  return <span title={formatInstant(reference.value)}>
+    <small>{reference.label}</small>{' '}
+    <time dateTime={reference.value}>{formatRelativeInstant(reference.value)}</time>
+  </span>
 }
 
 function statusLabel(status: Task['status']): string {

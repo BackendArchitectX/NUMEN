@@ -1,6 +1,7 @@
 import { CheckCircle2, CircleAlert, Database, Download, Radio, RefreshCw } from 'lucide-react'
 import type { DatasetSummary, LoadState, Task } from '../model/types'
 import { clip } from '../shared/text'
+import { formatInstant, formatRelativeInstant } from '../shared/time'
 
 interface ResearchOutcomeProps {
   task: Task
@@ -16,7 +17,7 @@ export function ResearchOutcome({ task, summary, summaryState, exportUrl, onRefi
   const hasResults = totalRecords > 0
   const allDemo = Boolean(summary ? summary.totalRecords > 0 && summary.demoRecords === summary.totalRecords : task.demoMode && hasResults)
   const mixedDemo = Boolean(summary && summary.demoRecords > 0 && summary.demoRecords < summary.totalRecords)
-  const updatedAt = summary?.latestCollectedAt || task.completedAt || task.createdAt
+  const temporalReference = outcomeTemporalReference(task, summary)
   const limited = Boolean(
     summary
       && (summary.sourceCoverageState === 'PARTIAL'
@@ -60,7 +61,7 @@ export function ResearchOutcome({ task, summary, summaryState, exportUrl, onRefi
           value={summary.totalRecords > 0 ? `${summary.evidenceLinkedRecords}/${summary.totalRecords}` : '—'}
           detail={summary.totalRecords > 0 ? 'records with captured evidence' : 'no published records'}
         />
-        <OutcomeFact label="Updated" value={formatRelative(updatedAt)} detail={formatDate(updatedAt)}/>
+        <OutcomeFact label={temporalReference.label} value={formatRelativeInstant(temporalReference.value)} detail={formatInstant(temporalReference.value)}/>
       </div>
 
       {summary.topLocations.length > 0 && <div className="outcomeContext">
@@ -123,18 +124,11 @@ function sourceCoverageValue(summary: DatasetSummary): string {
   return `${summary.successfulSources}/${summary.configuredSources}`
 }
 
-function formatDate(value: string): string {
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString()
-}
-
-function formatRelative(value: string): string {
-  const time = Date.parse(value)
-  if (!Number.isFinite(time)) return 'Recently'
-  const minutes = Math.max(0, Math.round((Date.now() - time) / 60_000))
-  if (minutes < 1) return 'Now'
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.round(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  return `${Math.round(hours / 24)}d ago`
+function outcomeTemporalReference(task: Task, summary?: DatasetSummary): { label: string; value: string } {
+  if (summary?.latestCollectedAt) {
+    return { label: 'Last evidence collected', value: summary.latestCollectedAt }
+  }
+  if (task.completedAt) return { label: 'Completed', value: task.completedAt }
+  if (task.startedAt) return { label: 'Started', value: task.startedAt }
+  return { label: 'Created', value: task.createdAt }
 }

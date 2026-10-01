@@ -303,6 +303,10 @@ public class TaskService {
             SourceCollectionAttempt attempt = attemptByUrl.get(url);
 
             if (group == null || group.isEmpty()) {
+                Instant lastSuccessfulObservationAt = attempt != null
+                        && attempt.getStatus() == SourceCollectionStatus.SUCCEEDED
+                        ? attempt.getAttemptedAt()
+                        : null;
                 summaries.add(new SourceSummary(
                         sourceNameFromUrl(url),
                         url,
@@ -310,6 +314,7 @@ public class TaskService {
                         0,
                         0,
                         null,
+                        lastSuccessfulObservationAt,
                         attempt == null ? "NOT_ATTEMPTED" : attempt.getStatus().name(),
                         attempt == null ? null : attempt.getErrorCode(),
                         attempt == null ? null : attempt.getErrorMessage(),
@@ -349,6 +354,14 @@ public class TaskService {
                 .orElse(null);
         boolean demo = group.stream().allMatch(record -> "DEMO".equalsIgnoreCase(record.getSourceType()));
         String status = demo ? "DEMO" : attempt != null ? attempt.getStatus().name() : "SUCCEEDED";
+        Instant lastSuccessfulObservationAt = latest;
+        if (!demo
+                && attempt != null
+                && attempt.getStatus() == SourceCollectionStatus.SUCCEEDED
+                && attempt.getAttemptedAt() != null
+                && (lastSuccessfulObservationAt == null || attempt.getAttemptedAt().isAfter(lastSuccessfulObservationAt))) {
+            lastSuccessfulObservationAt = attempt.getAttemptedAt();
+        }
 
         return new SourceSummary(
                 hasText(first.getSourceName()) ? first.getSourceName().trim() : sourceKey(first),
@@ -357,6 +370,7 @@ public class TaskService {
                 group.size(),
                 evidence,
                 latest,
+                lastSuccessfulObservationAt,
                 status,
                 attempt == null ? null : attempt.getErrorCode(),
                 attempt == null ? null : attempt.getErrorMessage(),
@@ -532,6 +546,7 @@ public class TaskService {
             int records,
             int evidence,
             Instant latestCollectedAt,
+            Instant lastSuccessfulObservationAt,
             String collectionStatus,
             String errorCode,
             String errorMessage,

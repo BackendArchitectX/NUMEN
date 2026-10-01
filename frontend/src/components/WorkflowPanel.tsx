@@ -1,6 +1,7 @@
 import { ChevronDown, Clock3, FileJson2, ShieldCheck } from 'lucide-react'
 import type { LoadState, SourceSummary, Task, TaskTimelineEvent } from '../model/types'
 import { clip } from '../shared/text'
+import { formatInstant } from '../shared/time'
 
 interface WorkflowPanelProps {
   task: Task
@@ -71,13 +72,13 @@ function TechnicalDetails({ task, timeline, plan }: { task: Task; timeline: Task
   return <div className="runDetailsContent">
     <div className="technicalMeta"><span>Run ID</span><code>{task.id}</code></div>
     <section className="timelineSection" aria-labelledby={`timeline-${task.id}`}>
-      <div className="sectionTitle"><Clock3 size={16} aria-hidden="true"/><div><span>Run timeline</span><strong id={`timeline-${task.id}`}>{timeline.length} persisted events</strong></div></div>
+      <div className="sectionTitle"><Clock3 size={16} aria-hidden="true"/><div><span>Run lifecycle</span><strong id={`timeline-${task.id}`}>{timeline.length} persisted run events</strong></div></div>
       {timeline.length ? <ol className="timelineList">{timeline.map(event => <li key={event.id}>
         <span className={`timelineDot ${event.status.toLowerCase()}`} aria-hidden="true"/>
         <div className="timelineBody">
           <div><strong>{humanizeStage(event.stage)}</strong><span>{humanizeEvent(event.eventType)}</span></div>
           <p>{event.detail || statusLabel(event.status)}</p>
-          <time dateTime={event.occurredAt}>{formatDate(event.occurredAt)}</time>
+          <time dateTime={event.occurredAt}>{formatInstant(event.occurredAt)}</time>
         </div>
       </li>)}</ol> : <p className="planEmpty">No persisted timeline events are available for this run yet.</p>}
     </section>
@@ -141,11 +142,6 @@ function parsePlan(value?: string): PersistedPlan | undefined {
 function stringList(value: unknown): string[] | undefined {
   if (!Array.isArray(value)) return undefined
   return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
-}
-
-function formatDate(value: string): string {
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString()
 }
 
 function statusLabel(status: Task['status']): string {

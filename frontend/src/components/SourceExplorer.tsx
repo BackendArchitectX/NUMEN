@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ArrowUpRight, Radio, Search } from 'lucide-react'
 import type { LoadState, SourceSummary } from '../model/types'
+import { formatInstant, formatRelativeInstant } from '../shared/time'
 
 interface SourceExplorerProps {
   sources: SourceSummary[]
@@ -76,7 +77,7 @@ export function SourceExplorer({ sources, totalRecords, state }: SourceExplorerP
 
         <div className="sourceMetric"><span>Records</span><strong>{source.records}</strong></div>
         <div className="sourceMetric"><span>Evidence</span><strong>{source.records > 0 ? `${source.evidence}/${source.records}` : '—'}</strong></div>
-        <div className="sourceMetric"><span>{source.latestCollectedAt ? 'Collected' : 'Attempted'}</span><strong>{formatRelative(source.latestCollectedAt || source.lastAttemptedAt)}</strong></div>
+        <SourceTemporalMetric source={source}/>
 
         <div className="sourceAction">
           {source.url?.startsWith('http')
@@ -119,20 +120,22 @@ function sourceStatusText(source: SourceSummary): string {
   if (source.collectionStatus === 'RATE_LIMITED') return `${sourceType} · Rate limited`
   if (source.collectionStatus === 'FAILED') return `${sourceType} · Collection failed`
   if (source.collectionStatus === 'NOT_ATTEMPTED') return `${sourceType} · Not attempted`
-  if (source.configured) return `${sourceType} · Collected`
+  if (source.configured) return `${sourceType} · Collection succeeded`
   return `${sourceType} · Contributing source`
 }
 
-function formatRelative(value?: string | null): string {
-  if (!value) return '—'
-  const time = Date.parse(value)
-  if (!Number.isFinite(time)) return '—'
-  const minutes = Math.max(0, Math.round((Date.now() - time) / 60_000))
-  if (minutes < 1) return 'Now'
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.round(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  return `${Math.round(hours / 24)}d ago`
+function SourceTemporalMetric({ source }: { source: SourceSummary }) {
+  const value = source.lastSuccessfulObservationAt || source.lastAttemptedAt
+  const label = source.lastSuccessfulObservationAt
+    ? 'Last success'
+    : source.lastAttemptedAt
+      ? 'Last attempt'
+      : 'Observation'
+
+  return <div className="sourceMetric">
+    <span>{label}</span>
+    <strong title={formatInstant(value)}>{formatRelativeInstant(value)}</strong>
+  </div>
 }
 
 function sourceTypeLabel(value: string): string {

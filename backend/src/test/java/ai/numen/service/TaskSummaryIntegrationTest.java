@@ -136,6 +136,8 @@ class TaskSummaryIntegrationTest {
                     assertThat(source.name()).isEqualTo("Example Careers");
                     assertThat(source.records()).isEqualTo(2);
                     assertThat(source.evidence()).isEqualTo(1);
+                    assertThat(source.lastSuccessfulObservationAt()).isNotNull();
+                    assertThat(source.lastAttemptedAt()).isEqualTo(source.lastSuccessfulObservationAt());
                     assertThat(source.demo()).isFalse();
                 });
 
@@ -153,6 +155,8 @@ class TaskSummaryIntegrationTest {
                     assertThat(source.records()).isZero();
                     assertThat(source.collectionStatus()).isEqualTo("UNAVAILABLE");
                     assertThat(source.errorCode()).isEqualTo("SOURCE_UNREACHABLE");
+                    assertThat(source.lastSuccessfulObservationAt()).isNull();
+                    assertThat(source.lastAttemptedAt()).isNotNull();
                     assertThat(source.connectorId()).isEqualTo("http-page");
                     assertThat(source.capabilities()).contains("public-http", "partial-failure", "evidence-capture");
                     assertThat(source.configured()).isTrue();

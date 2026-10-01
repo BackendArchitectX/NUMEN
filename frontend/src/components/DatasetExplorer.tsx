@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ArrowDown, ArrowUp, ArrowUpRight, ChevronLeft, ChevronRight, FileSearch, Search, X } from 'lucide-react'
 import type { DatasetRecord, DatasetSortKey, LoadState, SortDirection, TaskStatus } from '../model/types'
 import { clip } from '../shared/text'
+import { formatInstant, formatRelativeInstant } from '../shared/time'
 
 interface DatasetExplorerProps {
   records: DatasetRecord[]
@@ -201,7 +202,7 @@ export function DatasetExplorer({
           <span className={selectedRecord.sourceType === 'DEMO' ? 'trustDemo' : 'trustSource'}>
             {selectedRecord.sourceType === 'DEMO' ? 'Demo record' : 'Source-backed record'}
           </span>
-          <span>Collected {formatRelative(selectedRecord.collectedAt)}</span>
+          <span title={formatInstant(selectedRecord.collectedAt)}>NUMEN collected {formatRelativeInstant(selectedRecord.collectedAt)}</span>
         </div>
 
         <div className="inspectorGrid">
@@ -209,7 +210,7 @@ export function DatasetExplorer({
           <Detail label="Location" value={selectedRecord.location || '—'}/>
           <Detail label="Data quality" value={selectedRecord.sourceType === 'DEMO' ? 'Not scored · demo' : `${Math.round(selectedRecord.qualityScore)}%`}/>
           <Detail label="Source type" value={selectedRecord.sourceType || '—'}/>
-          <Detail label="Collected" value={formatDate(selectedRecord.collectedAt)}/>
+          <Detail label="Collected by NUMEN" value={formatInstant(selectedRecord.collectedAt)}/>
           <Detail label="Fingerprint" value={selectedRecord.fingerprint || '—'} code/>
         </div>
 
@@ -255,22 +256,6 @@ function resultRangeText(state: LoadState, filtered: boolean, start: number, end
   return filtered
     ? `${start}–${end} of ${matched} matching · ${total} published`
     : `${start}–${end} of ${total} published`
-}
-
-function formatDate(value: string): string {
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString()
-}
-
-function formatRelative(value: string): string {
-  const time = Date.parse(value)
-  if (!Number.isFinite(time)) return 'recently'
-  const minutes = Math.max(0, Math.round((Date.now() - time) / 60_000))
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.round(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  return `${Math.round(hours / 24)}d ago`
 }
 
 function emptyMessage(status: TaskStatus, query: string, minQuality: number): string {
