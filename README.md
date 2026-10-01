@@ -58,7 +58,7 @@ NUMEN combines those steps into one managed workflow with explicit source proven
 
 ## Key Features
 
-- Natural-language research intent with deterministic planning and a separately persisted public-source scope.
+- Natural-language research intent with deterministic planning and a separately persisted public-source scope, progressively disclosed so operational setup does not dominate the research question.
 - Explicit demo-mode opt-in: live research requires supplied permitted public URLs and never silently substitutes sample records.
 - Explicit permitted-source HTTP(S) collection behind a pluggable connector boundary.
 - SSRF and outbound URL policy, including reserved/private network, credential and non-standard-port rejection.
@@ -72,8 +72,9 @@ NUMEN combines those steps into one managed workflow with explicit source proven
 - Bounded transient source retries with backoff and jitter.
 - Genuine SSE progress updates with reconnect hints and polling fallback.
 - Durable per-workflow timeline events for creation, state transitions, restart recovery, cancellation, failure and completion.
-- Aurora X premium visual system with Deep Ink navigation, Frost analytical surfaces, Azure interaction, Aqua live-state cues, Iris interpretation, Emerald verification, persisted light/dark themes and a compact outcome-first hierarchy.
+- Aurora X premium visual system with Deep Ink navigation, Frost analytical surfaces, Azure interaction, Aqua live-state cues, Iris interpretation, Emerald verification, persisted light/dark themes, hue-based warm-color CI rejection and a compact outcome-first hierarchy.
 - First-class Sources workspace with exact per-source record contribution, evidence coverage, freshness and explicit demo/live classification.
+- Published-dataset library that separates reusable outputs from raw run history, plus grouped recent research that removes repeated-run navigation noise without deleting execution history.
 - Deep-linked Research, Datasets, Sources and Runs workspaces so browser refresh/back/forward preserve the intended research context.
 - Outcome-first completed research summaries backed by exact persisted dataset aggregates, search, sortable dataset exploration, quality filtering, right-side record evidence inspection and spreadsheet-safe CSV export.
 - Stable API error codes and request correlation IDs.
