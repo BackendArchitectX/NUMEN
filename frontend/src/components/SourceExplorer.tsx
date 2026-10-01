@@ -14,10 +14,13 @@ export function SourceExplorer({ sources, totalRecords, state }: SourceExplorerP
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase()
     if (!needle) return sources
-    return sources.filter(source => [source.name, source.url, source.type].some(value => value?.toLowerCase().includes(needle)))
+    return sources.filter(source => [source.name, source.url, source.type, source.collectionStatus, source.errorMessage]
+      .some(value => value?.toLowerCase().includes(needle)))
   }, [sources, query])
 
-  const liveSources = sources.filter(source => !source.demo).length
+  const successful = sources.filter(source => source.collectionStatus === 'SUCCEEDED').length
+  const failed = sources.filter(source => source.collectionStatus === 'FAILED').length
+  const demoSources = sources.filter(source => source.demo).length
   const evidenceLinked = sources.reduce((sum, source) => sum + source.evidence, 0)
 
   if (state === 'loading' || state === 'idle') {
@@ -25,7 +28,7 @@ export function SourceExplorer({ sources, totalRecords, state }: SourceExplorerP
       <div className="resultsHeader">
         <div className="resultsTitle"><Radio size={18} aria-hidden="true"/><div><h3 id="sources-heading">Sources</h3><span>Loading exact source contribution…</span></div></div>
       </div>
-      <div className="sourceStateNotice" role="status">Loading the complete persisted source set…</div>
+      <div className="sourceStateNotice" role="status">Loading configured sources and collection outcomes…</div>
     </section>
   }
 
@@ -42,7 +45,7 @@ export function SourceExplorer({ sources, totalRecords, state }: SourceExplorerP
     <div className="resultsHeader">
       <div className="resultsTitle">
         <Radio size={18} aria-hidden="true"/>
-        <div><h3 id="sources-heading">Sources</h3><span>{sources.length} contributing sources · {evidenceLinked}/{totalRecords} records with captured evidence</span></div>
+        <div><h3 id="sources-heading">Sources</h3><span>{sources.length} tracked sources · {evidenceLinked}/{totalRecords} records with captured evidence</span></div>
       </div>
       <label className="searchField">
         <span className="srOnly">Search sources</span>
@@ -52,24 +55,26 @@ export function SourceExplorer({ sources, totalRecords, state }: SourceExplorerP
     </div>
 
     {sources.length > 0 && <div className="sourceSummaryBar">
-      <span><strong>{sources.length}</strong> total</span>
-      <span><strong>{liveSources}</strong> live/public</span>
-      <span><strong>{sources.length - liveSources}</strong> demo</span>
+      <span><strong>{sources.length}</strong> tracked</span>
+      <span><strong>{successful}</strong> collected</span>
+      <span><strong>{failed}</strong> unavailable</span>
+      <span><strong>{demoSources}</strong> demo</span>
     </div>}
 
     {visible.length ? <div className="sourceList">
-      {visible.map(source => <article className="sourceRow" key={source.url || `${source.type}:${source.name}`}>
+      {visible.map(source => <article className={`sourceRow ${source.collectionStatus.toLowerCase()}`} key={source.url || `${source.type}:${source.name}`}>
         <div className="sourceIdentity">
-          <span className={source.demo ? 'sourceDot demo' : 'sourceDot live'} aria-hidden="true"/>
+          <span className={sourceDotClass(source)} aria-hidden="true"/>
           <div>
             <strong>{source.name}</strong>
-            <small>{source.demo ? 'Demo source' : sourceTypeLabel(source.type)}</small>
+            <small>{sourceStatusText(source)}</small>
+            {source.errorMessage && <p className="sourceError">{source.errorMessage}</p>}
           </div>
         </div>
 
         <div className="sourceMetric"><span>Records</span><strong>{source.records}</strong></div>
         <div className="sourceMetric"><span>Evidence</span><strong>{source.evidence}/{source.records}</strong></div>
-        <div className="sourceMetric"><span>Latest</span><strong>{formatRelative(source.latestCollectedAt)}</strong></div>
+        <div className="sourceMetric"><span>{source.latestCollectedAt ? 'Collected' : 'Attempted'}</span><strong>{formatRelative(source.latestCollectedAt || source.lastAttemptedAt)}</strong></div>
 
         <div className="sourceAction">
           {source.url?.startsWith('http')
@@ -79,10 +84,25 @@ export function SourceExplorer({ sources, totalRecords, state }: SourceExplorerP
       </article>)}
     </div> : <div className="emptyState compact">
       <Radio aria-hidden="true"/>
-      <h2>{sources.length ? 'No sources match your search' : 'No contributing sources yet'}</h2>
-      <p>{sources.length ? 'Clear the source search to see the full source set.' : 'Published research sources will appear here with their record and evidence contribution.'}</p>
+      <h2>{sources.length ? 'No sources match your search' : 'No sources are associated with this research'}</h2>
+      <p>{sources.length ? 'Clear the source search to see the full source set.' : 'Configured and contributing sources will appear here with their collection and evidence status.'}</p>
     </div>}
   </section>
+}
+
+function sourceDotClass(source: SourceSummary): string {
+  if (source.demo) return 'sourceDot demo'
+  if (source.collectionStatus === 'FAILED') return 'sourceDot failed'
+  if (source.collectionStatus === 'SUCCEEDED') return 'sourceDot live'
+  return 'sourceDot pending'
+}
+
+function sourceStatusText(source: SourceSummary): string {
+  if (source.demo) return 'Demo source'
+  if (source.collectionStatus === 'FAILED') return `${sourceTypeLabel(source.type)} · Collection unavailable`
+  if (source.collectionStatus === 'NOT_ATTEMPTED') return `${sourceTypeLabel(source.type)} · Not attempted`
+  if (source.configured) return `${sourceTypeLabel(source.type)} · Collected`
+  return `${sourceTypeLabel(source.type)} · Contributing source`
 }
 
 function formatRelative(value?: string | null): string {
@@ -96,7 +116,6 @@ function formatRelative(value?: string | null): string {
   if (hours < 24) return `${hours}h ago`
   return `${Math.round(hours / 24)}d ago`
 }
-
 
 function sourceTypeLabel(value: string): string {
   const normalized = value.trim().toUpperCase()
