@@ -69,8 +69,8 @@ NUMEN combines those steps into one managed workflow with explicit source proven
 - Bounded transient source retries with backoff and jitter.
 - Genuine SSE progress updates with reconnect hints and polling fallback.
 - Durable per-workflow timeline events for creation, state transitions, restart recovery, cancellation, failure and completion.
-- Aurora premium visual system with Deep Ink navigation, Frost analytical surfaces, Azure interaction, Aqua live-state cues, Iris intelligence cues, Emerald verification, compact results-first hierarchy and accessible focus/motion behavior.
-- Search, sortable dataset exploration, quality filtering, record-level evidence inspection and spreadsheet-safe CSV export.
+- Aurora X premium visual system with Deep Ink navigation, Frost analytical surfaces, Azure interaction, Aqua live-state cues, Iris interpretation, Emerald verification, persisted light/dark themes and a compact outcome-first hierarchy.
+- Outcome-first completed research summaries, search, sortable dataset exploration, quality filtering, right-side record evidence inspection and spreadsheet-safe CSV export.
 - Stable API error codes and request correlation IDs.
 - Process-local gateway abuse controls for mutation bursts and excessive concurrent SSE streams, with deterministic HTTP 429 responses.
 - Aggregate health/readiness, Micrometer/Prometheus metrics and executor-saturation metrics.
@@ -161,6 +161,7 @@ NUMEN/
 │   ├── ARCHITECTURE.md
 │   ├── DEVELOPMENT.md
 │   ├── DESIGN_SYSTEM.md
+│   ├── AURORA_X_VISUAL_DIRECTIVE.md
 │   ├── DEPLOYMENT.md
 │   ├── ENGINEERING_STANDARDS.md
 │   ├── PERFORMANCE.md
@@ -230,7 +231,7 @@ make reset
 
 `make quality` validates repository structure, source policy, Aurora visual policy, launcher syntax and whitespace. `make test` runs backend tests plus the frontend check pipeline. `make verify` performs the complete static/backend/frontend verification path.
 
-For direct service development and debugging, see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). The visual system is documented in [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md).
+For direct service development and debugging, see [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). The implemented visual system is documented in [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md), with the full Aurora X product/visual directive in [docs/AURORA_X_VISUAL_DIRECTIVE.md](docs/AURORA_X_VISUAL_DIRECTIVE.md).
 
 ## API Documentation
 
