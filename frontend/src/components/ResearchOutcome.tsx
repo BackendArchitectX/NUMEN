@@ -1,15 +1,16 @@
 import type { ReactNode } from 'react'
 import { Building2, CheckCircle2, Clock3, Database, Download, MapPin, Radio } from 'lucide-react'
-import type { DatasetSummary, Task } from '../model/types'
+import type { DatasetSummary, LoadState, Task } from '../model/types'
 import { clip } from '../shared/text'
 
 interface ResearchOutcomeProps {
   task: Task
   summary?: DatasetSummary
+  summaryState: LoadState
   exportUrl: string
 }
 
-export function ResearchOutcome({ task, summary, exportUrl }: ResearchOutcomeProps) {
+export function ResearchOutcome({ task, summary, summaryState, exportUrl }: ResearchOutcomeProps) {
   const totalRecords = summary?.totalRecords ?? task.recordCount
   const hasResults = totalRecords > 0
   const allDemo = Boolean(summary && summary.totalRecords > 0 && summary.demoRecords === summary.totalRecords)
@@ -24,7 +25,7 @@ export function ResearchOutcome({ task, summary, exportUrl }: ResearchOutcomePro
           {allDemo ? 'Demo dataset' : mixedDemo ? 'Mixed dataset' : hasResults ? 'Research ready' : 'Research complete'}
         </span>
         <h2 id={`outcome-${task.id}`}>{clip(task.prompt, 120)}</h2>
-        <p>{summary ? summaryText(summary) : hasResults ? 'Published results are ready. Loading exact dataset coverage…' : 'No publishable results were produced for this run.'}</p>
+        <p>{summary ? summaryText(summary) : hasResults ? summaryState === 'error' ? 'Published results are ready, but dataset-wide coverage is temporarily unavailable.' : 'Published results are ready. Loading exact dataset coverage…' : 'No publishable results were produced for this run.'}</p>
       </div>
       {hasResults && <a className="primaryAction" href={exportUrl}><Download size={15} aria-hidden="true"/> Export CSV</a>}
     </div>
@@ -43,7 +44,9 @@ export function ResearchOutcome({ task, summary, exportUrl }: ResearchOutcomePro
         <span>Top locations</span>
         <div>{summary.topLocations.map(item => <span key={item.value}>{item.value} <b>{item.count}</b></span>)}</div>
       </div>}
-    </> : hasResults && <div className="outcomeLoading" role="status">Loading exact dataset summary…</div>}
+    </> : hasResults && (summaryState === 'error'
+      ? <div className="outcomeLoading errorState" role="alert">Dataset-wide coverage could not be loaded. The published result table remains available.</div>
+      : <div className="outcomeLoading" role="status">Loading exact dataset summary…</div>)}
   </section>
 }
 
