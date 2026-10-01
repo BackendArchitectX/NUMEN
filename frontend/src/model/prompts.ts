@@ -1,5 +1,5 @@
 export const examplePrompts = [
-  'Find Java backend engineering roles in India and return role, company, location, experience and source evidence',
-  'Compare cloud data platforms by positioning, target customer and source-backed differentiators',
-  'Research companies adopting Kafka and preserve the public evidence behind every finding'
+  'Find Java backend engineering roles in India and return title, company, location, URL and source evidence',
+  'Build a source-backed dataset of cloud data platform companies with organization, website, location and evidence',
+  'Collect sponsor opportunities from supplied public pages and structure title, organization, location, website and source evidence'
 ] as const
