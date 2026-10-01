@@ -83,7 +83,7 @@ export function PromptComposer({
             onRun()
           }
         }}
-        placeholder="Example: Find Java backend engineering roles in India and return role, company, location, experience and source evidence."
+        placeholder="Example: Find Java backend engineering roles in India and return title, company, location, URL and source evidence."
       />
       <button type="button" className="run" onClick={onRun} disabled={!runnable} aria-busy={busy}>
         {busy ? <LoaderCircle className="spin" size={16} aria-hidden="true"/> : <Play size={16} aria-hidden="true"/>}
