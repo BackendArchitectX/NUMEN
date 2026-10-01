@@ -1,4 +1,4 @@
-import { Clock3, Download, FileJson2, ShieldCheck } from 'lucide-react'
+import { ChevronDown, Clock3, Download, FileJson2, ShieldCheck } from 'lucide-react'
 import type { Task, TaskTimelineEvent } from '../model/types'
 import { clip } from '../shared/text'
 
@@ -19,12 +19,16 @@ interface PersistedPlan {
 export function WorkflowPanel({ task, timeline, exportUrl, onCancel }: WorkflowPanelProps) {
   const active = !['COMPLETED', 'FAILED', 'CANCELLED'].includes(task.status)
   const plan = parsePlan(task.planJson)
+  const completed = task.status === 'COMPLETED'
 
   return <section className="runPanel panel" aria-labelledby={`workflow-${task.id}`}>
     <div className="runHeader">
-      <div>
-        <span className={`status ${task.status.toLowerCase()}`} aria-live="polite">{task.status}</span>
-        <h2 id={`workflow-${task.id}`}>{clip(task.prompt, 90)}</h2>
+      <div className="runIdentity">
+        <span className={`status ${task.status.toLowerCase()}`} aria-live="polite">{statusLabel(task.status)}</span>
+        <div>
+          <span className="runKicker">{completed ? 'Research outcome' : 'Research in progress'}</span>
+          <h2 id={`workflow-${task.id}`}>{clip(task.prompt, 90)}</h2>
+        </div>
       </div>
       <div className="runActions">
         {active && <button type="button" onClick={() => onCancel(task.id)}>Cancel</button>}
@@ -32,46 +36,53 @@ export function WorkflowPanel({ task, timeline, exportUrl, onCancel }: WorkflowP
       </div>
     </div>
 
-    <div className="currentStage" aria-label="Current persisted workflow state">
+    <div className="runSummary" aria-label="Current persisted workflow state">
       <div>
-        <span>Current stage</span>
+        <span>{completed ? 'Published result' : 'Current activity'}</span>
         <strong>{task.errorMessage || task.stage}</strong>
+        <small>{completed ? `${task.recordCount} records published` : humanizeStage(task.stage)}</small>
       </div>
-      <b>{task.progress}%</b>
+      {!completed && <div className="runProgressMeta"><span className="srOnly">Progress</span><b>{task.progress}%</b></div>}
     </div>
-    <div className="progressTrack" role="progressbar" aria-label="Workflow progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={task.progress}>
+
+    {!completed && <div className="progressTrack" role="progressbar" aria-label="Workflow progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={task.progress}>
       <div style={{ width: `${task.progress}%` }}/>
-    </div>
+    </div>}
 
-    <section className="timelineSection" aria-labelledby={`timeline-${task.id}`}>
-      <div className="sectionTitle"><Clock3 size={16} aria-hidden="true"/><div><span>RUN TIMELINE</span><strong id={`timeline-${task.id}`}>{timeline.length} persisted events</strong></div></div>
-      {timeline.length ? <ol className="timelineList">{timeline.map(event => <li key={event.id}>
-        <span className={`timelineDot ${event.status.toLowerCase()}`} aria-hidden="true"/>
-        <div className="timelineBody">
-          <div><strong>{event.stage}</strong><span>{event.eventType.replaceAll('_', ' ')}</span></div>
-          <p>{event.detail || `${event.status} · ${event.progress}%`}</p>
-          <time dateTime={event.occurredAt}>{formatDate(event.occurredAt)}</time>
-        </div>
-      </li>)}</ol> : <p className="planEmpty">No persisted timeline events are available for this run yet.</p>}
-    </section>
+    <details className="runDetails">
+      <summary><span>Run details</span><small>Execution plan, persisted events and safeguards</small><ChevronDown size={16} aria-hidden="true"/></summary>
+      <div className="runDetailsContent">
+        <section className="timelineSection" aria-labelledby={`timeline-${task.id}`}>
+          <div className="sectionTitle"><Clock3 size={16} aria-hidden="true"/><div><span>Run timeline</span><strong id={`timeline-${task.id}`}>{timeline.length} persisted events</strong></div></div>
+          {timeline.length ? <ol className="timelineList">{timeline.map(event => <li key={event.id}>
+            <span className={`timelineDot ${event.status.toLowerCase()}`} aria-hidden="true"/>
+            <div className="timelineBody">
+              <div><strong>{event.stage}</strong><span>{humanizeEvent(event.eventType)}</span></div>
+              <p>{event.detail || `${statusLabel(event.status)} · ${event.progress}%`}</p>
+              <time dateTime={event.occurredAt}>{formatDate(event.occurredAt)}</time>
+            </div>
+          </li>)}</ol> : <p className="planEmpty">No persisted timeline events are available for this run yet.</p>}
+        </section>
 
-    <section className="executionPlan" aria-label="Persisted execution plan">
-      <div className="sectionTitle"><FileJson2 size={16} aria-hidden="true"/><div><span>EXECUTION PLAN</span><strong>{plan?.useCase || 'Plan pending'}</strong></div></div>
-      {plan ? <div className="planGrid">
-        <div>
-          <span className="planLabel">Stages</span>
-          {plan.stages?.length ? <ol className="planList">{plan.stages.map(stage => <li key={stage}>{stage}</li>)}</ol> : <p className="planEmpty">No stages declared by the persisted plan.</p>}
-        </div>
-        <div>
-          <span className="planLabel">Output fields</span>
-          {plan.fields?.length ? <div className="planChips">{plan.fields.map(field => <span key={field}>{field}</span>)}</div> : <p className="planEmpty">No output fields declared yet.</p>}
-        </div>
-        <div>
-          <span className="planLabel">Safeguards</span>
-          {plan.safeguards?.length ? <ul className="safeguardList">{plan.safeguards.map(item => <li key={item}><ShieldCheck size={13} aria-hidden="true"/>{item}</li>)}</ul> : <p className="planEmpty">No safeguards declared by the plan.</p>}
-        </div>
-      </div> : <p className="planEmpty">NUMEN is still preparing the persisted execution plan. This panel does not infer stage completion from decorative thresholds.</p>}
-    </section>
+        <section className="executionPlan" aria-label="Persisted execution plan">
+          <div className="sectionTitle"><FileJson2 size={16} aria-hidden="true"/><div><span>Execution plan</span><strong>{plan?.useCase || 'Plan pending'}</strong></div></div>
+          {plan ? <div className="planGrid">
+            <div>
+              <span className="planLabel">Stages</span>
+              {plan.stages?.length ? <ol className="planList">{plan.stages.map(stage => <li key={stage}>{humanizeStage(stage)}</li>)}</ol> : <p className="planEmpty">No stages declared by the persisted plan.</p>}
+            </div>
+            <div>
+              <span className="planLabel">Output fields</span>
+              {plan.fields?.length ? <div className="planChips">{plan.fields.map(field => <span key={field}>{field}</span>)}</div> : <p className="planEmpty">No output fields declared yet.</p>}
+            </div>
+            <div>
+              <span className="planLabel">Safeguards</span>
+              {plan.safeguards?.length ? <ul className="safeguardList">{plan.safeguards.map(item => <li key={item}><ShieldCheck size={13} aria-hidden="true"/>{humanizeStage(item)}</li>)}</ul> : <p className="planEmpty">No safeguards declared by the plan.</p>}
+            </div>
+          </div> : <p className="planEmpty">NUMEN is still preparing the persisted execution plan.</p>}
+        </section>
+      </div>
+    </details>
   </section>
 }
 
@@ -98,4 +109,24 @@ function stringList(value: unknown): string[] | undefined {
 function formatDate(value: string): string {
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString()
+}
+
+function statusLabel(status: Task['status']): string {
+  switch (status) {
+    case 'QUEUED': return 'Queued'
+    case 'PLANNING': return 'Preparing'
+    case 'COLLECTING': return 'Searching sources'
+    case 'PROCESSING': return 'Validating'
+    case 'COMPLETED': return 'Ready'
+    case 'CANCELLED': return 'Cancelled'
+    case 'FAILED': return 'Needs attention'
+  }
+}
+
+function humanizeStage(value: string): string {
+  return value.replaceAll('_', ' ').replaceAll('-', ' ').replace(/\b\w/g, letter => letter.toUpperCase())
+}
+
+function humanizeEvent(value: TaskTimelineEvent['eventType']): string {
+  return value.replaceAll('_', ' ').toLowerCase().replace(/^./, letter => letter.toUpperCase())
 }
