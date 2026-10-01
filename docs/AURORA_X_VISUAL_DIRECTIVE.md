@@ -787,7 +787,7 @@ The product should become more trustworthy as more detail is inspected, never le
 
 Users often repeat the same research question while refining sources, refreshing data or testing changes.
 
-Primary navigation and recent-research surfaces should group repeated normalized research questions and show the latest outcome plus the number of runs.
+Primary navigation and recent-research surfaces may group repeated research only when the normalized question, execution mode and material source scope are equivalent. Show the latest outcome plus the number of runs.
 
 The detailed Runs workspace remains the place where every individual execution is preserved.
 
@@ -860,7 +860,7 @@ Running the same question again should produce another auditable run without for
 
 Until a first-class research/version model exists:
 
-- group repeated recent-research entries by normalized question,
+- group repeated recent-research entries only when question, Demo/live mode and material source scope are equivalent,
 - retain all runs in Runs,
 - keep every dataset separately addressable,
 - never pretend grouping deletes execution history.
@@ -909,3 +909,54 @@ When the interface feels flat, first improve:
 - interaction feedback.
 
 Only then consider whether a semantic accent is missing.
+
+
+## 71. Bounded collections must disclose their scope
+
+If the frontend intentionally loads only the most recent N runs, it must not present `tasks.length` as the lifetime total for the workspace.
+
+Apply this principle to:
+
+- navigation badges,
+- dataset-library headings,
+- run-history headings,
+- recent-research lists.
+
+Prefer:
+
+- omit the count,
+- or say "Showing N recent …"
+
+unless the backend supplies an exact aggregate.
+
+## 72. Research grouping must preserve material scope
+
+Two identical natural-language questions are not necessarily the same research definition.
+
+Do not group them when material execution scope differs, including:
+
+- Demo vs live mode,
+- different configured source sets,
+- materially different persisted collection constraints.
+
+Grouping is a navigation convenience, never permission to erase or merge execution truth.
+
+## 73. No-orange enforcement must detect new warm values
+
+A fixed denylist of legacy hex values is insufficient because a new warm color can be introduced under a different literal.
+
+Automated frontend verification should also inspect actual color hue for hex/RGB/HSL literals and reject visibly warm orange/tan/copper ranges.
+
+Keep the heuristic conservative enough to preserve legitimate Crimson error semantics and cool neutrals, but strong enough that a renamed orange value cannot bypass policy.
+
+## 74. Operational configuration belongs behind progressive disclosure
+
+When a technical prerequisite is necessary for execution but is not the user's primary intent, summarize it compactly and disclose the detailed controls on demand.
+
+For NUMEN research this applies to:
+
+- exact public source URLs,
+- Demo mode,
+- advanced collection constraints.
+
+The summary must still explain why Run research is unavailable when configuration is incomplete.
