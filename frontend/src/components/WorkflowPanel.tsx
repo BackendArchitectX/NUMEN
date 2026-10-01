@@ -1,11 +1,12 @@
 import { ChevronDown, Clock3, FileJson2, ShieldCheck } from 'lucide-react'
-import type { Task, TaskTimelineEvent } from '../model/types'
+import type { LoadState, SourceSummary, Task, TaskTimelineEvent } from '../model/types'
 import { clip } from '../shared/text'
 
 interface WorkflowPanelProps {
   task: Task
   timeline: TaskTimelineEvent[]
-  exportUrl: string
+  sources: SourceSummary[]
+  sourcesState: LoadState
   onCancel: (id: string) => void
 }
 
@@ -16,10 +17,11 @@ interface PersistedPlan {
   safeguards?: string[]
 }
 
-export function WorkflowPanel({ task, timeline, onCancel }: WorkflowPanelProps) {
+export function WorkflowPanel({ task, timeline, sources, sourcesState, onCancel }: WorkflowPanelProps) {
   const active = !['COMPLETED', 'FAILED', 'CANCELLED'].includes(task.status)
   const plan = parsePlan(task.planJson)
   const completed = task.status === 'COMPLETED'
+  const sourceProgress = describeSourceProgress(task, sources, sourcesState)
 
   if (completed) {
     return <section className="technicalPanel panel" aria-label="Technical run details">
@@ -49,8 +51,9 @@ export function WorkflowPanel({ task, timeline, onCancel }: WorkflowPanelProps) 
       <span className="activityPulse" aria-hidden="true"/>
       <div>
         <span>Current activity</span>
-        <strong>{task.errorMessage || humanizeStage(task.stage)}</strong>
+        <strong>{task.errorMessage || statusLabel(task.status)}</strong>
         <small>{activityDescription(task)}</small>
+        {sourceProgress && <div className="activityProgress">{sourceProgress}</div>}
       </div>
     </div>
 
@@ -80,7 +83,7 @@ function TechnicalDetails({ task, timeline, plan }: { task: Task; timeline: Task
     </section>
 
     <section className="executionPlan" aria-label="Persisted execution plan">
-      <div className="sectionTitle"><FileJson2 size={16} aria-hidden="true"/><div><span>Execution plan</span><strong>{plan?.useCase || 'Plan pending'}</strong></div></div>
+      <div className="sectionTitle"><FileJson2 size={16} aria-hidden="true"/><div><span>Execution plan</span><strong>{plan?.useCase ? humanizeStage(plan.useCase) : 'Plan pending'}</strong></div></div>
       {plan ? <div className="planGrid">
         <div>
           <span className="planLabel">Stages</span>
@@ -88,7 +91,7 @@ function TechnicalDetails({ task, timeline, plan }: { task: Task; timeline: Task
         </div>
         <div>
           <span className="planLabel">Output fields</span>
-          {plan.fields?.length ? <div className="planChips">{plan.fields.map(field => <span key={field}>{field}</span>)}</div> : <p className="planEmpty">No output fields declared yet.</p>}
+          {plan.fields?.length ? <div className="planChips">{plan.fields.map(field => <span key={field}>{humanizeStage(field)}</span>)}</div> : <p className="planEmpty">No output fields declared yet.</p>}
         </div>
         <div>
           <span className="planLabel">Safeguards</span>
@@ -97,6 +100,23 @@ function TechnicalDetails({ task, timeline, plan }: { task: Task; timeline: Task
       </div> : <p className="planEmpty">NUMEN is still preparing the persisted execution plan.</p>}
     </section>
   </div>
+}
+
+function describeSourceProgress(task: Task, sources: SourceSummary[], state: LoadState): string | undefined {
+  if (task.demoMode) return task.status === 'FAILED' ? undefined : 'Demo mode uses labeled sample records; no live sources are contacted.'
+  if (!task.sourceUrls.length) return undefined
+  if (state === 'error') return 'Live source progress is temporarily unavailable; the research run is still persisted.'
+
+  const configured = sources.filter(source => source.configured && !source.demo)
+  const resolved = configured.filter(source => source.collectionStatus === 'SUCCEEDED' || source.collectionStatus === 'FAILED').length
+  const failed = configured.filter(source => source.collectionStatus === 'FAILED').length
+  const total = task.sourceUrls.length
+  const checked = Math.min(total, resolved)
+
+  if (task.status === 'PLANNING' || task.status === 'QUEUED') return `0 / ${total} sources checked`
+  if (task.status === 'COLLECTING') return `${checked} / ${total} sources checked${failed ? ` · ${failed} unavailable` : ''}`
+  if (task.status === 'PROCESSING') return `${checked} / ${total} sources checked${failed ? ` · ${failed} unavailable` : ''}`
+  return undefined
 }
 
 function parsePlan(value?: string): PersistedPlan | undefined {
@@ -141,7 +161,7 @@ function activityDescription(task: Task): string {
     case 'QUEUED': return 'Waiting for execution capacity.'
     case 'PLANNING': return 'Structuring the request and preparing the collection plan.'
     case 'COLLECTING': return 'Collecting permitted source material and candidate records.'
-    case 'PROCESSING': return 'Checking the collected records before publication.'
+    case 'PROCESSING': return 'Checking collected records before publication.'
     case 'FAILED': return 'The run stopped before a complete result could be published.'
     case 'CANCELLED': return 'This run was cancelled.'
     case 'COMPLETED': return `${task.recordCount} records published.`
