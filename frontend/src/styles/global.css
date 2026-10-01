@@ -1031,6 +1031,15 @@ select {
 
 .demoNotice strong { color: var(--color-intelligence); }
 
+.resultLimitNotice {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-subtle);
+  color: var(--color-text-muted);
+  font-size: 9.5px;
+  line-height: 1.5;
+}
+
 .tableWrap {
   max-width: 100%;
   overflow: auto;
