@@ -28,7 +28,7 @@ NUMEN uses a premium light interface designed for long analytical sessions. The 
 
 ## Component treatment
 
-The sidebar uses a translucent warm surface with backdrop blur. Hero copy is spacious and editorial. The prompt composer receives the strongest elevation because it is the application's primary action surface. Metric cards use compact visual hierarchy. Workflow progress is quiet but legible. Dataset tables remain high-density while row hover, sticky headers and semantic badges improve scanability.
+The sidebar uses a translucent warm surface with backdrop blur. Workspace headers are compact and operational rather than landing-page heroes. The prompt composer receives the strongest elevation on the Console because it is the primary creation surface. Metric cards use compact visual hierarchy. Workflow state is quiet but legible and exposes the persisted execution plan rather than an inferred decorative stage history. Dataset tables remain high-density while sortable headers, evidence drill-downs, row hover, sticky headers and semantic badges improve scanability.
 
 ## Responsive behavior
 
@@ -37,3 +37,10 @@ Desktop keeps the persistent left workspace rail. Tablet collapses to the main w
 ## Guardrails
 
 Do not reintroduce dark-theme-only colors, external font dependencies, neon gradients, excessive blur, glass effects that reduce contrast, or multiple competing brand colors. New components should reuse the existing CSS variables before introducing new tokens.
+
+
+## Interaction truthfulness
+
+Navigation labels that look actionable are real controls and change actual workspace views. Workflow presentation must use persisted task state and persisted plan data; do not infer a decorative completion history from a percentage. Dataset rows expose their persisted evidence metadata through a real inspector, and sortable column headers perform real sorting.
+
+Metrics must be derivable from persisted domain state. Do not display a provenance percentage, health state or quality percentage merely because it looks desirable.
