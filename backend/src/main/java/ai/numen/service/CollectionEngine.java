@@ -5,6 +5,7 @@ import ai.numen.connector.SourceCollectionRequest;
 import ai.numen.connector.SourceConnector;
 import ai.numen.domain.WorkflowPlan;
 import ai.numen.entity.DatasetRecord;
+import ai.numen.exception.UserVisibleWorkflowException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -27,15 +28,20 @@ public class CollectionEngine {
         this.properties = properties;
     }
 
-    public List<DatasetRecord> collect(UUID taskId, String prompt, WorkflowPlan plan) {
+    public List<DatasetRecord> collect(UUID taskId, String prompt, WorkflowPlan plan, boolean demoMode) {
         List<String> urls = extractUrls(prompt).stream()
                 .limit(properties.getMaxFetchUrls())
                 .toList();
 
-        SourceCollectionRequest request = new SourceCollectionRequest(taskId, prompt, plan, urls);
+        SourceCollectionRequest request = new SourceCollectionRequest(taskId, prompt, plan, urls, demoMode);
         List<SourceConnector> matching = connectors.stream()
                 .filter(connector -> connector.supports(request))
                 .toList();
+
+        if (matching.isEmpty() && urls.isEmpty() && !demoMode) {
+            throw new UserVisibleWorkflowException(
+                    "No public source URL was supplied. Add one or more permitted HTTP(S) URLs to the research request, or explicitly enable Demo mode for sample data.");
+        }
 
         if (matching.size() != 1) {
             throw new IllegalStateException("Expected exactly one source connector but found " + matching.size());
