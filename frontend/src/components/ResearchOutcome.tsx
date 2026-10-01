@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Building2, CheckCircle2, Clock3, Database, Download, MapPin, Radio } from 'lucide-react'
 import type { DatasetRecord, Task } from '../model/types'
 import { clip } from '../shared/text'
@@ -46,7 +47,7 @@ export function ResearchOutcome({ task, records, exportUrl }: ResearchOutcomePro
   </section>
 }
 
-function OutcomeStat({ icon, label, value, detail }: { icon: React.ReactNode; label: string; value: string; detail: string }) {
+function OutcomeStat({ icon, label, value, detail }: { icon: ReactNode; label: string; value: string; detail: string }) {
   return <div className="outcomeStat">
     <span className="outcomeStatIcon" aria-hidden="true">{icon}</span>
     <div><span>{label}</span><strong>{value}</strong><small>{detail}</small></div>
