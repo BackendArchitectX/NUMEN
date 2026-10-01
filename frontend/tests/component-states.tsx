@@ -170,6 +170,33 @@ includes(populated, 'rel="noreferrer"', 'external provenance links must suppress
 includes(populated, 'Data quality', 'quality terminology must be explicit rather than an unexplained percentage')
 includes(populated, 'aria-haspopup="dialog"', 'record rows must announce that evidence opens in a dialog')
 
+const demoRecord: DatasetRecord = { ...record, id: 'record-demo', sourceType: 'DEMO', sourceUrl: 'urn:numen:demo:test:1', sourceName: 'NUMEN Demo Catalog' }
+const demoDataset = renderToStaticMarkup(
+  <DatasetExplorer
+    records={[demoRecord]}
+    totalRecords={1}
+    matchedRecords={1}
+    demoRecords={1}
+    status="COMPLETED"
+    loadState="ready"
+    query=""
+    minQuality={0}
+    page={0}
+    pageSize={50}
+    totalPages={1}
+    sortKey="qualityScore"
+    sortDirection="desc"
+    onQueryChange={noop}
+    onMinQualityChange={noop}
+    onSort={noop}
+    onPageChange={noop}
+    onPageSizeChange={noop}
+  />
+)
+includes(demoDataset, 'Sample', 'demo records must not present arbitrary quality precision')
+includes(demoDataset, 'Demo records · no quality filter', 'demo-only datasets must disable misleading quality filtering')
+excludes(demoDataset, '95%', 'demo records must not display synthetic quality as verified precision')
+
 const paged = renderToStaticMarkup(
   <DatasetExplorer
     records={[record]}
@@ -226,7 +253,7 @@ const timeline: TaskTimelineEvent[] = [{
 }]
 
 const activeWorkflow = renderToStaticMarkup(
-  <WorkflowPanel task={activeTask} timeline={timeline} exportUrl="#" onCancel={noop} />
+  <WorkflowPanel task={activeTask} timeline={timeline} sources={[]} sourcesState="ready" onCancel={noop} />
 )
 includes(activeWorkflow, '>Cancel<', 'active research needs a cancellation control')
 includes(activeWorkflow, 'Current activity', 'active research must explain what NUMEN is doing')
@@ -235,6 +262,22 @@ includes(activeWorkflow, 'Hiring intelligence', 'run details must retain the per
 includes(activeWorkflow, 'Run timeline', 'run details must retain persisted lifecycle evidence')
 excludes(activeWorkflow, 'role="progressbar"', 'fixed engine milestones must not be presented as precise user progress')
 excludes(activeWorkflow, '45%', 'primary active state must not expose decorative precision')
+
+
+const sourceProgress: SourceSummary[] = [{
+  ...sourceSummary,
+  url: 'https://example.com/',
+  records: 0,
+  evidence: 0,
+  latestCollectedAt: null,
+  collectionStatus: 'SUCCEEDED',
+  configured: true
+}]
+const sourceAwareWorkflow = renderToStaticMarkup(
+  <WorkflowPanel task={activeTask} timeline={timeline} sources={sourceProgress} sourcesState="ready" onCancel={noop} />
+)
+includes(sourceAwareWorkflow, '1 / 1 sources checked', 'active research must expose measurable source progress when source attempts exist')
+excludes(sourceAwareWorkflow, '45%', 'source-aware progress must not reintroduce milestone percentages')
 
 const completedTask: Task = {
   ...activeTask,
@@ -248,7 +291,7 @@ const completedTask: Task = {
 }
 
 const completedWorkflow = renderToStaticMarkup(
-  <WorkflowPanel task={completedTask} timeline={timeline} exportUrl="/api/v1/tasks/task-completed/export.csv" onCancel={noop} />
+  <WorkflowPanel task={completedTask} timeline={timeline} sources={[]} sourcesState="ready" onCancel={noop} />
 )
 excludes(completedWorkflow, '>Cancel<', 'terminal workflows must not expose cancellation')
 includes(completedWorkflow, 'Run details', 'completed workflow mechanics must remain available behind disclosure')
@@ -284,12 +327,14 @@ const sourceSummary: SourceSummary = {
 }
 
 const outcome = renderToStaticMarkup(
-  <ResearchOutcome task={completedTask} summary={summary} summaryState="ready" exportUrl="/api/v1/tasks/task-completed/export.csv" />
+  <ResearchOutcome task={completedTask} summary={summary} summaryState="ready" exportUrl="/api/v1/tasks/task-completed/export.csv" onRefine={noop} onViewSources={noop} />
 )
 includes(outcome, 'Research ready', 'completed live research must foreground the outcome state')
 includes(outcome, '1 published result', 'outcome summary must be derived from actual persisted records')
 includes(outcome, 'Evidence linked', 'outcome must foreground evidence coverage')
 includes(outcome, 'Export CSV', 'completed research must expose its export action')
+includes(outcome, 'Refine research', 'completed research must expose a real refine action')
+includes(outcome, 'View sources', 'completed research must expose a real source-navigation action')
 
 const limitedOutcome = renderToStaticMarkup(
   <ResearchOutcome
@@ -297,6 +342,8 @@ const limitedOutcome = renderToStaticMarkup(
     summary={{ ...summary, configuredSources: 2, failedSources: 1 }}
     summaryState="ready"
     exportUrl="/api/v1/tasks/task-completed/export.csv"
+    onRefine={noop}
+    onViewSources={noop}
   />
 )
 includes(limitedOutcome, 'Ready with limitations', 'partial source failure must be visible in the completed outcome')
@@ -308,19 +355,21 @@ const demoOutcome = renderToStaticMarkup(
     summary={{ ...summary, demoRecords: 1 }}
     summaryState="ready"
     exportUrl="/api/v1/tasks/task-completed/export.csv"
+    onRefine={noop}
+    onViewSources={noop}
   />
 )
 includes(demoOutcome, 'Demo dataset', 'demo tasks must remain visibly labeled after publication')
 
 const zeroOutcome = renderToStaticMarkup(
-  <ResearchOutcome task={{ ...completedTask, recordCount: 0 }} summary={{ ...summary, totalRecords: 0, uniqueOrganizations: 0, uniqueLocations: 0, uniqueSources: 0, evidenceLinkedRecords: 0, topLocations: [] }} summaryState="ready" exportUrl="#" />
+  <ResearchOutcome task={{ ...completedTask, recordCount: 0 }} summary={{ ...summary, totalRecords: 0, uniqueOrganizations: 0, uniqueLocations: 0, uniqueSources: 0, evidenceLinkedRecords: 0, topLocations: [] }} summaryState="ready" exportUrl="#" onRefine={noop} onViewSources={noop} />
 )
 includes(zeroOutcome, 'Research complete', 'zero-result completion must not be labelled as ready')
 includes(zeroOutcome, 'No publishable results', 'zero-result completion must explain the outcome honestly')
 excludes(zeroOutcome, 'Export CSV', 'zero-result completion must not expose an empty export')
 
 const summaryFailure = renderToStaticMarkup(
-  <ResearchOutcome task={completedTask} summaryState="error" exportUrl="/api/v1/tasks/task-completed/export.csv" />
+  <ResearchOutcome task={completedTask} summaryState="error" exportUrl="/api/v1/tasks/task-completed/export.csv" onRefine={noop} onViewSources={noop} />
 )
 includes(summaryFailure, 'coverage is temporarily unavailable', 'summary failure must not masquerade as a zero-result dataset')
 
