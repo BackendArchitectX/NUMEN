@@ -137,6 +137,9 @@ jobs:
           curl --fail --silent "http://localhost:5173/api/v1/tasks/$task_id/records?limit=10" \
             | python3 -c 'import json,sys; rows=json.load(sys.stdin); assert rows; assert all(r["sourceType"]=="DEMO" for r in rows); assert all(r["sourceUrl"].startswith("urn:numen:demo:") for r in rows)'
 
+          curl --fail --silent "http://localhost:5173/api/v1/tasks/$task_id/timeline" \
+            | python3 -c 'import json,sys; events=json.load(sys.stdin); kinds=[e["eventType"] for e in events]; assert events; assert kinds[0]=="CREATED"; assert "COMPLETED" in kinds; assert events[-1]["status"]=="COMPLETED"; assert events[-1]["progress"]==100'
+
           curl --fail --silent "http://localhost:5173/api/v1/tasks/$task_id/export.csv" -o /tmp/numen-export.csv
           grep -q 'source_url' /tmp/numen-export.csv
 
