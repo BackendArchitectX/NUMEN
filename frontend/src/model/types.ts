@@ -2,6 +2,8 @@ export type TaskStatus = 'QUEUED' | 'PLANNING' | 'COLLECTING' | 'PROCESSING' | '
 
 export type WorkspaceView = 'console' | 'datasets' | 'history'
 
+export type TaskTimelineEventType = 'CREATED' | 'STATE_CHANGED' | 'RECOVERED' | 'COMPLETED' | 'CANCELLED' | 'FAILED'
+
 export interface Task {
   id: string
   prompt: string
@@ -15,6 +17,17 @@ export interface Task {
   createdAt: string
   startedAt?: string
   completedAt?: string
+}
+
+export interface TaskTimelineEvent {
+  id: string
+  taskId: string
+  eventType: TaskTimelineEventType
+  status: TaskStatus
+  stage: string
+  progress: number
+  detail?: string
+  occurredAt: string
 }
 
 export interface DatasetRecord {
