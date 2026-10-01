@@ -24,7 +24,11 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
-    localStorage.setItem('numen-theme', theme)
+    try {
+      localStorage.setItem('numen-theme', theme)
+    } catch {
+      // Theme preference persistence is best-effort when browser storage is unavailable.
+    }
     const meta = document.querySelector('meta[name="theme-color"]')
     meta?.setAttribute('content', theme === 'dark' ? '#050B14' : '#08111F')
   }, [theme])
@@ -148,8 +152,12 @@ function readView(): WorkspaceView {
 
 function readTheme(): Theme {
   if (typeof window === 'undefined') return 'light'
-  const saved = localStorage.getItem('numen-theme')
-  if (saved === 'light' || saved === 'dark') return saved
+  try {
+    const saved = localStorage.getItem('numen-theme')
+    if (saved === 'light' || saved === 'dark') return saved
+  } catch {
+    // Fall through to the operating-system preference.
+  }
   return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
