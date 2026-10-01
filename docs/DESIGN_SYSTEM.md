@@ -144,3 +144,26 @@ Visual acceptance should additionally verify:
 - no evidence inspector hidden behind other layers.
 
 Aurora X is a product hierarchy, not a recolor.
+
+
+## Sources workspace
+
+Sources are a first-class product surface rather than a hidden implementation detail. The source view uses exact backend aggregation from the full persisted dataset and therefore does not change when the user searches or quality-filters the Results table.
+
+Each source exposes record contribution, captured-evidence coverage, collection freshness, source type and explicit demo/live state.
+
+## Navigation and selection
+
+Research, Datasets, Sources and Runs use durable hash routes. Selected research context is encoded into Research/Datasets/Sources URLs so refresh and browser back/forward preserve intent.
+
+New research is explicit: it clears the prior selection and filter state and presents an empty composer. Example prompts remain optional suggestions rather than prefilled user intent.
+
+## Infrastructure status
+
+Healthy infrastructure remains visually quiet. The header surfaces service availability only when health has actually resolved to an unavailable state, avoiding both permanent engine-status clutter and false initial-offline flashes.
+
+## Semantic integrity
+
+Dataset-wide outcome metrics are never derived from the filtered Results table. The UI consumes the exact dataset summary API for total records, organization/location/source counts, evidence-linked records, demo-record count and top locations.
+
+Visual clarity must never be achieved by weakening data truthfulness.
