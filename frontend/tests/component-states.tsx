@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { DatasetExplorer } from '../src/components/DatasetExplorer'
-import { MetricsGrid } from '../src/components/MetricsGrid'
 import { PromptComposer } from '../src/components/PromptComposer'
+import { ResearchOutcome } from '../src/components/ResearchOutcome'
 import { Sidebar } from '../src/components/Sidebar'
 import { WorkflowHistory } from '../src/components/WorkflowHistory'
 import { WorkflowPanel } from '../src/components/WorkflowPanel'
@@ -27,9 +27,9 @@ const offlinePrompt = renderToStaticMarkup(
     onRun={noop}
   />
 )
-includes(offlinePrompt, 'disabled=""', 'offline workflow submission must be disabled')
+includes(offlinePrompt, 'disabled=""', 'offline research submission must be disabled')
 includes(offlinePrompt, 'aria-busy="false"', 'idle submission must expose aria-busy=false')
-includes(offlinePrompt, 'What do you want to research?', 'prompt composer must expose the research question label')
+includes(offlinePrompt, 'New research', 'composer must present plain-language research terminology')
 
 const busyPrompt = renderToStaticMarkup(
   <PromptComposer
@@ -53,7 +53,7 @@ const emptyCompleted = renderToStaticMarkup(
     onMinQualityChange={noop}
   />
 )
-includes(emptyCompleted, 'No records match the current filters.', 'completed empty datasets need a clear empty state')
+includes(emptyCompleted, 'completed without publishable records', 'completed empty datasets need an honest empty state')
 includes(emptyCompleted, 'Collected intelligence records and source provenance', 'dataset table needs an accessible caption')
 
 const record: DatasetRecord = {
@@ -83,9 +83,10 @@ const populated = renderToStaticMarkup(
   />
 )
 includes(populated, 'Backend Engineer', 'dataset explorer must render returned records')
-includes(populated, '95%', 'quality display should round the persisted score')
+includes(populated, '95%', 'data-quality display should round the persisted score')
 includes(populated, 'target="_blank"', 'live provenance links should open separately')
 includes(populated, 'rel="noreferrer"', 'external provenance links must suppress referrer leakage')
+includes(populated, 'Data quality', 'quality terminology must be explicit rather than an unexplained percentage')
 
 const activeTask: Task = {
   id: 'task-active',
@@ -117,13 +118,13 @@ const timeline: TaskTimelineEvent[] = [{
 const activeWorkflow = renderToStaticMarkup(
   <WorkflowPanel task={activeTask} timeline={timeline} exportUrl="#" onCancel={noop} />
 )
-includes(activeWorkflow, '>Cancel<', 'active workflows need a cancellation control')
-includes(activeWorkflow, 'aria-valuenow="45"', 'workflow progress must be exposed semantically')
-includes(activeWorkflow, 'Hiring intelligence', 'workflow panel must expose the persisted plan rather than a fabricated pipeline')
-includes(activeWorkflow, 'Preserve Source Provenance', 'workflow panel must expose persisted safeguards')
-includes(activeWorkflow, 'Run timeline', 'workflow panel must expose the persisted run timeline')
-includes(activeWorkflow, 'Collecting permitted sources', 'workflow panel must render persisted timeline events')
-excludes(activeWorkflow, 'Export CSV', 'empty in-progress workflows must not advertise an export')
+includes(activeWorkflow, '>Cancel<', 'active research needs a cancellation control')
+includes(activeWorkflow, 'Current activity', 'active research must explain what NUMEN is doing')
+includes(activeWorkflow, 'Searching sources', 'active research must use user-facing status language')
+includes(activeWorkflow, 'Hiring intelligence', 'run details must retain the persisted plan')
+includes(activeWorkflow, 'Run timeline', 'run details must retain persisted lifecycle evidence')
+excludes(activeWorkflow, 'role="progressbar"', 'fixed engine milestones must not be presented as precise user progress')
+excludes(activeWorkflow, '45%', 'primary active state must not expose decorative precision')
 
 const completedTask: Task = {
   ...activeTask,
@@ -131,8 +132,8 @@ const completedTask: Task = {
   status: 'COMPLETED',
   stage: 'Ready',
   progress: 100,
-  recordCount: 3,
-  averageQuality: 92.3,
+  recordCount: 1,
+  averageQuality: 94.6,
   completedAt: '2026-09-30T00:01:00Z'
 }
 
@@ -140,30 +141,32 @@ const completedWorkflow = renderToStaticMarkup(
   <WorkflowPanel task={completedTask} timeline={timeline} exportUrl="/api/v1/tasks/task-completed/export.csv" onCancel={noop} />
 )
 excludes(completedWorkflow, '>Cancel<', 'terminal workflows must not expose cancellation')
-includes(completedWorkflow, 'Export CSV', 'completed workflows with records need export access')
-includes(completedWorkflow, '3 records published', 'completed workflow should summarize the published outcome instead of emphasizing a progress bar')
-excludes(completedWorkflow, 'role="progressbar"', 'completed workflow should not keep a decorative progress bar visible')
+includes(completedWorkflow, 'Run details', 'completed workflow mechanics must remain available behind disclosure')
+excludes(completedWorkflow, 'Research outcome', 'completed technical panel must not compete with the result outcome')
 
-const metrics = renderToStaticMarkup(
-  <MetricsGrid workflows={4} completed={3} records={12} averageQuality={91} />
+const outcome = renderToStaticMarkup(
+  <ResearchOutcome task={completedTask} records={[record]} exportUrl="/api/v1/tasks/task-completed/export.csv" />
 )
-includes(metrics, 'Runs', 'metrics grid should expose workflow summary')
-includes(metrics, 'Completed', 'metrics grid should expose completed-run count instead of a fabricated provenance percentage')
-includes(metrics, '12', 'metrics grid should expose record count')
-includes(metrics, '91%', 'metrics grid should expose measured quality')
+includes(outcome, 'Research ready', 'completed live research must foreground the outcome state')
+includes(outcome, '1 published results', 'outcome summary must be derived from actual persisted records')
+includes(outcome, 'Evidence linked', 'outcome must foreground evidence coverage')
+includes(outcome, 'Export CSV', 'completed research must expose its export action')
 
 const sidebar = renderToStaticMarkup(
   <Sidebar
     tasks={[completedTask]}
     selectedId={completedTask.id}
-    totalRecords={3}
+    totalRecords={1}
     activeView="datasets"
+    theme="light"
+    onToggleTheme={noop}
     onNavigate={noop}
     onSelect={noop}
   />
 )
-includes(sidebar, '<button', 'workspace navigation must use real interactive controls')
+includes(sidebar, '>Research<', 'workspace navigation must use research terminology')
 includes(sidebar, 'aria-current="page"', 'active workspace destination must expose current-page semantics')
+includes(sidebar, 'Appearance', 'sidebar must expose the theme control without infrastructure marketing')
 
 const history = renderToStaticMarkup(
   <WorkflowHistory tasks={[completedTask]} onOpen={noop} onOpenDataset={noop} />
