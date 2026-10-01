@@ -962,3 +962,24 @@ For NUMEN research this applies to:
 - advanced collection constraints.
 
 The summary must still explain why Run research is unavailable when configuration is incomplete.
+
+
+## 75. Example prompts are product contracts
+
+Placeholder text and example prompts teach users what NUMEN can do.
+
+Therefore they must not request output fields or capabilities that the shipped record contract cannot currently persist and present.
+
+Until the data model genuinely supports additional domain fields, do not advertise fields such as:
+
+- experience,
+- required skills,
+- pricing,
+- target customer,
+- differentiators,
+
+as structured outputs.
+
+When the domain model later adds those fields, update examples and tests together.
+
+A polished example that over-promises capability is still a product defect.
