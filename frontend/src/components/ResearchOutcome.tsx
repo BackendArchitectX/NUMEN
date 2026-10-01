@@ -28,7 +28,7 @@ export function ResearchOutcome({ task, summary, summaryState, exportUrl, onRefi
             : limited
               ? <CircleAlert size={14} aria-hidden="true"/>
               : <CheckCircle2 size={14} aria-hidden="true"/>}
-          {allDemo ? 'Demo dataset' : mixedDemo ? 'Mixed dataset' : limited ? 'Ready with limitations' : hasResults ? 'Research ready' : 'Research complete'}
+          {allDemo ? 'Demo dataset' : mixedDemo ? 'Mixed dataset' : limited ? 'Complete with limitations' : 'Research complete'}
         </span>
         <h2 id={`outcome-${task.id}`}>{clip(task.prompt, 120)}</h2>
         <p>{summary ? summaryText(summary) : hasResults ? summaryState === 'error' ? 'Published results are ready, but dataset-wide coverage is temporarily unavailable.' : 'Published results are ready. Loading exact dataset coverage…' : 'No publishable results were produced for this run.'}</p>
