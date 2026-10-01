@@ -153,30 +153,42 @@ export function useIntelligenceWorkspace() {
   }, [selectedId, selected?.status])
 
   useEffect(() => {
-    const terminal = selected?.status === 'COMPLETED' || selected?.status === 'FAILED' || selected?.status === 'CANCELLED'
-    if (!selectedId || !terminal) {
+    if (!selectedId) {
       setSources([])
       setSourcesState('idle')
       return
     }
 
     let active = true
-    setSources([])
-    setSourcesState('loading')
+    let timer: number | undefined
+    const terminal = selected?.status === 'COMPLETED' || selected?.status === 'FAILED' || selected?.status === 'CANCELLED'
 
-    void intelligenceApi.getSources(selectedId)
-      .then(nextSources => {
+    const loadSources = async (initial: boolean) => {
+      if (initial) {
+        setSources([])
+        setSourcesState('loading')
+      }
+
+      try {
+        const nextSources = await intelligenceApi.getSources(selectedId)
         if (!active) return
         setSources(nextSources)
         setSourcesState('ready')
-      })
-      .catch(() => {
+      } catch {
         if (!active) return
-        setSources([])
+        if (initial) setSources([])
         setSourcesState('error')
-      })
+      } finally {
+        if (active && !terminal) timer = window.setTimeout(() => void loadSources(false), 1500)
+      }
+    }
 
-    return () => { active = false }
+    void loadSources(true)
+
+    return () => {
+      active = false
+      if (timer !== undefined) window.clearTimeout(timer)
+    }
   }, [selectedId, selected?.status])
 
   useEffect(() => {
@@ -201,6 +213,13 @@ export function useIntelligenceWorkspace() {
     setPrompt('')
     setDemoMode(false)
     setSourceUrls([])
+  }
+
+  const refineTask = (task: Task) => {
+    selectTask(undefined)
+    setPrompt(task.prompt)
+    setDemoMode(task.demoMode)
+    setSourceUrls(task.demoMode ? [] : task.sourceUrls)
   }
 
   const createTask = async () => {
@@ -303,6 +322,7 @@ export function useIntelligenceWorkspace() {
     avgQuality,
     selectTask,
     startNewResearch,
+    refineTask,
     setPrompt,
     setDemoMode,
     setSourceUrls,
