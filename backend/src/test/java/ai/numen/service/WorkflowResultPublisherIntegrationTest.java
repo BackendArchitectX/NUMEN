@@ -3,8 +3,10 @@ package ai.numen.service;
 import ai.numen.entity.CollectionTask;
 import ai.numen.entity.DatasetRecord;
 import ai.numen.entity.TaskStatus;
+import ai.numen.entity.TaskTimelineEventType;
 import ai.numen.repository.CollectionTaskRepository;
 import ai.numen.repository.DatasetRecordRepository;
+import ai.numen.repository.TaskTimelineEventRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,6 +28,9 @@ class WorkflowResultPublisherIntegrationTest {
 
     @Autowired
     private DatasetRecordRepository records;
+
+    @Autowired
+    private TaskTimelineEventRepository timeline;
 
     @Test
     void replacesDatasetAndCompletesWorkflowInOneTransaction() {
@@ -74,5 +79,14 @@ class WorkflowResultPublisherIntegrationTest {
 
         List<DatasetRecord> persisted = records.findByTaskIdOrderByQualityScoreDesc(taskId);
         assertThat(persisted).singleElement().extracting(DatasetRecord::getTitle).isEqualTo("Fresh signal");
+
+        assertThat(timeline.findByTaskIdOrderByOccurredAtAscIdAsc(taskId))
+                .singleElement()
+                .satisfies(event -> {
+                    assertThat(event.getEventType()).isEqualTo(TaskTimelineEventType.COMPLETED);
+                    assertThat(event.getStatus()).isEqualTo(TaskStatus.COMPLETED);
+                    assertThat(event.getProgress()).isEqualTo(100);
+                    assertThat(event.getDetail()).isEqualTo("Published 1 records");
+                });
     }
 }
