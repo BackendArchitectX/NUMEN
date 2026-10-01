@@ -16,6 +16,7 @@ Spring Boot integration tests boot the actual application context with Flyway an
 
 - `HealthControllerIntegrationTest` verifies that the public health API reflects aggregate Actuator health rather than returning an unconditional constant.
 - `WorkflowResultPublisherIntegrationTest` verifies transactional dataset replacement, terminal workflow publication and the final completion-timeline event through the persistence layer.
+- `TaskSummaryIntegrationTest` verifies exact dataset-wide outcome counts, top-location aggregation and per-source evidence contribution from persisted records.
 - `TaskIdempotencyIntegrationTest` proves repeated submissions with the same idempotency key create one workflow and one durable creation-timeline event.
 - `ApiContractIntegrationTest` protects the OpenAPI endpoint plus the stable error-code/correlation-ID contract.
 
@@ -25,7 +26,7 @@ The default test datasource is H2 in PostgreSQL compatibility mode for fast dete
 
 CI installs only from `package-lock.json`, runs strict TypeScript typechecking, executes deterministic server-rendered component-state tests and produces the Vite production build.
 
-The component tests exercise meaningful presentation states without adding a browser-simulation dependency: offline and busy submission controls, accessible prompt semantics, completed-empty datasets, populated source/provenance rendering, active-vs-terminal workflow controls, persisted execution-plan rendering, persisted run-timeline rendering, progress semantics, real workspace navigation and metrics rendering. These tests intentionally complement rather than duplicate the full-stack browser-facing gateway smoke test.
+The component tests exercise meaningful presentation states without adding a browser-simulation dependency: offline and busy submission controls, accessible prompt semantics, completed-empty datasets, populated source/provenance rendering, active-vs-terminal workflow controls, persisted execution-plan rendering, persisted run-timeline rendering, no-fake-progress semantics, explicit new-research navigation, source coverage, zero-result completion and exact outcome rendering. These tests intentionally complement rather than duplicate the full-stack browser-facing gateway smoke test.
 
 ## 5. Full-stack one-step smoke test
 
