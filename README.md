@@ -54,11 +54,12 @@ Delete the local PostgreSQL volume as well with `./stop.sh --volumes` or `.\stop
 
 Teams often need a clean, structured dataset from a small set of permitted public sources, but the manual workflow is fragmented: interpret the request, visit sources, normalize fields, deduplicate results, retain evidence and track progress separately.
 
-NUMEN combines those steps into one managed workflow with explicit source provenance and visible execution state. The current implementation intentionally supports explicit public HTTP(S) URLs supplied in the request plus clearly labelled offline demo data; it does **not** pretend to provide unrestricted autonomous web search.
+NUMEN combines those steps into one managed workflow with explicit source provenance and visible execution state. The current implementation intentionally supports explicit public HTTP(S) URLs supplied in the request. Offline demo data is available only through an explicit Demo mode opt-in; source-less requests never silently fall back to synthetic records. NUMEN does **not** pretend to provide unrestricted autonomous web search.
 
 ## Key Features
 
 - Natural-language workflow requests with deterministic planning.
+- Explicit demo-mode opt-in: live research requires supplied permitted public URLs and never silently substitutes sample records.
 - Explicit permitted-source HTTP(S) collection behind a pluggable connector boundary.
 - SSRF and outbound URL policy, including reserved/private network, credential and non-standard-port rejection.
 - Source-backed records with fingerprints, collection timestamps and quality scores.
