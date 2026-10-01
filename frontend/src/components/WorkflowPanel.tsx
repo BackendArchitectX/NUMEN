@@ -1,9 +1,10 @@
-import { Download, FileJson2, ShieldCheck } from 'lucide-react'
-import type { Task } from '../model/types'
+import { Clock3, Download, FileJson2, ShieldCheck } from 'lucide-react'
+import type { Task, TaskTimelineEvent } from '../model/types'
 import { clip } from '../shared/text'
 
 interface WorkflowPanelProps {
   task: Task
+  timeline: TaskTimelineEvent[]
   exportUrl: string
   onCancel: (id: string) => void
 }
@@ -15,7 +16,7 @@ interface PersistedPlan {
   safeguards?: string[]
 }
 
-export function WorkflowPanel({ task, exportUrl, onCancel }: WorkflowPanelProps) {
+export function WorkflowPanel({ task, timeline, exportUrl, onCancel }: WorkflowPanelProps) {
   const active = !['COMPLETED', 'FAILED', 'CANCELLED'].includes(task.status)
   const plan = parsePlan(task.planJson)
 
@@ -41,6 +42,18 @@ export function WorkflowPanel({ task, exportUrl, onCancel }: WorkflowPanelProps)
     <div className="progressTrack" role="progressbar" aria-label="Workflow progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={task.progress}>
       <div style={{ width: `${task.progress}%` }}/>
     </div>
+
+    <section className="timelineSection" aria-labelledby={`timeline-${task.id}`}>
+      <div className="sectionTitle"><Clock3 size={16} aria-hidden="true"/><div><span>RUN TIMELINE</span><strong id={`timeline-${task.id}`}>{timeline.length} persisted events</strong></div></div>
+      {timeline.length ? <ol className="timelineList">{timeline.map(event => <li key={event.id}>
+        <span className={`timelineDot ${event.status.toLowerCase()}`} aria-hidden="true"/>
+        <div className="timelineBody">
+          <div><strong>{event.stage}</strong><span>{event.eventType.replaceAll('_', ' ')}</span></div>
+          <p>{event.detail || `${event.status} · ${event.progress}%`}</p>
+          <time dateTime={event.occurredAt}>{formatDate(event.occurredAt)}</time>
+        </div>
+      </li>)}</ol> : <p className="planEmpty">No persisted timeline events are available for this run yet.</p>}
+    </section>
 
     <section className="executionPlan" aria-label="Persisted execution plan">
       <div className="sectionTitle"><FileJson2 size={16} aria-hidden="true"/><div><span>EXECUTION PLAN</span><strong>{plan?.useCase || 'Plan pending'}</strong></div></div>
@@ -80,4 +93,9 @@ function parsePlan(value?: string): PersistedPlan | undefined {
 function stringList(value: unknown): string[] | undefined {
   if (!Array.isArray(value)) return undefined
   return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+}
+
+function formatDate(value: string): string {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString()
 }
