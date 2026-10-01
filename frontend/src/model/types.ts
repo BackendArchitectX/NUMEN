@@ -4,6 +4,9 @@ export type LoadState = 'idle' | 'loading' | 'ready' | 'error'
 
 export type WorkspaceView = 'research' | 'datasets' | 'sources' | 'history'
 
+export type DatasetSortKey = 'title' | 'organization' | 'location' | 'qualityScore' | 'sourceName' | 'collectedAt'
+export type SortDirection = 'asc' | 'desc'
+
 export type TaskTimelineEventType = 'CREATED' | 'STATE_CHANGED' | 'RECOVERED' | 'COMPLETED' | 'CANCELLED' | 'FAILED'
 
 export interface Task {
@@ -32,6 +35,14 @@ export interface TaskTimelineEvent {
   progress: number
   detail?: string
   occurredAt: string
+}
+
+export interface DatasetPage {
+  records: DatasetRecord[]
+  totalMatched: number
+  page: number
+  pageSize: number
+  totalPages: number
 }
 
 export interface DatasetRecord {
