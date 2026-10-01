@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { examplePrompts } from '../model/prompts'
-import type { DatasetRecord, Task } from '../model/types'
+import type { DatasetRecord, Task, TaskTimelineEvent } from '../model/types'
 import { intelligenceApi } from '../services/intelligenceApi'
 
 export function useIntelligenceWorkspace() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [selectedId, setSelectedId] = useState<string>()
   const [records, setRecords] = useState<DatasetRecord[]>([])
+  const [timeline, setTimeline] = useState<TaskTimelineEvent[]>([])
   const [prompt, setPrompt] = useState<string>(examplePrompts[0])
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
@@ -79,6 +80,20 @@ export function useIntelligenceWorkspace() {
   }, [selectedId, debouncedQuery, minQuality, selected?.status])
 
   useEffect(() => {
+    if (!selectedId) {
+      setTimeline([])
+      return
+    }
+
+    let active = true
+    void intelligenceApi.getTimeline(selectedId)
+      .then(events => { if (active) setTimeline(events) })
+      .catch(() => { if (active) setTimeline([]) })
+
+    return () => { active = false }
+  }, [selectedId, selected?.status, selected?.stage, selected?.progress])
+
+  useEffect(() => {
     if (!selectedId) return
     const stream = new EventSource(intelligenceApi.eventsUrl(selectedId))
     stream.addEventListener('progress', () => void refresh().catch(() => undefined))
@@ -127,6 +142,7 @@ export function useIntelligenceWorkspace() {
     selected,
     selectedId,
     records,
+    timeline,
     prompt,
     query,
     minQuality,
