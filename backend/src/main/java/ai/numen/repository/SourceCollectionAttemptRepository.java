@@ -8,6 +8,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface SourceCollectionAttemptRepository extends JpaRepository<SourceCollectionAttempt, UUID> {
-    Optional<SourceCollectionAttempt> findByTaskIdAndSourceUrl(UUID taskId, String sourceUrl);
+    Optional<SourceCollectionAttempt> findByTaskIdAndSourceKey(UUID taskId, String sourceKey);
     List<SourceCollectionAttempt> findByTaskIdOrderByAttemptedAtAsc(UUID taskId);
 }
