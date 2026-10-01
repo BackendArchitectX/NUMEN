@@ -45,22 +45,22 @@ public class TaskService {
         this.state = state;
     }
 
-    public TaskCreation create(String prompt, String idempotencyKey) {
+    public TaskCreation create(String prompt, boolean demoMode, String idempotencyKey) {
         String normalizedPrompt = prompt.trim();
         String normalizedKey = normalizeIdempotencyKey(idempotencyKey);
 
         if (normalizedKey != null) {
             var existing = tasks.findByIdempotencyKey(normalizedKey);
-            if (existing.isPresent()) return replay(existing.get(), normalizedPrompt);
+            if (existing.isPresent()) return replay(existing.get(), normalizedPrompt, demoMode);
         }
 
         CollectionTask task;
         try {
-            task = state.create(UUID.randomUUID(), normalizedPrompt, normalizedKey);
+            task = state.create(UUID.randomUUID(), normalizedPrompt, normalizedKey, demoMode);
         } catch (DataIntegrityViolationException ex) {
             if (normalizedKey != null) {
                 var raced = tasks.findByIdempotencyKey(normalizedKey);
-                if (raced.isPresent()) return replay(raced.get(), normalizedPrompt);
+                if (raced.isPresent()) return replay(raced.get(), normalizedPrompt, demoMode);
             }
             throw ex;
         }
@@ -209,10 +209,10 @@ public class TaskService {
         return task;
     }
 
-    private static TaskCreation replay(CollectionTask existing, String prompt) {
-        if (!existing.getPrompt().equals(prompt)) {
+    private static TaskCreation replay(CollectionTask existing, String prompt, boolean demoMode) {
+        if (!existing.getPrompt().equals(prompt) || existing.isDemoMode() != demoMode) {
             throw new IdempotencyConflictException(
-                    "The Idempotency-Key was already used with a different workflow request");
+                    "The Idempotency-Key was already used with a different research request");
         }
         return new TaskCreation(existing, true);
     }
