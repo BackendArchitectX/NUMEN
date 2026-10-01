@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Activity, Database, Layers3, Sparkles } from 'lucide-react'
+import { Activity, Database, History, Sparkles } from 'lucide-react'
 import { DatasetExplorer } from '../components/DatasetExplorer'
 import { MetricsGrid } from '../components/MetricsGrid'
 import { PromptComposer } from '../components/PromptComposer'
@@ -32,6 +32,8 @@ export default function App() {
     navigate(destination)
   }
 
+  const selectedComplete = workspace.selected?.status === 'COMPLETED'
+
   return <div className="shell">
     <Sidebar
       tasks={workspace.tasks}
@@ -41,11 +43,12 @@ export default function App() {
       onNavigate={navigate}
       onSelect={id => selectAndOpen(id, 'console')}
     />
+
     <main id="main-content">
       <nav className="mobileNav" aria-label="Workspace views">
         <button type="button" className={view === 'console' ? 'active' : ''} onClick={() => navigate('console')}><Activity size={15} aria-hidden="true"/> Console</button>
         <button type="button" className={view === 'datasets' ? 'active' : ''} onClick={() => navigate('datasets')}><Database size={15} aria-hidden="true"/> Datasets</button>
-        <button type="button" className={view === 'history' ? 'active' : ''} onClick={() => navigate('history')}><Layers3 size={15} aria-hidden="true"/> History</button>
+        <button type="button" className={view === 'history' ? 'active' : ''} onClick={() => navigate('history')}><History size={15} aria-hidden="true"/> Runs</button>
       </nav>
 
       <WorkspaceHeader view={view} online={workspace.online}/>
@@ -54,11 +57,16 @@ export default function App() {
       {view === 'console' && <>
         <PromptComposer prompt={workspace.prompt} busy={workspace.busy} online={workspace.online} onPromptChange={workspace.setPrompt} onRun={() => void workspace.createTask()}/>
         <MetricsGrid workflows={workspace.tasks.length} completed={workspace.completed} records={workspace.totalRecords} averageQuality={workspace.avgQuality}/>
+
         {workspace.selected ? <>
+          {selectedComplete && <DatasetExplorer records={workspace.records} status={workspace.selected.status} query={workspace.query} minQuality={workspace.minQuality}
+            onQueryChange={workspace.setQuery} onMinQualityChange={workspace.setMinQuality}/>}
+
           <WorkflowPanel task={workspace.selected} timeline={workspace.timeline} exportUrl={workspace.exportUrl} onCancel={id => void workspace.cancelTask(id)}/>
-          <DatasetExplorer records={workspace.records} status={workspace.selected.status} query={workspace.query} minQuality={workspace.minQuality}
-            onQueryChange={workspace.setQuery} onMinQualityChange={workspace.setMinQuality}/>
-        </> : <section className="emptyState panel"><Sparkles aria-hidden="true"/><h2>Start your first intelligence run</h2><p>Use the composer above to create a managed source-backed workflow.</p></section>}
+
+          {!selectedComplete && <DatasetExplorer records={workspace.records} status={workspace.selected.status} query={workspace.query} minQuality={workspace.minQuality}
+            onQueryChange={workspace.setQuery} onMinQualityChange={workspace.setMinQuality}/>}
+        </> : <section className="emptyState panel"><Sparkles aria-hidden="true"/><h2>Start your first research run</h2><p>Describe what you need above. NUMEN will structure the request and preserve the evidence behind the results.</p></section>}
       </>}
 
       {view === 'datasets' && <>
@@ -67,7 +75,7 @@ export default function App() {
         {workspace.selected
           ? <DatasetExplorer records={workspace.records} status={workspace.selected.status} query={workspace.query} minQuality={workspace.minQuality}
               onQueryChange={workspace.setQuery} onMinQualityChange={workspace.setMinQuality}/>
-          : <section className="emptyState panel"><Database aria-hidden="true"/><h2>No dataset available</h2><p>Run an intelligence workflow first. Published records will be inspectable here.</p></section>}
+          : <section className="emptyState panel"><Database aria-hidden="true"/><h2>No dataset available</h2><p>Run research first. Published records will be inspectable here with their source evidence.</p></section>}
       </>}
 
       {view === 'history' && <>
@@ -85,19 +93,19 @@ export default function App() {
 function WorkspaceHeader({ view, online }: { view: WorkspaceView; online: boolean }) {
   const content = {
     console: {
-      eyebrow: 'INTELLIGENCE CONSOLE',
-      title: 'Plan, run and inspect intelligence.',
-      description: 'Turn a business requirement into a persisted execution plan, collect permitted sources and inspect the resulting evidence-backed records.'
+      eyebrow: 'Research workspace',
+      title: 'Turn a question into traceable intelligence.',
+      description: 'Describe the outcome you need. NUMEN structures the request, collects permitted sources and keeps the evidence behind every published record.'
     },
     datasets: {
-      eyebrow: 'DATASETS',
-      title: 'Inspect published intelligence.',
-      description: 'Search, sort and inspect the persisted records produced by each workflow without losing their source evidence.'
+      eyebrow: 'Datasets',
+      title: 'Explore published results.',
+      description: 'Search, sort and inspect the records created by each research run without losing the source evidence behind them.'
     },
     history: {
-      eyebrow: 'WORKFLOW HISTORY',
-      title: 'Every run stays inspectable.',
-      description: 'Review persisted workflow state, outcomes, record counts and quality instead of relying on decorative activity indicators.'
+      eyebrow: 'Runs',
+      title: 'Review research activity.',
+      description: 'Open previous runs, inspect outcomes and return to their published datasets or technical details when needed.'
     }
   }[view]
 
@@ -107,16 +115,16 @@ function WorkspaceHeader({ view, online }: { view: WorkspaceView; online: boolea
       <h1>{content.title}</h1>
       <p>{content.description}</p>
     </div>
-    <div className={`livePill ${online ? 'online' : 'offline'}`} role="status" aria-live="polite"><span aria-hidden="true"/> {online ? 'ENGINE ONLINE' : 'ENGINE OFFLINE'}</div>
+    <div className={`livePill ${online ? 'online' : 'offline'}`} role="status" aria-live="polite"><span aria-hidden="true"/> {online ? 'Engine online' : 'Engine offline'}</div>
   </header>
 }
 
 function RunSelector({ tasks, selectedId, onSelect }: { tasks: Task[]; selectedId?: string; onSelect: (id: string) => void }) {
   if (!tasks.length) return null
   return <section className="runSelector panel" aria-label="Dataset run selector">
-    <div><span>DATASET SOURCE RUN</span><strong>Select the workflow whose published records you want to inspect.</strong></div>
-    <select aria-label="Select workflow dataset" value={selectedId || ''} onChange={event => onSelect(event.target.value)}>
-      {tasks.map(task => <option value={task.id} key={task.id}>{task.status} · {task.prompt.slice(0, 80)}</option>)}
+    <div><span>Dataset source run</span><strong>Select the research run whose published records you want to inspect.</strong></div>
+    <select aria-label="Select research dataset" value={selectedId || ''} onChange={event => onSelect(event.target.value)}>
+      {tasks.map(task => <option value={task.id} key={task.id}>{statusLabel(task.status)} · {task.prompt.slice(0, 80)}</option>)}
     </select>
   </section>
 }
@@ -125,4 +133,16 @@ function readView(): WorkspaceView {
   if (typeof window === 'undefined') return 'console'
   const value = window.location.hash.replace('#', '')
   return value === 'datasets' || value === 'history' ? value : 'console'
+}
+
+function statusLabel(status: Task['status']): string {
+  switch (status) {
+    case 'QUEUED': return 'Queued'
+    case 'PLANNING': return 'Preparing'
+    case 'COLLECTING': return 'Searching'
+    case 'PROCESSING': return 'Validating'
+    case 'COMPLETED': return 'Ready'
+    case 'CANCELLED': return 'Cancelled'
+    case 'FAILED': return 'Needs attention'
+  }
 }
