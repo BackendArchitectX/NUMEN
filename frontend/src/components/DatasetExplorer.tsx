@@ -171,7 +171,7 @@ function SortableHeader({ label, column, active, direction, onSort }: {
   onSort: (key: SortKey) => void
 }) {
   const selected = active === column
-  return <th scope="col"><button type="button" className="sortButton" onClick={() => onSort(column)} aria-label={`Sort by ${label.toLowerCase()}`} aria-sort={selected ? direction === 'asc' ? 'ascending' : 'descending' : undefined}>
+  return <th scope="col" aria-sort={selected ? direction === 'asc' ? 'ascending' : 'descending' : 'none'}><button type="button" className="sortButton" onClick={() => onSort(column)} aria-label={`Sort by ${label.toLowerCase()}`}>
     {label}{selected ? direction === 'asc' ? <ArrowUp size={12} aria-hidden="true"/> : <ArrowDown size={12} aria-hidden="true"/> : null}
   </button></th>
 }
