@@ -12,8 +12,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -34,7 +36,7 @@ class TaskIdempotencyIntegrationTest {
     }
 
     @Test
-    void repeatedCreateWithSameIdempotencyKeyReturnsSameTask() throws Exception {
+    void repeatedCreateWithSameIdempotencyKeyReturnsSameTaskAndOneCreatedTimelineEvent() throws Exception {
         String body = "{\"prompt\":\"Collect traceable public market intelligence\"}";
         String key = "11111111-2222-3333-4444-555555555555";
 
@@ -54,9 +56,16 @@ class TaskIdempotencyIntegrationTest {
                 .andExpect(header().string("Idempotency-Replayed", "true"))
                 .andReturn().getResponse().getContentAsString();
 
-        assertThat(first).contains("\"id\":");
-        assertThat(second).contains(extractId(first));
+        String taskId = extractId(first);
+        assertThat(second).contains(taskId);
         assertThat(tasks.count()).isEqualTo(1);
+
+        mvc.perform(get("/api/v1/tasks/{id}/timeline", taskId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].eventType").value("CREATED"))
+                .andExpect(jsonPath("$[0].status").value("QUEUED"))
+                .andExpect(jsonPath("$[0].stage").value("Queued"));
     }
 
     @Test
