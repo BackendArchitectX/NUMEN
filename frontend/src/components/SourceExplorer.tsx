@@ -45,7 +45,7 @@ export function SourceExplorer({ sources, totalRecords, state }: SourceExplorerP
     <div className="resultsHeader">
       <div className="resultsTitle">
         <Radio size={18} aria-hidden="true"/>
-        <div><h3 id="sources-heading">Sources</h3><span>{sources.length} tracked sources · {evidenceLinked}/{totalRecords} records with captured evidence</span></div>
+        <div><h3 id="sources-heading">Sources</h3><span>{sources.length} tracked sources · {totalRecords > 0 ? `${evidenceLinked}/${totalRecords} records with captured evidence` : 'no published records'}</span></div>
       </div>
       <label className="searchField">
         <span className="srOnly">Search sources</span>
@@ -73,7 +73,7 @@ export function SourceExplorer({ sources, totalRecords, state }: SourceExplorerP
         </div>
 
         <div className="sourceMetric"><span>Records</span><strong>{source.records}</strong></div>
-        <div className="sourceMetric"><span>Evidence</span><strong>{source.evidence}/{source.records}</strong></div>
+        <div className="sourceMetric"><span>Evidence</span><strong>{source.records > 0 ? `${source.evidence}/${source.records}` : '—'}</strong></div>
         <div className="sourceMetric"><span>{source.latestCollectedAt ? 'Collected' : 'Attempted'}</span><strong>{formatRelative(source.latestCollectedAt || source.lastAttemptedAt)}</strong></div>
 
         <div className="sourceAction">
