@@ -33,6 +33,18 @@ class ApiContractIntegrationTest {
     }
 
     @Test
+    void unknownRouteReturnsStructuredNotFoundError() throws Exception {
+        mvc.perform(get("/api/v1/this-route-must-not-exist"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.code").value("ROUTE_NOT_FOUND"))
+                .andExpect(jsonPath("$.message").value("The requested endpoint was not found"))
+                .andExpect(jsonPath("$.path").value("/api/v1/this-route-must-not-exist"))
+                .andExpect(jsonPath("$.correlationId").isNotEmpty());
+    }
+
+    @Test
     void corsAllowsIdempotentWorkflowCreationFromDocumentedLocalOrigin() throws Exception {
         mvc.perform(options("/api/v1/tasks")
                         .header(ORIGIN, "http://localhost:5173")
