@@ -356,6 +356,13 @@ public class HttpPageConnector implements SourceConnector {
                         .trim();
     }
 
+    private static String bounded(String value, int maxLength) {
+        String cleaned = clean(value);
+        if (cleaned.length() <= maxLength) return cleaned;
+        if (maxLength <= 1) return cleaned.substring(0, maxLength);
+        return cleaned.substring(0, maxLength - 1).trim() + "…";
+    }
+
     private static final class SourceAccessBarrierException extends IOException {
         private SourceAccessBarrierException(String message) { super(message); }
     }
