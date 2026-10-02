@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -58,8 +59,8 @@ public class ResearchBriefService {
     }
 
     static ResearchBriefResponse project(UUID taskId, String question, List<DatasetRecord> records) {
-        Map<String, LinkedHashMap<String, FindingAccumulator>> sections = new LinkedHashMap<>();
-        for (String key : SECTION_ORDER) sections.put(key, new LinkedHashMap<>());
+        Map<String, List<ClaimCandidate>> candidates = new LinkedHashMap<>();
+        for (String key : SECTION_ORDER) candidates.put(key, new ArrayList<>());
 
         Set<String> contributingSources = new LinkedHashSet<>();
         for (DatasetRecord record : records == null ? List.<DatasetRecord>of() : records) {
@@ -69,22 +70,40 @@ public class ResearchBriefService {
 
             for (Map.Entry<String, String> claim : claims(record.getExcerpt()).entrySet()) {
                 String claimText = normalizeText(claim.getValue());
-                if (claimText.isBlank()) continue;
-                LinkedHashMap<String, FindingAccumulator> section = sections.get(claim.getKey());
-                if (section == null) continue;
-
-                FindingAccumulator accumulator = section.computeIfAbsent(
-                        claimText.toLowerCase(Locale.ROOT),
-                        ignored -> new FindingAccumulator(claimText)
-                );
-                accumulator.addCitation(citation(record));
+                if (claimText.isBlank() || !candidates.containsKey(claim.getKey())) continue;
+                candidates.get(claim.getKey()).add(new ClaimCandidate(
+                        claimText,
+                        normalizeText(record.getTitle()),
+                        sourceKey,
+                        citation(record)
+                ));
             }
         }
 
         List<ResearchBriefResponse.Section> projected = new ArrayList<>();
         int findingCount = 0;
         for (String key : SECTION_ORDER) {
-            List<ResearchBriefResponse.Finding> findings = sections.get(key).values().stream()
+            List<ClaimCandidate> sectionCandidates = candidates.get(key);
+            sectionCandidates.sort(Comparator
+                    .comparing((ClaimCandidate candidate) -> ClaimEquivalence.canonicalSurface(candidate.text()))
+                    .thenComparing(ClaimCandidate::sourceKey)
+                    .thenComparing(candidate -> candidate.citation().recordId().toString()));
+
+            List<FindingAccumulator> groups = new ArrayList<>();
+            for (ClaimCandidate candidate : sectionCandidates) {
+                FindingAccumulator compatible = groups.stream()
+                        .filter(group -> group.canAccept(candidate))
+                        .findFirst()
+                        .orElse(null);
+                if (compatible == null) {
+                    compatible = new FindingAccumulator(candidate);
+                    groups.add(compatible);
+                } else {
+                    compatible.add(candidate);
+                }
+            }
+
+            List<ResearchBriefResponse.Finding> findings = groups.stream()
                     .map(FindingAccumulator::toResponse)
                     .toList();
             if (findings.isEmpty()) continue;
@@ -159,16 +178,35 @@ public class ResearchBriefService {
 
     private record FacetMatch(String key, int contentStart, int markerStart) { }
 
+    private record ClaimCandidate(
+            String text,
+            String title,
+            String sourceKey,
+            ResearchBriefResponse.Citation citation) { }
+
     private static final class FindingAccumulator {
-        private final String text;
+        private String representativeText;
+        private final List<ClaimCandidate> variants = new ArrayList<>();
         private final LinkedHashMap<UUID, ResearchBriefResponse.Citation> citations = new LinkedHashMap<>();
 
-        private FindingAccumulator(String text) {
-            this.text = text;
+        private FindingAccumulator(ClaimCandidate initial) {
+            this.representativeText = initial.text();
+            add(initial);
         }
 
-        private void addCitation(ResearchBriefResponse.Citation citation) {
-            citations.putIfAbsent(citation.recordId(), citation);
+        private boolean canAccept(ClaimCandidate candidate) {
+            return variants.stream().allMatch(existing -> ClaimEquivalence.equivalent(
+                    existing.text(),
+                    existing.title(),
+                    candidate.text(),
+                    candidate.title()
+            ));
+        }
+
+        private void add(ClaimCandidate candidate) {
+            representativeText = ClaimEquivalence.preferredRepresentative(representativeText, candidate.text());
+            variants.add(candidate);
+            citations.putIfAbsent(candidate.citation().recordId(), candidate.citation());
         }
 
         private ResearchBriefResponse.Finding toResponse() {
@@ -180,7 +218,11 @@ public class ResearchBriefService {
                     .filter(value -> value != null && !value.isBlank())
                     .distinct()
                     .count();
-            return new ResearchBriefResponse.Finding(text, Math.toIntExact(supportingSources), citationList);
+            return new ResearchBriefResponse.Finding(
+                    representativeText,
+                    Math.toIntExact(supportingSources),
+                    citationList
+            );
         }
     }
 }

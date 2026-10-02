@@ -56,6 +56,48 @@ class ResearchBriefServiceTest {
     }
 
     @Test
+    void mergesConservativelyEquivalentFindingsAcrossSpringBootSources() {
+        UUID taskId = UUID.randomUUID();
+        DatasetRecord docs = record(taskId, "Spring Boot :: Spring Boot", "https://docs.spring.io/spring-boot/", "docs.spring.io",
+                "Purpose: Spring Boot helps you to create stand-alone, production-grade Spring-based applications that you can run. " +
+                        "Key capabilities: Provide a range of non-functional features that are common to large classes of projects (such as embedded servers, security, metrics, health checks, and externalized configuration). " +
+                        "Common use cases: You can use Spring Boot to create Java applications that can be started by using java -jar or more traditional WAR deployments.", "docs");
+        DatasetRecord readme = record(taskId, "Spring Boot", "https://raw.githubusercontent.com/spring-projects/spring-boot/main/README.adoc", "raw.githubusercontent.com",
+                "Purpose: Spring Boot helps you to create Spring-powered, production-grade applications and services with absolute minimum fuss. " +
+                        "Key capabilities: Provide a range of non-functional features common to large classes of projects (for example, embedded servers, security, metrics, health checks, externalized configuration). " +
+                        "Common use cases: You can use Spring Boot to create stand-alone Java applications that can be started using java -jar or more traditional WAR deployments.", "readme");
+
+        ResearchBriefResponse brief = ResearchBriefService.project(
+                taskId,
+                "Research Spring Boot and summarize its purpose, key capabilities, and common use cases.",
+                List.of(docs, readme)
+        );
+
+        assertThat(brief.findingCount()).isEqualTo(3);
+        assertThat(brief.contributingSources()).isEqualTo(2);
+        assertThat(brief.sections()).hasSize(3);
+        assertThat(brief.sections())
+                .allSatisfy(section -> section.findings().singleElement().satisfies(finding -> {
+                    assertThat(finding.supportingSources()).isEqualTo(2);
+                    assertThat(finding.citations()).hasSize(2);
+                }));
+    }
+
+    @Test
+    void semanticGroupingIsDeterministicAcrossRecordOrder() {
+        UUID taskId = UUID.randomUUID();
+        DatasetRecord docs = record(taskId, "Spring Boot", "https://docs.spring.io/spring-boot/", "docs.spring.io",
+                "Purpose: Spring Boot helps you to create stand-alone, production-grade Spring-based applications that you can run.", "docs-order");
+        DatasetRecord readme = record(taskId, "Spring Boot", "https://raw.githubusercontent.com/spring-projects/spring-boot/main/README.adoc", "raw.githubusercontent.com",
+                "Purpose: Spring Boot helps you to create Spring-powered, production-grade applications and services with absolute minimum fuss.", "readme-order");
+
+        ResearchBriefResponse first = ResearchBriefService.project(taskId, "Research Spring Boot", List.of(docs, readme));
+        ResearchBriefResponse reversed = ResearchBriefService.project(taskId, "Research Spring Boot", List.of(readme, docs));
+
+        assertThat(reversed.sections()).isEqualTo(first.sections());
+    }
+
+    @Test
     void preservesUnlabelledEvidenceWithoutInventingFacets() {
         UUID taskId = UUID.randomUUID();
         DatasetRecord record = record(taskId, "Vector Search", "https://example.com/vector", "example.com",
