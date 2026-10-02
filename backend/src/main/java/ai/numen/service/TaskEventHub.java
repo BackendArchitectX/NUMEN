@@ -2,6 +2,8 @@ package ai.numen.service;
 
 import ai.numen.dto.TaskEventResponse;
 import jakarta.annotation.PreDestroy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -15,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class TaskEventHub {
+    private static final Logger log = LoggerFactory.getLogger(TaskEventHub.class);
     private static final long STREAM_TIMEOUT_MS = 300_000L;
     private static final long RECONNECT_MS = 2_000L;
 
@@ -38,9 +41,9 @@ public class TaskEventHub {
                     .name("progress")
                     .reconnectTime(RECONNECT_MS)
                     .data(initialState));
-        } catch (IOException ex) {
+        } catch (IOException | RuntimeException ex) {
             cleanup.run();
-            emitter.completeWithError(ex);
+            safeCompleteWithError(emitter, ex);
         }
 
         return emitter;
@@ -58,8 +61,8 @@ public class TaskEventHub {
                             .reconnectTime(RECONNECT_MS)
                             .data(payload));
                     return false;
-                } catch (IOException ex) {
-                    emitter.complete();
+                } catch (IOException | RuntimeException ex) {
+                    log.debug("sse_listener_dropped taskId={} error={}", taskId, ex.getClass().getSimpleName());
                     return true;
                 }
             });
@@ -74,11 +77,27 @@ public class TaskEventHub {
     void shutdown() {
         emitters.values().forEach(listeners -> {
             synchronized (listeners) {
-                listeners.forEach(SseEmitter::complete);
+                listeners.forEach(TaskEventHub::safeComplete);
                 listeners.clear();
             }
         });
         emitters.clear();
+    }
+
+    private static void safeComplete(SseEmitter emitter) {
+        try {
+            emitter.complete();
+        } catch (RuntimeException ignored) {
+            // The servlet container may already have invalidated this async response.
+        }
+    }
+
+    private static void safeCompleteWithError(SseEmitter emitter, Throwable error) {
+        try {
+            emitter.completeWithError(error);
+        } catch (RuntimeException ignored) {
+            // A failed initial write can invalidate AsyncContext before cleanup completes.
+        }
     }
 
     private void remove(UUID taskId, SseEmitter emitter) {

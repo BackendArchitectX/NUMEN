@@ -60,20 +60,29 @@ public class TaskRunner {
             if (state.isCancelled(taskId)) return;
 
             CollectionTask completed = publisher.publish(taskId, collected);
-            events.publish(taskId, TaskEventResponse.from(completed));
+            notifySubscribers(completed);
         } catch (Exception ex) {
             log.error("workflow_execution_failed taskId={}", taskId, ex);
             CollectionTask latest = state.get(taskId);
             if (latest.getStatus() == TaskStatus.CANCELLED || latest.getStatus() == TaskStatus.COMPLETED) return;
 
             CollectionTask failed = state.fail(taskId, publicMessage(ex));
-            events.publish(taskId, TaskEventResponse.from(failed));
+            notifySubscribers(failed);
         }
     }
 
     private CollectionTask publish(CollectionTask task) {
-        events.publish(task.getId(), TaskEventResponse.from(task));
+        notifySubscribers(task);
         return task;
+    }
+
+    private void notifySubscribers(CollectionTask task) {
+        try {
+            events.publish(task.getId(), TaskEventResponse.from(task));
+        } catch (RuntimeException ex) {
+            log.warn("task_event_delivery_failed taskId={} status={} error={}",
+                    task.getId(), task.getStatus(), ex.getClass().getSimpleName());
+        }
     }
 
     private static String publicMessage(Exception ex) {

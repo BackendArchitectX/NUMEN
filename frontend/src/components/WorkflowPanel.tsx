@@ -41,7 +41,7 @@ export function WorkflowPanel({ task, timeline, sources, sourcesState, onCancel 
       <div className="runIdentity">
         <span className={`status ${task.status.toLowerCase()}`} aria-live="polite">{statusLabel(task.status)}</span>
         <div>
-          <span className="runKicker">{task.demoMode ? 'Demo research in progress' : 'Research in progress'}</span>
+          <span className="runKicker">{runKicker(task)}</span>
           <h2 id={`workflow-${task.id}`}>{clip(task.prompt, 100)}</h2>
         </div>
       </div>
@@ -142,6 +142,12 @@ function parsePlan(value?: string): PersistedPlan | undefined {
 function stringList(value: unknown): string[] | undefined {
   if (!Array.isArray(value)) return undefined
   return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+}
+
+function runKicker(task: Task): string {
+  if (task.status === 'FAILED') return task.demoMode ? 'Demo research stopped' : 'Research stopped'
+  if (task.status === 'CANCELLED') return task.demoMode ? 'Demo research cancelled' : 'Research cancelled'
+  return task.demoMode ? 'Demo research in progress' : 'Research in progress'
 }
 
 function statusLabel(status: Task['status']): string {

@@ -376,6 +376,24 @@ const sourceAwareWorkflow = renderToStaticMarkup(
 includes(sourceAwareWorkflow, '1 / 1 sources checked', 'active research must expose measurable source progress when source attempts exist')
 excludes(sourceAwareWorkflow, '45%', 'source-aware progress must not reintroduce milestone percentages')
 
+const failedTask: Task = {
+  ...activeTask,
+  id: 'task-failed',
+  status: 'FAILED',
+  stage: 'Failed',
+  progress: 90,
+  errorMessage: 'Workflow failed due to an internal processing error.',
+  completedAt: '2026-09-30T00:00:45Z'
+}
+
+const failedWorkflow = renderToStaticMarkup(
+  <WorkflowPanel task={failedTask} timeline={timeline} sources={sourceProgress} sourcesState="ready" onCancel={noop} />
+)
+includes(failedWorkflow, 'Needs attention', 'failed research must expose its terminal failure status')
+includes(failedWorkflow, 'Research stopped', 'failed research must use terminal wording')
+excludes(failedWorkflow, 'Research in progress', 'failed research must never be described as still in progress')
+excludes(failedWorkflow, '>Cancel<', 'terminal failed research must not expose cancellation')
+
 const completedTask: Task = {
   ...activeTask,
   id: 'task-completed',
