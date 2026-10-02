@@ -10,6 +10,7 @@ interface DatasetExplorerProps {
   totalRecords: number
   matchedRecords: number
   demoRecords?: number
+  generalResearch?: boolean
   status: TaskStatus
   loadState: LoadState
   query: string
@@ -31,6 +32,7 @@ export function DatasetExplorer({
   totalRecords,
   matchedRecords,
   demoRecords = 0,
+  generalResearch = false,
   status,
   loadState,
   query,
@@ -156,14 +158,14 @@ export function DatasetExplorer({
       <caption className="srOnly">Collected intelligence records and source provenance</caption>
       <thead><tr>
         <SortableHeader label="Result" column="title" active={sortKey} direction={sortDirection} onSort={onSort}/>
-        <SortableHeader label="Organization" column="organization" active={sortKey} direction={sortDirection} onSort={onSort}/>
-        <SortableHeader label="Location" column="location" active={sortKey} direction={sortDirection} onSort={onSort}/>
+        {!generalResearch && <SortableHeader label="Organization" column="organization" active={sortKey} direction={sortDirection} onSort={onSort}/>}
+        {!generalResearch && <SortableHeader label="Location" column="location" active={sortKey} direction={sortDirection} onSort={onSort}/>}
         <SortableHeader label="Record heuristic" column="qualityScore" active={sortKey} direction={sortDirection} onSort={onSort}/>
         <SortableHeader label="Source" column="sourceName" active={sortKey} direction={sortDirection} onSort={onSort}/>
       </tr></thead>
       <tbody>
         {loadState === 'error'
-          ? <tr><td colSpan={5} className="empty errorState">Results are temporarily unavailable. The research run remains persisted; retry by refreshing or reopening this dataset.</td></tr>
+          ? <tr><td colSpan={generalResearch ? 3 : 5} className="empty errorState">Results are temporarily unavailable. The research run remains persisted; retry by refreshing or reopening this dataset.</td></tr>
           : records.map(record => {
             const sourceHref = safeExternalHttpUrl(record.sourceUrl)
             const sourceHost = sourceHostname(record.sourceUrl)
@@ -173,8 +175,8 @@ export function DatasetExplorer({
             )
             return <tr key={record.id} className={record.id === selectedRecordId ? 'selectedRow' : undefined}>
             <td><button type="button" className="recordTitleButton" aria-haspopup="dialog" onClick={() => setSelectedRecordId(record.id)}><strong>{record.title}</strong><small>{clip(record.excerpt, 78)}</small></button></td>
-            <td>{record.organization || '—'}</td>
-            <td>{record.location || '—'}</td>
+            {!generalResearch && <td>{record.organization || '—'}</td>}
+            {!generalResearch && <td>{record.location || '—'}</td>}
             <td>{record.sourceType === 'DEMO'
               ? <span className="quality demoQuality" title="Demo records do not represent verified live-data quality">Sample</span>
               : <span className="quality" title="Persisted collection heuristic based on record/source fields; not factual confidence">{Math.round(record.qualityScore)}/100</span>}</td>
@@ -183,8 +185,8 @@ export function DatasetExplorer({
               : <span className="demoSource">{record.sourceType === 'DEMO' ? record.sourceName || 'Demo source' : 'External source URL unavailable'}</span>}</td>
           </tr>
           })}
-        {loadState !== 'error' && loadState !== 'loading' && !records.length && <tr><td colSpan={5} className="empty">{emptyMessage(status, query, minQuality)}</td></tr>}
-        {loadState === 'loading' && !records.length && <tr><td colSpan={5} className="empty">Loading results…</td></tr>}
+        {loadState !== 'error' && loadState !== 'loading' && !records.length && <tr><td colSpan={generalResearch ? 3 : 5} className="empty">{emptyMessage(status, query, minQuality)}</td></tr>}
+        {loadState === 'loading' && !records.length && <tr><td colSpan={generalResearch ? 3 : 5} className="empty">Loading results…</td></tr>}
       </tbody>
     </table></div>
 
@@ -209,7 +211,7 @@ export function DatasetExplorer({
       <div className="inspectorBackdrop" aria-hidden="true" onClick={() => setSelectedRecordId(undefined)}/>
       <aside ref={inspectorRef} className="recordInspector" role="dialog" aria-modal="true" aria-labelledby="record-inspector-title">
         <div className="inspectorHeader">
-          <div><span>Record evidence</span><h4 id="record-inspector-title">{selectedRecord.title}</h4><p>{selectedRecord.organization || 'Unknown organization'}</p></div>
+          <div><span>Record evidence</span><h4 id="record-inspector-title">{selectedRecord.title}</h4><p>{generalResearch ? 'Evidence-backed research result' : selectedRecord.organization || 'Unknown organization'}</p></div>
           <button type="button" className="iconAction" onClick={() => setSelectedRecordId(undefined)} aria-label="Close record evidence"><X size={17} aria-hidden="true"/></button>
         </div>
 
@@ -221,8 +223,8 @@ export function DatasetExplorer({
         </div>
 
         <div className="inspectorGrid">
-          <Detail label="Organization" value={selectedRecord.organization || '—'}/>
-          <Detail label="Location" value={selectedRecord.location || '—'}/>
+          {!generalResearch && <Detail label="Organization" value={selectedRecord.organization || '—'}/>}
+          {!generalResearch && <Detail label="Location" value={selectedRecord.location || '—'}/>}
           <Detail label="Record heuristic" value={selectedRecord.sourceType === 'DEMO' ? 'Not scored · demo' : `${Math.round(selectedRecord.qualityScore)}/100 · not factual confidence`}/>
           <Detail label="Source type" value={selectedRecord.sourceType || '—'}/>
           <Detail label="Collected by NUMEN" value={formatInstant(selectedRecord.collectedAt)}/>

@@ -21,6 +21,15 @@ class WorkflowPlannerTest {
 
     @Test
     void fallsBackToGeneralResearch() {
-        assertThat(planner.plan("Research public information about renewable energy").useCase()).isEqualTo("GENERAL_RESEARCH");
+        var plan = planner.plan("Research public information about renewable energy");
+        assertThat(plan.useCase()).isEqualTo("GENERAL_RESEARCH");
+        assertThat(plan.fields()).containsExactly("title", "sourceUrl", "excerpt", "qualityScore");
+    }
+
+    @Test
+    void intentClassificationUsesWholeTermsInsteadOfSubstringAccidents() {
+        assertThat(planner.plan("Research jobless-rate methodology").useCase()).isEqualTo("GENERAL_RESEARCH");
+        assertThat(planner.plan("Explain marketplace architecture").useCase()).isEqualTo("GENERAL_RESEARCH");
+        assertThat(planner.plan("Summarize leadership principles").useCase()).isEqualTo("GENERAL_RESEARCH");
     }
 }

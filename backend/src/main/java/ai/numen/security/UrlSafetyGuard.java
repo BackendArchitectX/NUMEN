@@ -26,7 +26,14 @@ public class UrlSafetyGuard {
             }
 
             String host = uri.getHost().toLowerCase(Locale.ROOT);
-            if (host.equals("localhost") || host.endsWith(".localhost") || host.endsWith(".local") || host.endsWith(".internal")) {
+            if (host.equals("localhost")
+                    || host.endsWith(".localhost")
+                    || host.equals("home.arpa")
+                    || host.endsWith(".home.arpa")
+                    || host.endsWith(".local")
+                    || host.endsWith(".internal")
+                    || host.endsWith(".invalid")
+                    || host.endsWith(".test")) {
                 throw new IllegalArgumentException("Local or internal hostnames are blocked");
             }
 
@@ -59,7 +66,8 @@ public class UrlSafetyGuard {
             if (a == 172 && b >= 16 && b <= 31) return true;
             if (a == 192 && b == 168) return true;
             if (a == 192 && b == 0 && (c == 0 || c == 2)) return true;
-            if (a == 198 && (b == 18 || b == 19 || b == 51)) return true;
+            if (a == 198 && (b == 18 || b == 19)) return true;
+            if (a == 198 && b == 51 && c == 100) return true;
             if (a == 203 && b == 0 && c == 113) return true;
         }
 

@@ -79,4 +79,43 @@ class ResearchEvidenceExtractorTest {
         assertThat(extracted.title()).isEqualTo("Platform Notes");
         assertThat(extracted.excerpt()).contains("Vector search combines embeddings");
     }
+    @Test
+    void requestedFacetsAreNotInventedWhenTheSourceHasNoFacetEvidence() {
+        Document document = Jsoup.parse("""
+                <html><head><title>Vector Notes</title></head><body>
+                <p>Vector search combines embeddings with nearest-neighbor retrieval for semantic matching.</p>
+                <p>Index maintenance affects latency and retrieval quality across large collections.</p>
+                </body></html>
+                """);
+
+        var extracted = ResearchEvidenceExtractor.extract(
+                URI.create("https://example.com/vector"),
+                document,
+                "Summarize the purpose, key capabilities, and common use cases of vector search."
+        );
+
+        assertThat(extracted.excerpt())
+                .contains("Vector search combines embeddings")
+                .doesNotContain("Purpose:")
+                .doesNotContain("Key capabilities:")
+                .doesNotContain("Common use cases:");
+    }
+
+    @Test
+    void markdownHeadingCanProvideTheDocumentTitle() {
+        Document document = Jsoup.parse("<html><body></body></html>");
+        document.body().appendElement("pre").text("""
+                # Vector Search Guide
+
+                Vector search combines embeddings with nearest-neighbor retrieval for semantic matching.
+                """);
+
+        var extracted = ResearchEvidenceExtractor.extract(
+                URI.create("https://raw.example.org/vector.md"),
+                document,
+                "Explain vector search."
+        );
+
+        assertThat(extracted.title()).isEqualTo("Vector Search Guide");
+    }
 }

@@ -46,6 +46,19 @@ class HttpPageConnectorTest {
         assertThat(record.getSourceName()).isEqualTo("example.com");
         assertThat(record.getSourceType()).isEqualTo("WEB");
         assertThat(record.getSourceUrl()).isEqualTo("https://example.com/");
+        assertThat(record.getQualityScore()).isEqualTo(77);
+    }
+
+    @Test
+    void boundsContentAndAcceptsOnlyTextualResearchMedia() {
+        assertThat(HttpPageConnector.isSupportedContentType("text/plain; charset=UTF-8")).isTrue();
+        assertThat(HttpPageConnector.isSupportedContentType("text/html")).isTrue();
+        assertThat(HttpPageConnector.isSupportedContentType("application/problem+json")).isTrue();
+        assertThat(HttpPageConnector.isSupportedContentType("image/png")).isFalse();
+        assertThat(HttpPageConnector.isSupportedContentType("application/pdf")).isFalse();
+
+        assertThat(HttpPageConnector.exceedsBodyLimit(1_500_000)).isFalse();
+        assertThat(HttpPageConnector.exceedsBodyLimit(1_500_001)).isTrue();
     }
 
     @Test

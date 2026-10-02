@@ -17,6 +17,7 @@ final class ResearchEvidenceExtractor {
     private static final int MAX_EXCERPT_LENGTH = 1_100;
     private static final Pattern TOKEN = Pattern.compile("[\\p{L}\\p{N}][\\p{L}\\p{N}+#.-]*");
     private static final Pattern ASCIIDOC_TITLE = Pattern.compile("^\\s*=+\\s+(.+?)\\s*$");
+    private static final Pattern MARKDOWN_TITLE = Pattern.compile("^\\s*#\\s+(.+?)\\s*$");
     private static final Set<String> STOP_WORDS = Set.of(
             "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "in", "into", "is", "it", "its",
             "of", "on", "or", "that", "the", "their", "this", "to", "using", "with", "you", "your", "research",
@@ -52,6 +53,7 @@ final class ResearchEvidenceExtractor {
         for (String line : rawText.split("\\R")) {
             if (++inspected > 40) break;
             Matcher matcher = ASCIIDOC_TITLE.matcher(line);
+            if (!matcher.matches()) matcher = MARKDOWN_TITLE.matcher(line);
             if (!matcher.matches()) continue;
             String heading = cleanHeading(matcher.group(1));
             if (!heading.isBlank()) return heading;
@@ -165,6 +167,7 @@ final class ResearchEvidenceExtractor {
         int bestScore = Integer.MIN_VALUE;
         for (Candidate candidate : candidates) {
             if (used.contains(candidate.order())) continue;
+            if (facet != Facet.GENERAL && facetCueScore(candidate.text().toLowerCase(Locale.ROOT), facet) == 0) continue;
             int score = score(candidate, subjectTerms, facet);
             if (score > bestScore) {
                 best = candidate;
@@ -181,15 +184,19 @@ final class ResearchEvidenceExtractor {
             if (containsWord(lower, term)) score += 8;
         }
         if (candidate.text().length() >= 80 && candidate.text().length() <= 700) score += 3;
-        score += switch (facet) {
-            case PURPOSE -> cueScore(lower, List.of("hels", "designed", "purpose", "production-grade", "opinionated", "aim", "goal"), 6);
-            case CAPABILITIES -> cueScore(lower, List.of("feature", "features", "embedded", "security", "metrics", "health", "configuration", "support", "provides", "primary goals"), 6);
-            case USE_CASES -> cueScore(lower, List.of("you can use", "create", "build", "application", "applications", "service", "services", "rest", "stand-alone", "standalone", "deployment"), 5);
-            case GENERAL -> 0;
-        };
+        score += facetCueScore(lower, facet);
         if (lower.contains("image:") || lower.contains("badge")) score -= 20;
         if (lower.contains("@restcontroller") || lower.contains("public static void") || lower.contains("./gradlew")) score -= 8;
         return score;
+    }
+
+    private static int facetCueScore(String text, Facet facet) {
+        return switch (facet) {
+            case PURPOSE -> cueScore(text, List.of("helps", "designed", "purpose", "production-grade", "opinionated", "aim", "goal"), 6);
+            case CAPABILITIES -> cueScore(text, List.of("feature", "features", "embedded", "security", "metrics", "health", "configuration", "support", "provides", "primary goals"), 6);
+            case USE_CASES -> cueScore(text, List.of("you can use", "used for", "create", "build", "application", "applications", "service", "services", "deployment"), 5);
+            case GENERAL -> 0;
+        };
     }
 
     private static int cueScore(String text, List<String> cues, int weight) {

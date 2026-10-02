@@ -11,7 +11,7 @@ import { WorkflowHistory } from '../components/WorkflowHistory'
 import { WorkflowPanel } from '../components/WorkflowPanel'
 import { useIntelligenceWorkspace } from '../hooks/useIntelligenceWorkspace'
 import type { Task, WorkspaceView } from '../model/types'
-import { groupResearchTasks } from '../shared/research'
+import { groupResearchTasks, isGeneralResearchTask } from '../shared/research'
 import { formatRelativeInstant } from '../shared/time'
 
 interface WorkspaceRoute {
@@ -155,6 +155,7 @@ export default function App() {
             totalRecords={workspace.summary?.totalRecords ?? workspace.selected.recordCount}
             matchedRecords={workspace.matchedRecords}
             demoRecords={workspace.summary?.demoRecords ?? (workspace.selected.demoMode ? workspace.selected.recordCount : 0)}
+            generalResearch={isGeneralResearchTask(workspace.selected)}
             status={workspace.selected.status}
             loadState={workspace.recordsState}
             query={workspace.query}
@@ -202,6 +203,7 @@ export default function App() {
                 totalRecords={workspace.summary?.totalRecords ?? workspace.selected.recordCount}
                 matchedRecords={workspace.matchedRecords}
                 demoRecords={workspace.summary?.demoRecords ?? (workspace.selected.demoMode ? workspace.selected.recordCount : 0)}
+                generalResearch={isGeneralResearchTask(workspace.selected)}
                 status={workspace.selected.status}
                 loadState={workspace.recordsState}
                 query={workspace.query}

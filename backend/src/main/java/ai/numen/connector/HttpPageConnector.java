@@ -7,6 +7,7 @@ import ai.numen.entity.SourceCollectionStatus;
 import ai.numen.exception.UserVisibleWorkflowException;
 import ai.numen.security.UrlSafetyGuard;
 import ai.numen.service.SourceCollectionAttemptService;
+import org.jsoup.Connection;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.UnsupportedMimeTypeException;
@@ -28,6 +29,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @Component
 public class HttpPageConnector implements SourceConnector {
     private static final Logger log = LoggerFactory.getLogger(HttpPageConnector.class);
+    private static final int MAX_BODY_BYTES = 1_500_000;
 
     private final UrlSafetyGuard safetyGuard;
     private final NumenProperties properties;
@@ -124,13 +126,23 @@ public class HttpPageConnector implements SourceConnector {
 
     private DatasetRecord fetch(SourceCollectionRequest request, String raw) throws IOException {
         URI uri = safetyGuard.requirePublicHttpUrl(raw);
-        Document document = Jsoup.connect(uri.toString())
+        Connection.Response response = Jsoup.connect(uri.toString())
                 .userAgent("NUMEN/1.0 (+public-source-research)")
                 .timeout(7_000)
-                .maxBodySize(1_500_000)
+                .maxBodySize(MAX_BODY_BYTES + 1)
                 .followRedirects(false)
-                .get();
+                .ignoreHttpErrors(true)
+                .ignoreContentType(true)
+                .execute()
+                .readFully();
 
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            throw new HttpStatusException("Source returned HTTP " + response.statusCode(), response.statusCode(), uri.toString());
+        }
+        if (!isSupportedContentType(response.contentType())) throw new SourceContentTypeException(response.contentType());
+        if (exceedsBodyLimit(response.bodyAsBytes().length)) throw new SourceContentTooLargeException();
+
+        Document document = response.parse();
         String barrier = accessBarrierReason(document);
         if (barrier != null) {
             throw new SourceAccessBarrierException(barrier);
@@ -173,7 +185,7 @@ public class HttpPageConnector implements SourceConnector {
         }
 
         String sourceHost = uri.getHost() == null ? "" : uri.getHost();
-        double quality = score(title, sourceHost, excerpt, uri.toString());
+        double quality = score(title, excerpt, uri.toString());
         return new DatasetRecord(
                 taskId,
                 title,
@@ -249,7 +261,10 @@ public class HttpPageConnector implements SourceConnector {
         if (ex instanceof HttpStatusException http) {
             return collectionStatusForHttpStatus(http.getStatusCode());
         }
-        if (ex instanceof SourceAccessBarrierException || ex instanceof UnsupportedMimeTypeException) {
+        if (ex instanceof SourceAccessBarrierException
+                || ex instanceof SourceContentTypeException
+                || ex instanceof SourceContentTooLargeException
+                || ex instanceof UnsupportedMimeTypeException) {
             return SourceCollectionStatus.REJECTED;
         }
         if (ex instanceof IllegalArgumentException) return SourceCollectionStatus.REJECTED;
@@ -263,7 +278,8 @@ public class HttpPageConnector implements SourceConnector {
             return "HTTP_" + http.getStatusCode();
         }
         if (ex instanceof SourceAccessBarrierException) return "SOURCE_ACCESS_BARRIER";
-        if (ex instanceof UnsupportedMimeTypeException) return "UNSUPPORTED_MEDIA_TYPE";
+        if (ex instanceof SourceContentTypeException || ex instanceof UnsupportedMimeTypeException) return "UNSUPPORTED_MEDIA_TYPE";
+        if (ex instanceof SourceContentTooLargeException) return "SOURCE_CONTENT_TOO_LARGE";
         if (ex instanceof IllegalArgumentException) return "SOURCE_REJECTED";
         if (ex instanceof IOException) return "SOURCE_UNREACHABLE";
         return "SOURCE_COLLECTION_FAILED";
@@ -283,7 +299,8 @@ public class HttpPageConnector implements SourceConnector {
             return "Source returned HTTP " + http.getStatusCode();
         }
         if (ex instanceof SourceAccessBarrierException) return "Source presented an access barrier instead of usable public evidence";
-        if (ex instanceof UnsupportedMimeTypeException) return "Source content type is not supported by this public-page connector";
+        if (ex instanceof SourceContentTypeException || ex instanceof UnsupportedMimeTypeException) return "Source content type is not supported by this public-page connector";
+        if (ex instanceof SourceContentTooLargeException) return "Source exceeded the bounded public-page content limit";
         if (ex instanceof IllegalArgumentException) return "Source was rejected by the public-source safety policy";
         if (ex instanceof IOException) return "Source could not be reached after the configured retry policy";
         return "Source could not be collected";
@@ -298,10 +315,24 @@ public class HttpPageConnector implements SourceConnector {
         }
     }
 
-    private static double score(String title, String organization, String excerpt, String url) {
+    static boolean isSupportedContentType(String value) {
+        if (value == null || value.isBlank()) return true;
+        String contentType = value.toLowerCase(java.util.Locale.ROOT).split(";", 2)[0].trim();
+        return contentType.startsWith("text/")
+                || contentType.equals("application/xhtml+xml")
+                || contentType.equals("application/xml")
+                || contentType.endsWith("+xml")
+                || contentType.equals("application/json")
+                || contentType.endsWith("+json");
+    }
+
+    static boolean exceedsBodyLimit(int bytes) {
+        return bytes > MAX_BODY_BYTES;
+    }
+
+    private static double score(String title, String excerpt, String url) {
         int score = 55;
         if (!title.isBlank()) score += 12;
-        if (!organization.isBlank()) score += 8;
         if (excerpt.length() > 80) score += 10;
         if (url.startsWith("https://")) score += 10;
         return Math.min(100, score);
@@ -316,9 +347,17 @@ public class HttpPageConnector implements SourceConnector {
     }
 
     private static final class SourceAccessBarrierException extends IOException {
-        private SourceAccessBarrierException(String message) {
-            super(message);
+        private SourceAccessBarrierException(String message) { super(message); }
+    }
+
+    private static final class SourceContentTypeException extends IOException {
+        private SourceContentTypeException(String contentType) {
+            super("Unsupported source content type: " + (contentType == null ? "unknown" : contentType));
         }
+    }
+
+    private static final class SourceContentTooLargeException extends IOException {
+        private SourceContentTooLargeException() { super("Source exceeded bounded content limit"); }
     }
 
     private static String sha256(String input) {

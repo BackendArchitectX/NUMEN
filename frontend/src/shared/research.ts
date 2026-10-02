@@ -5,6 +5,20 @@ export interface ResearchGroup {
   runs: number
 }
 
+export function taskUseCase(task: Pick<Task, 'planJson'>): string {
+  if (!task.planJson) return ''
+  try {
+    const parsed = JSON.parse(task.planJson) as { useCase?: unknown }
+    return typeof parsed.useCase === 'string' ? parsed.useCase : ''
+  } catch {
+    return ''
+  }
+}
+
+export function isGeneralResearchTask(task: Pick<Task, 'planJson'>): boolean {
+  return taskUseCase(task) === 'GENERAL_RESEARCH'
+}
+
 export function groupResearchTasks(tasks: Task[]): ResearchGroup[] {
   const ordered = [...tasks].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt))
   const groups = new Map<string, ResearchGroup>()

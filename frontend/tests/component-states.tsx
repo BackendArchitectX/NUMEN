@@ -227,6 +227,33 @@ includes(populated, 'not factual confidence', 'record heuristic must explicitly 
 includes(populated, 'aria-haspopup="dialog"', 'record rows must announce that evidence opens in a dialog')
 includes(populated, '<bdi class="sourceHost" dir="ltr">example.com</bdi>', 'record provenance must expose the parsed destination hostname with bidi isolation')
 
+const generalDataset = renderToStaticMarkup(
+  <DatasetExplorer
+    records={[{ ...record, title: 'Spring Boot', organization: '', location: '' }]}
+    totalRecords={1}
+    matchedRecords={1}
+    demoRecords={0}
+    generalResearch={true}
+    status="COMPLETED"
+    loadState="ready"
+    query=""
+    minQuality={0}
+    page={0}
+    pageSize={50}
+    totalPages={1}
+    sortKey="qualityScore"
+    sortDirection="desc"
+    onQueryChange={noop}
+    onMinQualityChange={noop}
+    onSort={noop}
+    onPageChange={noop}
+    onPageSizeChange={noop}
+  />
+)
+includes(generalDataset, 'Spring Boot', 'general research must render evidence-backed results')
+excludes(generalDataset, '>Organization<', 'general research must not expose an irrelevant organization column')
+excludes(generalDataset, '>Location<', 'general research must not expose an irrelevant location column')
+
 const hostNamedRecord = renderToStaticMarkup(
   <DatasetExplorer
     records={[{ ...record, sourceName: 'example.com' }]}
@@ -523,6 +550,29 @@ includes(outcome, 'Last evidence collected', 'outcome must label dataset collect
 includes(outcome, '1/1 evidence-content hashes available', 'outcome must distinguish snapshot-integrity coverage from factual confidence')
 includes(outcome, 'do not prove source authenticity, independence or factual truth', 'hashes must never be presented as truth or source authentication')
 excludes(outcome, '<span>Updated</span>', 'outcome must not collapse collection, completion and update semantics into one timestamp label')
+
+const generalResearchTask: Task = {
+  ...completedTask,
+  planJson: JSON.stringify({
+    useCase: 'GENERAL_RESEARCH',
+    fields: ['title', 'sourceUrl', 'excerpt', 'qualityScore'],
+    stages: [],
+    safeguards: []
+  })
+}
+const generalOutcome = renderToStaticMarkup(
+  <ResearchOutcome
+    task={generalResearchTask}
+    summary={{ ...summary, uniqueOrganizations: 0, uniqueLocations: 0, topLocations: [] }}
+    summaryState="ready"
+    exportUrl="/api/v1/tasks/task-completed/export.csv"
+    onRefine={noop}
+    onViewSources={noop}
+  />
+)
+includes(generalOutcome, '1 published result from 1 contributing source', 'general research summary must describe source-backed evidence without job-shaped metrics')
+excludes(generalOutcome, '>Organizations<', 'general research outcome must not show irrelevant organization metrics')
+excludes(generalOutcome, '>Locations<', 'general research outcome must not show irrelevant location metrics')
 
 const stableChangeOutcome = renderToStaticMarkup(
   <ResearchOutcome

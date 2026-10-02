@@ -25,6 +25,8 @@ class UrlSafetyGuardTest {
     void blocksReservedAddressRanges() throws Exception {
         assertThat(UrlSafetyGuard.isNonPublic(InetAddress.getByName("100.64.0.1"))).isTrue();
         assertThat(UrlSafetyGuard.isNonPublic(InetAddress.getByName("198.18.0.1"))).isTrue();
+        assertThat(UrlSafetyGuard.isNonPublic(InetAddress.getByName("198.51.100.1"))).isTrue();
+        assertThat(UrlSafetyGuard.isNonPublic(InetAddress.getByName("198.51.101.1"))).isFalse();
         assertThat(UrlSafetyGuard.isNonPublic(InetAddress.getByName("2001:db8::1"))).isTrue();
         assertThat(UrlSafetyGuard.isNonPublic(InetAddress.getByName("fc00::1"))).isTrue();
     }
@@ -32,5 +34,15 @@ class UrlSafetyGuardTest {
     @Test
     void acceptsPublicHttpsUrl() {
         assertThat(guard.requirePublicHttpUrl("https://example.com/data").getHost()).isEqualTo("example.com");
+    }
+
+    @Test
+    void blocksSpecialUseLocalNamingZonesBeforeDnsResolution() {
+        assertThatThrownBy(() -> guard.requirePublicHttpUrl("https://service.home.arpa/data"))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> guard.requirePublicHttpUrl("https://collector.test/data"))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> guard.requirePublicHttpUrl("https://invalid.invalid/data"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

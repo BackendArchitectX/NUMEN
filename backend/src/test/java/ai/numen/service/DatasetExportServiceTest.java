@@ -38,6 +38,8 @@ class DatasetExportServiceTest {
 
         String csv = new String(exports.export(taskId).content(), StandardCharsets.UTF_8);
 
+        assertThat(csv).contains("captured_evidence");
+        assertThat(csv).contains("\"Captured evidence\"");
         assertThat(csv).contains("record_heuristic_score");
         assertThat(csv).contains("identity_fingerprint");
         assertThat(csv).contains("evidence_hash");

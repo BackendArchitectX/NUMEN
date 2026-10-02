@@ -1,5 +1,6 @@
 import { CheckCircle2, CircleAlert, Database, Download, Radio, RefreshCw } from 'lucide-react'
 import type { DatasetSummary, LoadState, RunChangeSummary, Task } from '../model/types'
+import { isGeneralResearchTask } from '../shared/research'
 import { clip } from '../shared/text'
 import { formatInstant, formatRelativeInstant } from '../shared/time'
 
@@ -16,6 +17,7 @@ interface ResearchOutcomeProps {
 
 export function ResearchOutcome({ task, summary, summaryState, changes, changesState = 'idle', exportUrl, onRefine, onViewSources }: ResearchOutcomeProps) {
   const totalRecords = summary?.totalRecords ?? task.recordCount
+  const generalResearch = isGeneralResearchTask(task)
   const hasResults = totalRecords > 0
   const allDemo = Boolean(summary ? summary.totalRecords > 0 && summary.demoRecords === summary.totalRecords : task.demoMode && hasResults)
   const mixedDemo = Boolean(summary && summary.demoRecords > 0 && summary.demoRecords < summary.totalRecords)
@@ -42,7 +44,7 @@ export function ResearchOutcome({ task, summary, summaryState, changes, changesS
           {allDemo ? 'Demo dataset' : mixedDemo ? 'Mixed dataset' : limited ? 'Complete with limitations' : 'Research complete'}
         </span>
         <h2 id={`outcome-${task.id}`}>{clip(task.prompt, 120)}</h2>
-        <p>{summary ? summaryText(summary) : hasResults ? summaryState === 'error' ? 'Published results are ready, but dataset-wide coverage is temporarily unavailable.' : 'Published results are ready. Loading exact dataset coverage…' : 'No publishable results were produced for this run.'}</p>
+        <p>{summary ? summaryText(summary, generalResearch) : hasResults ? summaryState === 'error' ? 'Published results are ready, but dataset-wide coverage is temporarily unavailable.' : 'Published results are ready. Loading exact dataset coverage…' : 'No publishable results were produced for this run.'}</p>
       </div>
 
       <div className="outcomeActions" aria-label="Research actions">
@@ -55,9 +57,9 @@ export function ResearchOutcome({ task, summary, summaryState, changes, changesS
     {summary ? <>
       <div className="outcomeFacts" aria-label="Research outcome summary">
         <OutcomeFact label="Results" value={summary.totalRecords.toString()} detail={allDemo ? 'sample records' : mixedDemo ? 'mixed-source records' : 'published records'}/>
-        <OutcomeFact label="Organizations" value={summary.uniqueOrganizations.toString()} detail="unique values"/>
+        {!generalResearch && <OutcomeFact label="Organizations" value={summary.uniqueOrganizations.toString()} detail="unique values"/>}
         <OutcomeFact label="Sources" value={sourceCoverageValue(summary)} detail={summary.configuredSources > 0 ? 'collected / configured' : 'contributing sources'}/>
-        <OutcomeFact label="Locations" value={summary.uniqueLocations.toString()} detail="unique values"/>
+        {!generalResearch && <OutcomeFact label="Locations" value={summary.uniqueLocations.toString()} detail="unique values"/>}
         <OutcomeFact
           label="Evidence linked"
           value={summary.totalRecords > 0 ? `${summary.evidenceLinkedRecords}/${summary.totalRecords}` : '—'}
@@ -79,7 +81,7 @@ export function ResearchOutcome({ task, summary, summaryState, changes, changesS
 
       <RunChangeContext changes={changes} state={changesState}/>
 
-      {summary.topLocations.length > 0 && <div className="outcomeContext">
+      {!generalResearch && summary.topLocations.length > 0 && <div className="outcomeContext">
         <span>Top locations</span>
         <div>{summary.topLocations.map(item => <span key={item.value}>{item.value} <b>{item.count}</b></span>)}</div>
       </div>}
@@ -136,12 +138,16 @@ function OutcomeFact({ label, value, detail }: { label: string; value: string; d
   </div>
 }
 
-function summaryText(summary: DatasetSummary): string {
+function summaryText(summary: DatasetSummary, generalResearch: boolean): string {
   if (summary.totalRecords === 0) return 'No publishable results were produced for this run. Refine the question or source scope and run the research again.'
 
   const resultLabel = summary.totalRecords === 1 ? 'result' : 'results'
   const organizationLabel = summary.uniqueOrganizations === 1 ? 'organization' : 'organizations'
   const sourceLabel = summary.uniqueSources === 1 ? 'source' : 'sources'
+
+  if (generalResearch && summary.demoRecords === 0) {
+    return `${summary.totalRecords} published ${resultLabel} from ${summary.uniqueSources} contributing ${sourceLabel}.${sourceLimitationText(summary)} Open a result to inspect its captured evidence.`
+  }
 
   if (summary.demoRecords === summary.totalRecords) {
     return `${summary.totalRecords} sample ${resultLabel} across ${summary.uniqueOrganizations} ${organizationLabel} from ${summary.uniqueSources} demo ${sourceLabel}. Demo content is for product evaluation and is not live intelligence.`
