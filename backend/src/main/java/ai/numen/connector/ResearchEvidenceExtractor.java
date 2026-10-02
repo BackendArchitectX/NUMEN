@@ -109,21 +109,21 @@ final class ResearchEvidenceExtractor {
             Candidate purpose = best(candidates, subjectTerms, Facet.PURPOSE, used);
             if (purpose != null) {
                 used.add(purpose.order());
-                parts.add("Purpose: " + clip(purpose.text(), MAX_FACET_LENGTH));
+                parts.add("Purpose: " + clip(facetSnippet(purpose, subjectTerms, Facet.PURPOSE), MAX_FACET_LENGTH));
             }
         }
         if (asksForCapabilities(normalizedPrompt)) {
             Candidate capabilities = best(candidates, subjectTerms, Facet.CAPABILITIES, used);
             if (capabilities != null) {
                 used.add(capabilities.order());
-                parts.add("Key capabilities: " + clip(capabilities.text(), MAX_FACET_LENGTH));
+                parts.add("Key capabilities: " + clip(facetSnippet(capabilities, subjectTerms, Facet.CAPABILITIES), MAX_FACET_LENGTH));
             }
         }
         if (asksForUseCases(normalizedPrompt)) {
             Candidate useCases = best(candidates, subjectTerms, Facet.USE_CASES, used);
             if (useCases != null) {
                 used.add(useCases.order());
-                parts.add("Common use cases: " + clip(useCases.text(), MAX_FACET_LENGTH));
+                parts.add("Common use cases: " + clip(facetSnippet(useCases, subjectTerms, Facet.USE_CASES), MAX_FACET_LENGTH));
             }
         }
 
@@ -138,6 +138,26 @@ final class ResearchEvidenceExtractor {
         }
 
         return String.join(" ", parts);
+    }
+
+    private static String facetSnippet(Candidate candidate, Set<String> subjectTerms, Facet facet) {
+        String[] sentences = candidate.text().split("(?<=[.!?])\\s+");
+        if (sentences.length <= 1) return candidate.text();
+
+        Candidate best = null;
+        int bestScore = Integer.MIN_VALUE;
+        int order = 0;
+        for (String sentence : sentences) {
+            String cleaned = cleanInline(sentence);
+            if (cleaned.length() < 35) continue;
+            Candidate fragment = new Candidate(cleaned, order++);
+            int score = score(fragment, subjectTerms, facet);
+            if (score > bestScore) {
+                best = fragment;
+                bestScore = score;
+            }
+        }
+        return best == null ? candidate.text() : best.text();
     }
 
     private static Candidate best(List<Candidate> candidates, Set<String> subjectTerms, Facet facet, Set<Integer> used) {
@@ -162,7 +182,7 @@ final class ResearchEvidenceExtractor {
         }
         if (candidate.text().length() >= 80 && candidate.text().length() <= 700) score += 3;
         score += switch (facet) {
-            case PURPOSE -> cueScore(lower, List.of("helps", "designed", "purpose", "production-grade", "opinionated", "aim", "goal"), 6);
+            case PURPOSE -> cueScore(lower, List.of("hels", "designed", "purpose", "production-grade", "opinionated", "aim", "goal"), 6);
             case CAPABILITIES -> cueScore(lower, List.of("feature", "features", "embedded", "security", "metrics", "health", "configuration", "support", "provides", "primary goals"), 6);
             case USE_CASES -> cueScore(lower, List.of("you can use", "create", "build", "application", "applications", "service", "services", "rest", "stand-alone", "standalone", "deployment"), 5);
             case GENERAL -> 0;
