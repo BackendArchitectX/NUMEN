@@ -901,7 +901,7 @@ includes(briefMarkup, 'Spring Boot helps create production-grade Spring applicat
 includes(briefMarkup, '2 supporting sources', 'brief must expose support coverage when identical findings occur across sources')
 includes(briefMarkup, '[1] spring.io', 'brief must attach source citations to each finding')
 includes(briefMarkup, '[2] raw.githubusercontent.com', 'brief must preserve multiple citations instead of collapsing provenance')
-includes(briefMarkup, "one source's wording", 'semantic grouping must disclose that the displayed wording comes from one supporting source')
+includes(briefMarkup, 'using one source', 'semantic grouping must disclose that the displayed wording comes from one supporting source')
 includes(briefMarkup, 'not factual verification or source independence', 'brief must not equate multiple citations with truth or independence')
 
 const briefLoading = renderToStaticMarkup(<ResearchBriefPanel state="loading" />)
