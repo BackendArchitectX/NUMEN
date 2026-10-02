@@ -50,6 +50,12 @@ export function DatasetExplorer({
   const inspectorRef = useRef<HTMLElement>(null)
 
   const selectedRecord = records.find(record => record.id === selectedRecordId)
+  const selectedSourceHref = selectedRecord ? safeExternalHttpUrl(selectedRecord.sourceUrl) : undefined
+  const selectedSourceHost = selectedRecord ? sourceHostname(selectedRecord.sourceUrl) : ''
+  const selectedSourceLabel = selectedRecord?.sourceName?.trim() || selectedSourceHost
+  const selectedSourceHasDistinctHost = Boolean(
+    selectedSourceHost && selectedSourceLabel && selectedSourceHost.toLowerCase() !== selectedSourceLabel.toLowerCase()
+  )
   const filtered = Boolean(query.trim()) || minQuality > 0
   const pageStart = matchedRecords > 0 ? page * pageSize + 1 : 0
   const pageEnd = matchedRecords > 0 ? Math.min(page * pageSize + records.length, matchedRecords) : 0
@@ -161,6 +167,10 @@ export function DatasetExplorer({
           : records.map(record => {
             const sourceHref = safeExternalHttpUrl(record.sourceUrl)
             const sourceHost = sourceHostname(record.sourceUrl)
+            const sourceLabel = record.sourceName?.trim() || sourceHost
+            const sourceHasDistinctHost = Boolean(
+              sourceHost && sourceLabel && sourceHost.toLowerCase() !== sourceLabel.toLowerCase()
+            )
             return <tr key={record.id} className={record.id === selectedRecordId ? 'selectedRow' : undefined}>
             <td><button type="button" className="recordTitleButton" aria-haspopup="dialog" onClick={() => setSelectedRecordId(record.id)}><strong>{record.title}</strong><small>{clip(record.excerpt, 78)}</small></button></td>
             <td>{record.organization || '—'}</td>
@@ -169,7 +179,7 @@ export function DatasetExplorer({
               ? <span className="quality demoQuality" title="Demo records do not represent verified live-data quality">Sample</span>
               : <span className="quality" title="Persisted collection heuristic based on record/source fields; not factual confidence">{Math.round(record.qualityScore)}/100</span>}</td>
             <td>{sourceHref
-              ? <a href={sourceHref} target="_blank" rel="noreferrer" aria-label={`Open source ${sourceHost || record.sourceName} in a new tab`}><span>{record.sourceName}</span><bdi className="sourceHost" dir="ltr">{sourceHost}</bdi><ArrowUpRight size={13} aria-hidden="true"/></a>
+              ? <a href={sourceHref} target="_blank" rel="noreferrer" aria-label={`Open source ${sourceHost || sourceLabel} in a new tab`}><span>{sourceLabel}</span>{sourceHasDistinctHost && <bdi className="sourceHost" dir="ltr">{sourceHost}</bdi>}<ArrowUpRight size={13} aria-hidden="true"/></a>
               : <span className="demoSource">{record.sourceType === 'DEMO' ? record.sourceName || 'Demo source' : 'External source URL unavailable'}</span>}</td>
           </tr>
           })}
@@ -230,8 +240,8 @@ export function DatasetExplorer({
 
         <div className="evidenceSource">
           <span>Source</span>
-          {safeExternalHttpUrl(selectedRecord.sourceUrl)
-            ? <a href={safeExternalHttpUrl(selectedRecord.sourceUrl)} target="_blank" rel="noreferrer"><span>{selectedRecord.sourceName || sourceHostname(selectedRecord.sourceUrl)}</span><bdi className="sourceHost" dir="ltr">{sourceHostname(selectedRecord.sourceUrl)}</bdi><ArrowUpRight size={13} aria-hidden="true"/></a>
+          {selectedSourceHref
+            ? <a href={selectedSourceHref} target="_blank" rel="noreferrer"><span>{selectedSourceLabel}</span>{selectedSourceHasDistinctHost && <bdi className="sourceHost" dir="ltr">{selectedSourceHost}</bdi>}<ArrowUpRight size={13} aria-hidden="true"/></a>
             : <code>{selectedRecord.sourceType === 'DEMO' ? selectedRecord.sourceUrl : 'External source URL unavailable'}</code>}
         </div>
       </aside>

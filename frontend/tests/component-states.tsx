@@ -227,6 +227,30 @@ includes(populated, 'not factual confidence', 'record heuristic must explicitly 
 includes(populated, 'aria-haspopup="dialog"', 'record rows must announce that evidence opens in a dialog')
 includes(populated, '<bdi class="sourceHost" dir="ltr">example.com</bdi>', 'record provenance must expose the parsed destination hostname with bidi isolation')
 
+const hostNamedRecord = renderToStaticMarkup(
+  <DatasetExplorer
+    records={[{ ...record, sourceName: 'example.com' }]}
+    totalRecords={1}
+    matchedRecords={1}
+    demoRecords={0}
+    status="COMPLETED"
+    loadState="ready"
+    query=""
+    minQuality={0}
+    page={0}
+    pageSize={50}
+    totalPages={1}
+    sortKey="qualityScore"
+    sortDirection="desc"
+    onQueryChange={noop}
+    onMinQualityChange={noop}
+    onSort={noop}
+    onPageChange={noop}
+    onPageSizeChange={noop}
+  />
+)
+excludes(hostNamedRecord, '<span>example.com</span><bdi class="sourceHost" dir="ltr">example.com</bdi>', 'source actions must not repeat an identical source label and hostname')
+
 const unsafeRecord: DatasetRecord = {
   ...record,
   id: 'record-unsafe-source',
