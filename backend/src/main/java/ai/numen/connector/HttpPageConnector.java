@@ -72,7 +72,7 @@ public class HttpPageConnector implements SourceConnector {
         for (String raw : request.urls()) {
             DatasetRecord record;
             try {
-                record = fetchWithRetry(request.taskId(), raw);
+                record = fetchWithRetry(request, raw);
             } catch (Exception ex) {
                 attempts.failed(
                         request.taskId(),
@@ -99,12 +99,13 @@ public class HttpPageConnector implements SourceConnector {
         return records;
     }
 
-    private DatasetRecord fetchWithRetry(java.util.UUID taskId, String raw) throws IOException {
+    private DatasetRecord fetchWithRetry(SourceCollectionRequest request, String raw) throws IOException {
+        java.util.UUID taskId = request.taskId();
         int maxAttempts = properties.getMaxFetchAttempts();
 
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
-                return fetch(taskId, raw);
+                return fetch(request, raw);
             } catch (HttpStatusException ex) {
                 if (!isRetryableStatus(ex.getStatusCode()) || attempt == maxAttempts) throw ex;
                 log.info("source_collection_retry taskId={} sourceHost={} attempt={} status={}",
@@ -121,7 +122,7 @@ public class HttpPageConnector implements SourceConnector {
         throw new IOException("Source collection attempts exhausted");
     }
 
-    private DatasetRecord fetch(java.util.UUID taskId, String raw) throws IOException {
+    private DatasetRecord fetch(SourceCollectionRequest request, String raw) throws IOException {
         URI uri = safetyGuard.requirePublicHttpUrl(raw);
         Document document = Jsoup.connect(uri.toString())
                 .userAgent("NUMEN/1.0 (+public-source-research)")
@@ -135,18 +136,41 @@ public class HttpPageConnector implements SourceConnector {
             throw new SourceAccessBarrierException(barrier);
         }
 
-        return recordFromDocument(taskId, uri, document);
+        return recordFromDocument(
+                request.taskId(),
+                uri,
+                document,
+                request.prompt(),
+                request.plan().useCase()
+        );
     }
 
     static DatasetRecord recordFromDocument(java.util.UUID taskId, URI uri, Document document) {
-        String title = clean(document.title());
-        if (title.isBlank()) {
-            title = clean(document.selectFirst("h1") == null ? uri.getHost() : document.selectFirst("h1").text());
-        }
+        return recordFromDocument(taskId, uri, document, "", "");
+    }
 
-        String excerpt = clean(document.select("meta[name=description]").attr("content"));
-        if (excerpt.isBlank()) excerpt = clean(document.body() == null ? "" : document.body().text());
-        if (excerpt.length() > 420) excerpt = excerpt.substring(0, 420) + "…";
+    static DatasetRecord recordFromDocument(java.util.UUID taskId,
+                                            URI uri,
+                                            Document document,
+                                            String prompt,
+                                            String useCase) {
+        String title;
+        String excerpt;
+        if ("GENERAL_RESEARCH".equalsIgnoreCase(useCase)) {
+            ResearchEvidenceExtractor.ExtractedEvidence extracted =
+                    ResearchEvidenceExtractor.extract(uri, document, prompt);
+            title = extracted.title();
+            excerpt = extracted.excerpt();
+        } else {
+            title = clean(document.title());
+            if (title.isBlank()) {
+                title = clean(document.selectFirst("h1") == null ? uri.getHost() : document.selectFirst("h1").text());
+            }
+
+            excerpt = clean(document.select("meta[name=description]").attr("content"));
+            if (excerpt.isBlank()) excerpt = clean(document.body() == null ? "" : document.body().text());
+            if (excerpt.length() > 420) excerpt = excerpt.substring(0, 420) + "…";
+        }
 
         String sourceHost = uri.getHost() == null ? "" : uri.getHost();
         double quality = score(title, sourceHost, excerpt, uri.toString());
