@@ -63,7 +63,7 @@ export function ResearchBriefPanel({ brief, state }: ResearchBriefPanelProps) {
     </div>}
 
     <div className="briefIntegrity" role="note">
-      NUMEN groups captured evidence without inventing missing claims. Multiple sources indicate support coverage, not factual verification or source independence.
+      NUMEN groups conservatively equivalent captured claims using one source's wording and preserves every matched citation. Supporting-source counts show coverage, not factual verification or source independence.
     </div>
   </section>
 }
