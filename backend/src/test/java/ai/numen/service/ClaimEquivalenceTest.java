@@ -123,6 +123,26 @@ class ClaimEquivalenceTest {
     }
 
     @Test
+    void doesNotTreatDifferentExplicitProductVersionsAsSourceDisagreement() {
+        assertThat(ClaimEquivalence.disagreementReason(
+                "Spring Boot 3.5.16 requires at least Java 17 and is compatible with versions up to and including Java 25. Spring Framework 6.2.19 or above is also required. You can also deploy Spring Boot applications to any servlet 5.0+ compatible container.",
+                "System Requirements :: Spring Boot",
+                "Spring Boot 4.0.8 requires at least Java 17 and is compatible with versions up to and including Java 26. Spring Framework 7.0.9 or above is also required. You can also deploy Spring Boot applications to any Servlet 6.1+ compatible container.",
+                "System Requirements :: Spring Boot"
+        )).isEmpty();
+    }
+
+    @Test
+    void detectsSameScopeNumericConflictInsideLongMultiNumberEvidence() {
+        assertThat(ClaimEquivalence.disagreementReason(
+                "Acme Runtime 2.0 requires at least Java 17 and is compatible with versions up to and including Java 25. Protocol 1.2 is also required for production deployments.",
+                "Acme Runtime Compatibility",
+                "Acme Runtime 2.0 requires at least Java 17 and is compatible with versions up to and including Java 26. Protocol 1.2 is also required for production deployments.",
+                "Acme Runtime Compatibility"
+        )).contains(ClaimEquivalence.DisagreementReason.NUMERIC_CONFLICT);
+    }
+
+    @Test
     void exactNormalizedClaimsStillMergeAcrossDifferentlyNamedSources() {
         assertThat(ClaimEquivalence.equivalent(
                 "Build traceable research workflows.",

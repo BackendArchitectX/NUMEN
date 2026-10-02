@@ -158,6 +158,42 @@ class ResearchBriefServiceTest {
     }
 
     @Test
+    void surfacesSameScopeLongFormNumericDisagreementAcrossSources() {
+        UUID taskId = UUID.randomUUID();
+        DatasetRecord java25 = record(taskId, "Acme Runtime Compatibility", "https://a.example/acme-runtime-2", "a.example",
+                "Acme Runtime 2.0 requires at least Java 17 and is compatible with versions up to and including Java 25. Protocol 1.2 is also required for production deployments.", "acme25");
+        DatasetRecord java26 = record(taskId, "Acme Runtime Compatibility", "https://b.example/acme-runtime-2", "b.example",
+                "Acme Runtime 2.0 requires at least Java 17 and is compatible with versions up to and including Java 26. Protocol 1.2 is also required for production deployments.", "acme26");
+
+        ResearchBriefResponse brief = ResearchBriefService.project(
+                taskId, "Compare Acme Runtime 2.0 Java compatibility.", List.of(java25, java26));
+
+        assertThat(brief.findingCount()).isEqualTo(2);
+        assertThat(brief.disagreementCount()).isEqualTo(1);
+        assertThat(brief.disagreements()).singleElement().satisfies(disagreement -> {
+            assertThat(disagreement.reason()).isEqualTo("NUMERIC_CONFLICT");
+            assertThat(disagreement.left().text() + " " + disagreement.right().text())
+                    .contains("Java 25")
+                    .contains("Java 26");
+        });
+    }
+
+    @Test
+    void differentExplicitProductVersionsRemainSeparateWithoutFalseDisagreement() {
+        UUID taskId = UUID.randomUUID();
+        DatasetRecord boot35 = record(taskId, "System Requirements :: Spring Boot", "https://docs.example/spring-boot/3.5", "docs.example",
+                "Spring Boot 3.5.16 requires at least Java 17 and is compatible with versions up to and including Java 25. Spring Framework 6.2.19 or above is also required.", "boot35");
+        DatasetRecord boot40 = record(taskId, "System Requirements :: Spring Boot", "https://docs.example/spring-boot/4.0", "docs.example",
+                "Spring Boot 4.0.8 requires at least Java 17 and is compatible with versions up to and including Java 26. Spring Framework 7.0.9 or above is also required.", "boot40");
+
+        ResearchBriefResponse brief = ResearchBriefService.project(
+                taskId, "Compare Spring Boot Java compatibility by version.", List.of(boot35, boot40));
+
+        assertThat(brief.findingCount()).isEqualTo(2);
+        assertThat(brief.disagreementCount()).isZero();
+    }
+
+    @Test
     void preservesUnlabelledEvidenceWithoutInventingFacets() {
         UUID taskId = UUID.randomUUID();
         DatasetRecord record = record(taskId, "Vector Search", "https://example.com/vector", "example.com",

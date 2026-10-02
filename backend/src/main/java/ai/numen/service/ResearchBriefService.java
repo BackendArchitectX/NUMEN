@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 
 @Service
 public class ResearchBriefService {
-    static final String PROJECTION_VERSION = "evidence-brief-v2";
+    static final String PROJECTION_VERSION = "evidence-brief-v3";
 
     private static final Pattern FACET = Pattern.compile("(?i)(Purpose|Key capabilities|Common use cases):\\s*");
     private static final List<String> SECTION_ORDER = List.of("purpose", "capabilities", "use-cases", "relevant-evidence");

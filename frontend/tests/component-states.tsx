@@ -845,7 +845,7 @@ const researchBrief: ResearchBrief = {
   status: 'AVAILABLE',
   findingCount: 2,
   contributingSources: 2,
-  projectionVersion: 'evidence-brief-v2',
+  projectionVersion: 'evidence-brief-v3',
   disagreementCount: 0,
   disagreements: [],
   sections: [{
@@ -905,7 +905,7 @@ includes(briefMarkup, '2 supporting sources', 'brief must expose support coverag
 includes(briefMarkup, '[1] spring.io', 'brief must attach source citations to each finding')
 includes(briefMarkup, '[2] raw.githubusercontent.com', 'brief must preserve multiple citations instead of collapsing provenance')
 includes(briefMarkup, 'using one source', 'semantic grouping must disclose that the displayed wording comes from one supporting source')
-includes(briefMarkup, 'Projection evidence-brief-v2', 'brief must expose its projection version independently of evidence snapshot hashes')
+includes(briefMarkup, 'Projection evidence-brief-v3', 'brief must expose its projection version independently of evidence snapshot hashes')
 includes(briefMarkup, 'not factual verification or source independence', 'brief must not equate multiple citations with truth or independence')
 excludes(briefMarkup, 'Potential source disagreement', 'briefs without detected conflicts must not render a disagreement warning')
 
