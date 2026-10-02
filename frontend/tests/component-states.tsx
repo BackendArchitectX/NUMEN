@@ -452,6 +452,23 @@ includes(completedWorkflow, 'Run details', 'completed workflow mechanics must re
 excludes(completedWorkflow, 'Research outcome', 'completed technical panel must not compete with the result outcome')
 
 
+const publishingTimeline: TaskTimelineEvent[] = [{
+  id: 'timeline-publishing',
+  taskId: completedTask.id,
+  eventType: 'STATE_CHANGED',
+  status: 'PROCESSING',
+  stage: 'Publishing evidence-linked dataset',
+  progress: 90,
+  occurredAt: '2026-09-30T00:00:45Z'
+}]
+const publishingWorkflow = renderToStaticMarkup(
+  <WorkflowPanel task={completedTask} timeline={publishingTimeline} sources={[]} sourcesState="ready" onCancel={noop} />
+)
+includes(publishingWorkflow, 'Publishing Evidence Linked Dataset', 'publishing lifecycle events must retain their persisted stage')
+includes(publishingWorkflow, 'Publishing dataset', 'publishing lifecycle events must describe publication rather than validation')
+excludes(publishingWorkflow, 'Validating results', 'publishing lifecycle events must not inherit the generic processing validation label')
+
+
 const summary: DatasetSummary = {
   totalRecords: 1,
   uniqueOrganizations: 1,

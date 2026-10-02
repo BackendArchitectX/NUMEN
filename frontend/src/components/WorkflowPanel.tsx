@@ -77,7 +77,7 @@ function TechnicalDetails({ task, timeline, plan }: { task: Task; timeline: Task
         <span className={`timelineDot ${event.status.toLowerCase()}`} aria-hidden="true"/>
         <div className="timelineBody">
           <div><strong>{humanizeStage(event.stage)}</strong><span>{humanizeEvent(event.eventType)}</span></div>
-          <p>{event.detail || statusLabel(event.status)}</p>
+          <p>{timelineDescription(event)}</p>
           <time dateTime={event.occurredAt}>{formatInstant(event.occurredAt)}</time>
         </div>
       </li>)}</ol> : <p className="planEmpty">No persisted timeline events are available for this run yet.</p>}
@@ -148,6 +148,13 @@ function runKicker(task: Task): string {
   if (task.status === 'FAILED') return task.demoMode ? 'Demo research stopped' : 'Research stopped'
   if (task.status === 'CANCELLED') return task.demoMode ? 'Demo research cancelled' : 'Research cancelled'
   return task.demoMode ? 'Demo research in progress' : 'Research in progress'
+}
+
+function timelineDescription(event: TaskTimelineEvent): string {
+  const detail = event.detail?.trim()
+  if (detail) return detail
+  if (event.status === 'PROCESSING' && event.stage.trim().toLowerCase().startsWith('publishing')) return 'Publishing dataset'
+  return statusLabel(event.status)
 }
 
 function statusLabel(status: Task['status']): string {
