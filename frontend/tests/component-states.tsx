@@ -75,7 +75,8 @@ const offlinePrompt = renderToStaticMarkup(
 includes(offlinePrompt, 'class="run needsSource" disabled=""', 'offline research submission must disable the primary research action')
 includes(offlinePrompt, 'Service unavailable', 'offline composer must explain why the primary action cannot run')
 includes(offlinePrompt, 'aria-busy="false"', 'idle submission must expose aria-busy=false')
-includes(offlinePrompt, 'New research', 'composer must present plain-language research terminology')
+includes(offlinePrompt, 'Ask NUMEN', 'composer must expose the primary research workbench identity without a redundant new-research eyebrow')
+includes(offlinePrompt, 'Research brief', 'composer must use research-oriented language rather than generic chat framing')
 
 const busyPrompt = renderToStaticMarkup(
   <PromptComposer
