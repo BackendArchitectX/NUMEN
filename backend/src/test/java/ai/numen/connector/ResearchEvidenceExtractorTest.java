@@ -102,6 +102,27 @@ class ResearchEvidenceExtractorTest {
     }
 
     @Test
+    void collapsesRepeatedHtmlDocumentTitlesWithoutHidingDistinctQualifiers() {
+        Document repeated = Jsoup.parse("""
+                <html><head><title>Spring Boot :: Spring Boot</title></head>
+                <body><p>Spring Boot helps create production-grade applications.</p></body></html>
+                """);
+        var repeatedTitle = ResearchEvidenceExtractor.extract(
+                URI.create("https://docs.spring.io/spring-boot/"),
+                repeated,
+                "Research Spring Boot."
+        );
+        assertThat(repeatedTitle.title()).isEqualTo("Spring Boot");
+
+        assertThat(ResearchEvidenceExtractor.normalizeRepeatedTitle("Spring Boot | Spring Boot"))
+                .isEqualTo("Spring Boot");
+        assertThat(ResearchEvidenceExtractor.normalizeRepeatedTitle("Spring Boot — Spring Boot"))
+                .isEqualTo("Spring Boot");
+        assertThat(ResearchEvidenceExtractor.normalizeRepeatedTitle("Spring Boot :: Reference Documentation"))
+                .isEqualTo("Spring Boot :: Reference Documentation");
+    }
+
+    @Test
     void markdownHeadingCanProvideTheDocumentTitle() {
         Document document = Jsoup.parse("<html><body></body></html>");
         document.body().appendElement("pre").text("""

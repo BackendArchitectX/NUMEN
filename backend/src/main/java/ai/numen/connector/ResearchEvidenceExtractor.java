@@ -4,6 +4,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import java.net.URI;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -18,6 +19,7 @@ final class ResearchEvidenceExtractor {
     private static final Pattern TOKEN = Pattern.compile("[\\p{L}\\p{N}][\\p{L}\\p{N}+#.-]*");
     private static final Pattern ASCIIDOC_TITLE = Pattern.compile("^\\s*=+\\s+(.+?)\\s*$");
     private static final Pattern MARKDOWN_TITLE = Pattern.compile("^\\s*#\\s+(.+?)\\s*$");
+    private static final Pattern REPEATED_TITLE_DELIMITER = Pattern.compile("\\s*(?:::|\\|)\\s*|\\s+[-–—]\\s+");
     private static final Set<String> STOP_WORDS = Set.of(
             "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "in", "into", "is", "it", "its",
             "of", "on", "or", "that", "the", "their", "this", "to", "using", "with", "you", "your", "research",
@@ -40,12 +42,12 @@ final class ResearchEvidenceExtractor {
     }
 
     private static String extractTitle(URI uri, Document document, String rawText) {
-        String documentTitle = cleanInline(document.title());
+        String documentTitle = normalizeRepeatedTitle(document.title());
         if (meaningfulTitle(documentTitle, uri)) return documentTitle;
 
         Element h1 = document.selectFirst("h1");
         if (h1 != null) {
-            String heading = cleanInline(h1.text());
+            String heading = normalizeRepeatedTitle(h1.text());
             if (!heading.isBlank()) return heading;
         }
 
@@ -55,12 +57,35 @@ final class ResearchEvidenceExtractor {
             Matcher matcher = ASCIIDOC_TITLE.matcher(line);
             if (!matcher.matches()) matcher = MARKDOWN_TITLE.matcher(line);
             if (!matcher.matches()) continue;
-            String heading = cleanHeading(matcher.group(1));
+            String heading = normalizeRepeatedTitle(cleanHeading(matcher.group(1)));
             if (!heading.isBlank()) return heading;
         }
 
         String host = uri.getHost();
         return host == null || host.isBlank() ? uri.toString() : host;
+    }
+
+    static String normalizeRepeatedTitle(String value) {
+        String cleaned = cleanInline(value);
+        if (cleaned.isBlank()) return "";
+
+        String[] parts = REPEATED_TITLE_DELIMITER.split(cleaned);
+        if (parts.length < 2) return cleaned;
+
+        String firstKey = titlePartKey(parts[0]);
+        if (firstKey.isBlank()) return cleaned;
+        for (int index = 1; index < parts.length; index++) {
+            if (!firstKey.equals(titlePartKey(parts[index]))) return cleaned;
+        }
+        return cleanInline(parts[0]);
+    }
+
+    private static String titlePartKey(String value) {
+        return Normalizer.normalize(cleanInline(value), Normalizer.Form.NFKC)
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[^\\p{L}\\p{N}]+", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
     }
 
     private static boolean meaningfulTitle(String title, URI uri) {

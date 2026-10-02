@@ -13,7 +13,7 @@ import java.util.UUID;
         indexes = @Index(name = "idx_records_task", columnList = "task_id"),
         uniqueConstraints = @UniqueConstraint(name = "uk_task_fingerprint", columnNames = {"task_id", "fingerprint"}))
 public class DatasetRecord {
-    private static final String EVIDENCE_HASH_ALGORITHM = "SHA-256 canonical-text-v2";
+    private static final String EVIDENCE_HASH_ALGORITHM = "SHA-256 canonical-text-v3";
 
     @Id private UUID id;
     @Column(name = "task_id", nullable = false) private UUID taskId;
