@@ -23,6 +23,9 @@ class ResearchBriefServiceTest {
         ResearchBriefResponse brief = ResearchBriefService.project(taskId, "Research Spring Boot", List.of(record));
 
         assertThat(brief.status()).isEqualTo("AVAILABLE");
+        assertThat(brief.projectionVersion()).isEqualTo(ResearchBriefService.PROJECTION_VERSION);
+        assertThat(brief.disagreementCount()).isZero();
+        assertThat(brief.disagreements()).isEmpty();
         assertThat(brief.findingCount()).isEqualTo(3);
         assertThat(brief.contributingSources()).isEqualTo(1);
         assertThat(brief.sections()).extracting(ResearchBriefResponse.Section::label)
@@ -95,6 +98,63 @@ class ResearchBriefServiceTest {
         ResearchBriefResponse reversed = ResearchBriefService.project(taskId, "Research Spring Boot", List.of(readme, docs));
 
         assertThat(reversed.sections()).isEqualTo(first.sections());
+    }
+
+    @Test
+    void surfacesNumericDisagreementAcrossDistinctSourcesWithoutChoosingAWinner() {
+        UUID taskId = UUID.randomUUID();
+        DatasetRecord java17 = record(taskId, "Runtime Guide", "https://a.example/runtime", "a.example",
+                "The runtime requires Java 17 for supported production deployments.", "java17");
+        DatasetRecord java21 = record(taskId, "Runtime Guide", "https://b.example/runtime", "b.example",
+                "The runtime requires Java 21 for supported production deployments.", "java21");
+
+        ResearchBriefResponse brief = ResearchBriefService.project(
+                taskId, "Which Java version is required for production?", List.of(java17, java21));
+
+        assertThat(brief.findingCount()).isEqualTo(2);
+        assertThat(brief.disagreementCount()).isEqualTo(1);
+        assertThat(brief.disagreements()).singleElement().satisfies(disagreement -> {
+            assertThat(disagreement.sectionLabel()).isEqualTo("Relevant evidence");
+            assertThat(disagreement.reason()).isEqualTo("NUMERIC_CONFLICT");
+            assertThat(disagreement.left().text()).contains("Java 17");
+            assertThat(disagreement.right().text()).contains("Java 21");
+            assertThat(disagreement.left().citations()).singleElement()
+                    .extracting(ResearchBriefResponse.Citation::sourceUrl)
+                    .isEqualTo("https://a.example/runtime");
+            assertThat(disagreement.right().citations()).singleElement()
+                    .extracting(ResearchBriefResponse.Citation::sourceUrl)
+                    .isEqualTo("https://b.example/runtime");
+        });
+    }
+
+    @Test
+    void doesNotCallTwoClaimsFromTheSameSourceASourceDisagreement() {
+        UUID taskId = UUID.randomUUID();
+        DatasetRecord first = record(taskId, "Runtime Guide", "https://a.example/runtime", "a.example",
+                "The runtime requires Java 17 for supported production deployments.", "same-a");
+        DatasetRecord second = record(taskId, "Runtime Guide", "https://a.example/runtime", "a.example",
+                "The runtime requires Java 21 for supported production deployments.", "same-b");
+
+        ResearchBriefResponse brief = ResearchBriefService.project(
+                taskId, "Which Java version is required for production?", List.of(first, second));
+
+        assertThat(brief.findingCount()).isEqualTo(2);
+        assertThat(brief.disagreementCount()).isZero();
+    }
+
+    @Test
+    void equivalentMultiSourceFindingsDoNotProduceDisagreement() {
+        UUID taskId = UUID.randomUUID();
+        DatasetRecord first = record(taskId, "Spring Boot", "https://a.example/spring", "a.example",
+                "Purpose: Spring Boot helps create production-grade Spring applications.", "eq-a");
+        DatasetRecord second = record(taskId, "Spring Boot", "https://b.example/spring", "b.example",
+                "Purpose: Spring Boot helps create production-grade Spring applications.", "eq-b");
+
+        ResearchBriefResponse brief = ResearchBriefService.project(
+                taskId, "Research Spring Boot", List.of(first, second));
+
+        assertThat(brief.findingCount()).isEqualTo(1);
+        assertThat(brief.disagreementCount()).isZero();
     }
 
     @Test

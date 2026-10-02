@@ -10,11 +10,21 @@ public record ResearchBriefResponse(
         String status,
         int findingCount,
         int contributingSources,
-        List<Section> sections) {
+        List<Section> sections,
+        String projectionVersion,
+        int disagreementCount,
+        List<Disagreement> disagreements) {
 
     public record Section(String key, String label, List<Finding> findings) { }
 
     public record Finding(String text, int supportingSources, List<Citation> citations) { }
+
+    public record Disagreement(
+            String sectionKey,
+            String sectionLabel,
+            String reason,
+            Finding left,
+            Finding right) { }
 
     public record Citation(
             UUID recordId,

@@ -76,6 +76,53 @@ class ClaimEquivalenceTest {
     }
 
     @Test
+    void detectsNumericDisagreementOnlyWhenTheTopicMatches() {
+        assertThat(ClaimEquivalence.disagreementReason(
+                "The runtime requires Java 17 for supported production deployments.",
+                "Runtime Guide",
+                "The runtime requires Java 21 for supported production deployments.",
+                "Runtime Guide"
+        )).contains(ClaimEquivalence.DisagreementReason.NUMERIC_CONFLICT);
+
+        assertThat(ClaimEquivalence.disagreementReason(
+                "The runtime requires Java 17 for supported production deployments.",
+                "Runtime Guide",
+                "The service retains logs for 21 days in production.",
+                "Operations Guide"
+        )).isEmpty();
+    }
+
+    @Test
+    void detectsPolarityDisagreement() {
+        assertThat(ClaimEquivalence.disagreementReason(
+                "Spring Boot supports XML configuration for application setup.",
+                "Spring Boot",
+                "Spring Boot does not support XML configuration for application setup.",
+                "Spring Boot"
+        )).contains(ClaimEquivalence.DisagreementReason.POLARITY_CONFLICT);
+    }
+
+    @Test
+    void detectsRequiredVersusOptionalDisagreement() {
+        assertThat(ClaimEquivalence.disagreementReason(
+                "TLS configuration is required for production connections.",
+                "Connection Security",
+                "TLS configuration is optional for production connections.",
+                "Connection Security"
+        )).contains(ClaimEquivalence.DisagreementReason.REQUIREMENT_CONFLICT);
+    }
+
+    @Test
+    void doesNotFlagAddedDetailAsDisagreement() {
+        assertThat(ClaimEquivalence.disagreementReason(
+                "The runtime supports Java for production deployments.",
+                "Runtime Guide",
+                "The runtime supports Java 21 for production deployments.",
+                "Runtime Guide"
+        )).isEmpty();
+    }
+
+    @Test
     void exactNormalizedClaimsStillMergeAcrossDifferentlyNamedSources() {
         assertThat(ClaimEquivalence.equivalent(
                 "Build traceable research workflows.",

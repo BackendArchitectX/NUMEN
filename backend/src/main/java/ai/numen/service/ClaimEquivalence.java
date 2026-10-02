@@ -3,6 +3,7 @@ package ai.numen.service;
 import java.text.Normalizer;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -12,6 +13,8 @@ final class ClaimEquivalence {
     private static final double MIN_OVERLAP = 0.75d;
     private static final double MIN_JACCARD = 0.55d;
     private static final double MIN_LIST_JACCARD = 0.85d;
+    private static final double MIN_DISAGREEMENT_OVERLAP = 0.72d;
+    private static final double MIN_DISAGREEMENT_JACCARD = 0.50d;
 
     private static final Pattern TOKEN = Pattern.compile("[\\p{L}\\p{N}+#]+");
     private static final Pattern NUMBER = Pattern.compile("(?<![\\p{L}\\p{N}])\\d+(?:\\.\\d+)*(?![\\p{L}\\p{N}])");
@@ -39,7 +42,21 @@ final class ClaimEquivalence {
             "must", "required", "requires", "mandatory", "only", "always", "never", "cannot", "prohibited"
     );
 
+    private static final Set<String> REQUIRED_QUALIFIERS = Set.of(
+            "must", "required", "requires", "mandatory"
+    );
+
+    private static final Set<String> OPTIONAL_QUALIFIERS = Set.of(
+            "optional", "optionally", "may"
+    );
+
     private ClaimEquivalence() { }
+
+    enum DisagreementReason {
+        POLARITY_CONFLICT,
+        NUMERIC_CONFLICT,
+        REQUIREMENT_CONFLICT
+    }
 
     static boolean equivalent(String leftText, String leftTitle, String rightText, String rightTitle) {
         String leftSurface = canonicalSurface(leftText);
@@ -58,16 +75,44 @@ final class ClaimEquivalence {
         if (!left.hardQualifiers().equals(right.hardQualifiers())) return false;
         if (!anchorsCompatible(left.titleAnchors(), right.titleAnchors())) return false;
 
-        Set<String> intersection = new HashSet<>(left.tokens());
-        intersection.retainAll(right.tokens());
-        Set<String> union = new HashSet<>(left.tokens());
-        union.addAll(right.tokens());
-
-        double overlap = intersection.size() / (double) Math.min(left.tokens().size(), right.tokens().size());
-        double jaccard = intersection.size() / (double) union.size();
+        Similarity similarity = similarity(left.tokens(), right.tokens());
         double requiredJaccard = left.listLike() || right.listLike() ? MIN_LIST_JACCARD : MIN_JACCARD;
+        return similarity.overlap() >= MIN_OVERLAP && similarity.jaccard() >= requiredJaccard;
+    }
 
-        return overlap >= MIN_OVERLAP && jaccard >= requiredJaccard;
+    static Optional<DisagreementReason> disagreementReason(
+            String leftText,
+            String leftTitle,
+            String rightText,
+            String rightTitle) {
+        if (canonicalSurface(leftText).equals(canonicalSurface(rightText))) return Optional.empty();
+
+        Signature left = signature(leftText, leftTitle);
+        Signature right = signature(rightText, rightTitle);
+        if (left.tokens().size() < MIN_SEMANTIC_TOKENS || right.tokens().size() < MIN_SEMANTIC_TOKENS) {
+            return Optional.empty();
+        }
+        if (!anchorsCompatible(left.titleAnchors(), right.titleAnchors())) return Optional.empty();
+
+        Similarity topicSimilarity = similarity(topicTokens(left), topicTokens(right));
+        if (topicSimilarity.overlap() < MIN_DISAGREEMENT_OVERLAP
+                || topicSimilarity.jaccard() < MIN_DISAGREEMENT_JACCARD) {
+            return Optional.empty();
+        }
+
+        if (left.negated() != right.negated()) {
+            return Optional.of(DisagreementReason.POLARITY_CONFLICT);
+        }
+        if (!left.numbers().isEmpty() && !right.numbers().isEmpty()
+                && !left.numbers().equals(right.numbers())) {
+            return Optional.of(DisagreementReason.NUMERIC_CONFLICT);
+        }
+        if (left.requirementMode() != RequirementMode.NONE
+                && right.requirementMode() != RequirementMode.NONE
+                && left.requirementMode() != right.requirementMode()) {
+            return Optional.of(DisagreementReason.REQUIREMENT_CONFLICT);
+        }
+        return Optional.empty();
     }
 
     static String canonicalSurface(String value) {
@@ -101,14 +146,42 @@ final class ClaimEquivalence {
         Set<String> hardQualifiers = new HashSet<>(words);
         hardQualifiers.retainAll(HARD_QUALIFIERS);
 
+        RequirementMode requirementMode = RequirementMode.NONE;
+        if (words.stream().anyMatch(REQUIRED_QUALIFIERS::contains)) requirementMode = RequirementMode.REQUIRED;
+        if (words.stream().anyMatch(OPTIONAL_QUALIFIERS::contains)) {
+            requirementMode = requirementMode == RequirementMode.REQUIRED ? RequirementMode.NONE : RequirementMode.OPTIONAL;
+        }
+
         return new Signature(
                 tokens,
                 numbers,
                 negated,
                 Set.copyOf(hardQualifiers),
                 titleAnchors(title),
-                isListLike(text)
+                isListLike(text),
+                requirementMode
         );
+    }
+
+    private static Set<String> topicTokens(Signature signature) {
+        Set<String> topic = new HashSet<>(signature.tokens());
+        topic.removeAll(signature.numbers());
+        topic.removeAll(NEGATION);
+        topic.removeAll(HARD_QUALIFIERS);
+        topic.removeAll(REQUIRED_QUALIFIERS);
+        topic.removeAll(OPTIONAL_QUALIFIERS);
+        return Set.copyOf(topic);
+    }
+
+    private static Similarity similarity(Set<String> left, Set<String> right) {
+        if (left.isEmpty() || right.isEmpty()) return new Similarity(0d, 0d);
+        Set<String> intersection = new HashSet<>(left);
+        intersection.retainAll(right);
+        Set<String> union = new HashSet<>(left);
+        union.addAll(right);
+        double overlap = intersection.size() / (double) Math.min(left.size(), right.size());
+        double jaccard = intersection.size() / (double) union.size();
+        return new Similarity(overlap, jaccard);
     }
 
     private static boolean isListLike(String text) {
@@ -191,11 +264,16 @@ final class ClaimEquivalence {
         return Normalizer.normalize(value == null ? "" : value, Normalizer.Form.NFKC);
     }
 
+    private enum RequirementMode { NONE, REQUIRED, OPTIONAL }
+
+    private record Similarity(double overlap, double jaccard) { }
+
     private record Signature(
             Set<String> tokens,
             Set<String> numbers,
             boolean negated,
             Set<String> hardQualifiers,
             Set<String> titleAnchors,
-            boolean listLike) { }
+            boolean listLike,
+            RequirementMode requirementMode) { }
 }

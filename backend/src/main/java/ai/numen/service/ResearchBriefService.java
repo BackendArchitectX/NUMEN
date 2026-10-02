@@ -14,6 +14,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -21,6 +22,8 @@ import java.util.regex.Pattern;
 
 @Service
 public class ResearchBriefService {
+    static final String PROJECTION_VERSION = "evidence-brief-v2";
+
     private static final Pattern FACET = Pattern.compile("(?i)(Purpose|Key capabilities|Common use cases):\\s*");
     private static final List<String> SECTION_ORDER = List.of("purpose", "capabilities", "use-cases", "relevant-evidence");
     private static final Map<String, String> SECTION_LABELS = Map.of(
@@ -41,12 +44,26 @@ public class ResearchBriefService {
     public ResearchBriefResponse brief(UUID id) {
         CollectionTask task = tasks.get(id);
         if (task.getStatus() != TaskStatus.COMPLETED) {
-            return new ResearchBriefResponse(task.getId(), task.getPrompt(), "CURRENT_NOT_COMPLETED", 0, 0, List.of());
+            return empty(task, "CURRENT_NOT_COMPLETED");
         }
         if (!isGeneralResearch(task.getPlanJson())) {
-            return new ResearchBriefResponse(task.getId(), task.getPrompt(), "NOT_APPLICABLE", 0, 0, List.of());
+            return empty(task, "NOT_APPLICABLE");
         }
         return project(task.getId(), task.getPrompt(), tasks.allRecords(id));
+    }
+
+    private static ResearchBriefResponse empty(CollectionTask task, String status) {
+        return new ResearchBriefResponse(
+                task.getId(),
+                task.getPrompt(),
+                status,
+                0,
+                0,
+                List.of(),
+                PROJECTION_VERSION,
+                0,
+                List.of()
+        );
     }
 
     boolean isGeneralResearch(String planJson) {
@@ -81,7 +98,9 @@ public class ResearchBriefService {
         }
 
         List<ResearchBriefResponse.Section> projected = new ArrayList<>();
+        List<ResearchBriefResponse.Disagreement> disagreements = new ArrayList<>();
         int findingCount = 0;
+
         for (String key : SECTION_ORDER) {
             List<ClaimCandidate> sectionCandidates = candidates.get(key);
             sectionCandidates.sort(Comparator
@@ -96,8 +115,7 @@ public class ResearchBriefService {
                         .findFirst()
                         .orElse(null);
                 if (compatible == null) {
-                    compatible = new FindingAccumulator(candidate);
-                    groups.add(compatible);
+                    groups.add(new FindingAccumulator(candidate));
                 } else {
                     compatible.add(candidate);
                 }
@@ -106,9 +124,27 @@ public class ResearchBriefService {
             List<ResearchBriefResponse.Finding> findings = groups.stream()
                     .map(FindingAccumulator::toResponse)
                     .toList();
-            if (findings.isEmpty()) continue;
-            findingCount += findings.size();
-            projected.add(new ResearchBriefResponse.Section(key, SECTION_LABELS.get(key), findings));
+            if (!findings.isEmpty()) {
+                findingCount += findings.size();
+                projected.add(new ResearchBriefResponse.Section(key, SECTION_LABELS.get(key), findings));
+            }
+
+            for (int leftIndex = 0; leftIndex < groups.size(); leftIndex++) {
+                for (int rightIndex = leftIndex + 1; rightIndex < groups.size(); rightIndex++) {
+                    FindingAccumulator left = groups.get(leftIndex);
+                    FindingAccumulator right = groups.get(rightIndex);
+                    Optional<ClaimEquivalence.DisagreementReason> reason = left.disagreementReason(right);
+                    reason.ifPresent(disagreementReason -> disagreements.add(
+                            new ResearchBriefResponse.Disagreement(
+                                    key,
+                                    SECTION_LABELS.get(key),
+                                    disagreementReason.name(),
+                                    left.toResponse(),
+                                    right.toResponse()
+                            )
+                    ));
+                }
+            }
         }
 
         return new ResearchBriefResponse(
@@ -117,7 +153,10 @@ public class ResearchBriefService {
                 findingCount == 0 ? "EMPTY" : "AVAILABLE",
                 findingCount,
                 contributingSources.size(),
-                List.copyOf(projected)
+                List.copyOf(projected),
+                PROJECTION_VERSION,
+                disagreements.size(),
+                List.copyOf(disagreements)
         );
     }
 
@@ -201,6 +240,26 @@ public class ResearchBriefService {
                     candidate.text(),
                     candidate.title()
             ));
+        }
+
+        private Optional<ClaimEquivalence.DisagreementReason> disagreementReason(FindingAccumulator other) {
+            for (ClaimCandidate left : variants) {
+                for (ClaimCandidate right : other.variants) {
+                    if (left.sourceKey().isBlank()
+                            || right.sourceKey().isBlank()
+                            || left.sourceKey().equals(right.sourceKey())) {
+                        continue;
+                    }
+                    Optional<ClaimEquivalence.DisagreementReason> reason = ClaimEquivalence.disagreementReason(
+                            left.text(),
+                            left.title(),
+                            right.text(),
+                            right.title()
+                    );
+                    if (reason.isPresent()) return reason;
+                }
+            }
+            return Optional.empty();
         }
 
         private void add(ClaimCandidate candidate) {
