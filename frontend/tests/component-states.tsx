@@ -693,6 +693,7 @@ includes(sidebar, 'aria-current="page"', 'active workspace destination must expo
 excludes(sidebar, 'Appearance', 'light-only NUMEN must not expose an appearance/theme switcher')
 excludes(sidebar, '>Dark<', 'light-only NUMEN must not expose a dark-theme action')
 includes(sidebar, 'Evidence-first research', 'sidebar footer should reinforce the workspace purpose instead of theme controls')
+includes(sidebar, 'class="brandGlyph"', 'NUMEN must expose a distinctive branded research-intelligence mark rather than a plain letter tile')
 
 const history = renderToStaticMarkup(
   <WorkflowHistory tasks={[completedTask]} onOpen={noop} onOpenDataset={noop} onOpenSources={noop} />

@@ -29,7 +29,19 @@ select {
 button,
 a[href],
 summary {
-  font-weight: 650;
+  font-weight: 700;
+}
+
+button:not(:disabled),
+a[href],
+summary {
+  transition: color 140ms ease, background 140ms ease, border-color 140ms ease, box-shadow 140ms ease, transform 100ms ease;
+}
+
+button:not(:disabled):active,
+a[href]:active,
+summary:active {
+  transform: translateY(1px);
 }
 
 button:focus-visible,
@@ -478,49 +490,56 @@ tbody tr {
 
 .sortButton {
   appearance: none;
-  min-height: 28px;
-  padding: 4px 7px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: var(--color-bg-surface);
-  color: var(--color-text-secondary);
+  min-height: 30px;
+  padding: 5px 8px;
+  border: 1px solid var(--color-control-border);
+  border-radius: 7px;
+  background: var(--color-control-bg);
+  color: var(--color-control-text);
   display: inline-flex;
   align-items: center;
   gap: 4px;
   cursor: pointer;
   font-size: inherit;
-  font-weight: 700;
-  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+  font-weight: 740;
+  box-shadow: var(--shadow-control);
 }
 
 .sortButton:hover {
-  color: var(--color-action-primary);
-  border-color: color-mix(in srgb, var(--color-action-primary) 28%, var(--color-border));
-  background: var(--color-action-subtle);
+  color: #ffffff;
+  border-color: var(--color-control-hover);
+  background: var(--color-control-hover);
 }
 
 .recordTitleButton {
   width: 100%;
-  min-height: 42px;
-  border: 1px solid var(--color-border);
-  border-radius: 7px;
-  padding: 7px 8px;
-  background: var(--color-bg-subtle);
-  color: var(--color-text-primary);
+  min-height: 44px;
+  border: 1px solid var(--color-control-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: var(--color-control-bg);
+  color: var(--color-control-text);
   text-align: left;
   cursor: pointer;
-  font-weight: 650;
-  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+  font-weight: 720;
+  box-shadow: var(--shadow-control);
+}
+
+.recordTitleButton strong {
+  color: inherit;
+  font-weight: 760;
 }
 
 .recordTitleButton:hover {
-  color: var(--color-action-primary);
-  border-color: color-mix(in srgb, var(--color-action-primary) 28%, var(--color-border));
-  background: var(--color-action-subtle);
+  color: #ffffff;
+  border-color: var(--color-control-hover);
+  background: var(--color-control-hover);
+  box-shadow: 0 6px 14px rgba(55, 111, 246, .15);
 }
 
-.recordTitleButton:hover strong {
-  color: var(--color-action-primary);
+.recordTitleButton:hover strong,
+.recordTitleButton:hover small {
+  color: #ffffff;
 }
 
 td a {
@@ -528,21 +547,21 @@ td a {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 5px 7px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: var(--color-bg-surface);
-  color: var(--color-action-primary);
+  padding: 5px 8px;
+  border: 1px solid var(--color-control-border);
+  border-radius: 7px;
+  background: var(--color-control-bg);
+  color: var(--color-control-text);
   text-decoration: none;
   font-size: 10.5px;
-  font-weight: 650;
-  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+  font-weight: 720;
+  box-shadow: var(--shadow-control);
 }
 
 td a:hover {
-  color: var(--color-action-primary-hover);
-  border-color: color-mix(in srgb, var(--color-action-primary) 30%, var(--color-border));
-  background: var(--color-action-subtle);
+  color: #ffffff;
+  border-color: var(--color-control-hover);
+  background: var(--color-control-hover);
   text-decoration: none;
 }
 
@@ -741,29 +760,30 @@ td a:hover {
 .secondaryAction,
 .export,
 .tableAction {
-  min-height: 32px;
+  min-height: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  padding: 6px 9px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 6px;
-  background: var(--color-bg-surface);
-  color: var(--color-text-primary);
+  gap: 6px;
+  padding: 7px 10px;
+  border: 1px solid var(--color-control-border);
+  border-radius: 8px;
+  background: var(--color-control-bg);
+  color: var(--color-control-text);
   cursor: pointer;
   text-decoration: none;
   font-size: 10.5px;
-  font-weight: 650;
-  transition: color 140ms ease, border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+  font-weight: 720;
+  box-shadow: var(--shadow-control);
 }
 
 .secondaryAction:hover,
 .export:hover,
 .tableAction:hover {
-  color: var(--color-action-primary);
-  border-color: color-mix(in srgb, var(--color-action-primary) 27%, var(--color-border));
-  background: var(--color-action-subtle);
+  color: #ffffff;
+  border-color: var(--color-control-hover);
+  background: var(--color-control-hover);
+  box-shadow: 0 6px 14px rgba(55, 111, 246, .16);
 }
 
 .activityPulse {
@@ -815,26 +835,31 @@ td a:hover {
 }
 
 .runDetails > summary {
-  min-height: 43px;
+  min-height: 46px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 8px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-bg-surface);
+  padding: 9px 11px;
+  border: 1px solid var(--color-control-border);
+  border-radius: 9px;
+  background: var(--color-control-bg);
   list-style: none;
-  color: var(--color-text-primary);
+  color: var(--color-control-text);
   cursor: pointer;
-  font-weight: 650;
-  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+  font-weight: 720;
+  box-shadow: var(--shadow-control);
 }
 
 .runDetails > summary:hover {
-  color: var(--color-action-primary);
-  border-color: color-mix(in srgb, var(--color-action-primary) 30%, var(--color-border));
-  background: var(--color-action-subtle);
+  color: #ffffff;
+  border-color: var(--color-control-hover);
+  background: var(--color-control-hover);
+  box-shadow: 0 6px 14px rgba(55, 111, 246, .15);
+}
+
+.runDetails > summary:hover small {
+  color: rgba(255, 255, 255, .82);
 }
 
 .runDetails > summary::-webkit-details-marker {
@@ -1194,9 +1219,9 @@ td a:hover {
 }
 
 .sourceAction a:hover {
-  color: var(--color-action-primary-hover);
-  border-color: color-mix(in srgb, var(--color-action-primary) 30%, var(--color-border));
-  background: var(--color-action-subtle);
+  color: #ffffff;
+  border-color: var(--color-control-hover);
+  background: var(--color-control-hover);
   text-decoration: none;
 }
 
@@ -1411,24 +1436,25 @@ td a:hover {
 }
 
 .pageControls button {
-  min-height: 29px;
+  min-height: 31px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 8px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: var(--color-bg-surface);
-  color: var(--color-text-secondary);
+  padding: 5px 9px;
+  border: 1px solid var(--color-control-border);
+  border-radius: 7px;
+  background: var(--color-control-bg);
+  color: var(--color-control-text);
   cursor: pointer;
   font-size: 9.5px;
-  font-weight: 600;
+  font-weight: 700;
+  box-shadow: var(--shadow-control);
 }
 
 .pageControls button:hover:not(:disabled) {
-  color: var(--color-action-primary);
-  border-color: color-mix(in srgb, var(--color-action-primary) 26%, var(--color-border));
-  background: var(--color-action-subtle);
+  color: #ffffff;
+  border-color: var(--color-control-hover);
+  background: var(--color-control-hover);
 }
 
 .pageControls span {
@@ -2064,12 +2090,12 @@ tbody tr.selectedRow {
 .nav.active::before {
   content: "";
   position: absolute;
-  left: -14px;
-  top: 9px;
-  bottom: 9px;
+  left: 5px;
+  top: 8px;
+  bottom: 8px;
   width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: var(--color-action-primary);
+  border-radius: 3px;
+  background: #53d6ff;
 }
 
 .navText {
@@ -2109,11 +2135,6 @@ tbody tr.selectedRow {
   color: var(--color-success-strong);
   border-color: color-mix(in srgb, var(--color-success) 30%, var(--color-border));
   background: #ffffff;
-}
-
-.headerNewResearch:hover {
-  background: #111827;
-  color: #ffffff;
 }
 
 .mobileNav {
@@ -2335,13 +2356,15 @@ tbody tr.selectedRow {
 
 .primaryTableAction {
   color: #ffffff;
-  border-color: #111827;
-  background: #111827;
+  border-color: var(--color-action-primary);
+  background: var(--color-action-primary);
   min-height: 34px;
+  box-shadow: 0 4px 10px rgba(55, 111, 246, .14);
 }
 
 .primaryTableAction:hover {
-  background: #0b0f16;
+  border-color: var(--color-action-primary-hover);
+  background: var(--color-action-primary-hover);
   color: #ffffff;
 }
 
@@ -2414,14 +2437,15 @@ th {
 
 .tableAction {
   min-height: 34px;
-  border-color: #d5dde7;
-  background: #ffffff;
+  border-color: var(--color-control-border);
+  background: var(--color-control-bg);
+  color: var(--color-control-text);
 }
 
 .tableAction:hover {
-  border-color: #111827;
-  color: #111827;
-  background: #ffffff;
+  border-color: var(--color-control-hover);
+  color: #ffffff;
+  background: var(--color-control-hover);
 }
 
 .status.completed {
@@ -2479,6 +2503,13 @@ th {
   --color-action-primary-hover: #285dde;
   --color-action-primary-pressed: #204dbd;
   --color-action-subtle: #edf3ff;
+  --color-control-bg: #eef4ff;
+  --color-control-bg-strong: #e2ebff;
+  --color-control-border: #b8cbff;
+  --color-control-text: #204fb8;
+  --color-control-hover: #376ff6;
+  --color-control-hover-strong: #285dde;
+  --shadow-control: 0 1px 2px rgba(55, 111, 246, .10), 0 0 0 1px rgba(55, 111, 246, .025);
   --color-live: #18bfb6;
   --color-live-strong: #0b918b;
   --color-live-subtle: #eaf9f7;
@@ -2561,102 +2592,135 @@ body {
 .brand {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 1px 8px 14px;
-  min-height: 52px;
+  gap: 11px;
+  padding: 2px 7px 16px;
+  min-height: 60px;
 }
 
 .brandMark {
-  width: 32px;
-  height: 32px;
+  position: relative;
+  width: 42px;
+  height: 42px;
   flex: 0 0 auto;
   display: grid;
   place-items: center;
-  border-radius: 8px;
-  background: #0b0f16;
-  box-shadow: none;
-  border: 1px solid #0b0f16;
+  overflow: hidden;
+  border: 1px solid #285dde;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #0b1220 0%, #111d34 54%, #1b2e59 100%);
+  box-shadow: 0 8px 22px rgba(17, 29, 52, .18), 0 0 0 3px rgba(55, 111, 246, .08);
 }
 
-.brandMark span {
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: -.035em;
+.brandMark::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px solid rgba(255, 255, 255, .10);
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.brandGlyph {
+  position: relative;
+  z-index: 1;
+  width: 31px;
+  height: 31px;
+  overflow: visible;
+}
+
+.brandGlyphPath {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 3.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.brandGlyphNode {
+  stroke: #0b1220;
+  stroke-width: 1.2;
+}
+
+.brandGlyphNodeStart {
+  fill: #53d6ff;
+}
+
+.brandGlyphNodeEnd {
+  fill: #8b7cff;
 }
 
 .brandCopy b {
   display: block;
   color: var(--color-text-primary);
-  font-size: 14px;
-  font-weight: 780;
-  letter-spacing: .12em;
+  font-size: 15.5px;
+  font-weight: 820;
+  letter-spacing: .14em;
 }
 
 .brandCopy span {
   display: block;
   margin-top: 3px;
-  color: var(--color-text-muted);
-  font-size: 10px;
+  color: var(--color-text-secondary);
+  font-size: 10.25px;
+  font-weight: 580;
 }
 
 .newResearchAction {
   width: 100%;
-  min-height: 40px;
-  margin-bottom: 10px;
+  min-height: 44px;
+  margin: 2px 0 12px;
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 7px;
-  padding: 10px 12px;
-  border: 1px solid #111827;
-  border-radius: 9px;
-  background: #111827;
+  gap: 8px;
+  padding: 10px 13px;
+  border: 1px solid var(--color-action-primary);
+  border-radius: 10px;
+  background: var(--color-action-primary);
   color: #ffffff;
   cursor: pointer;
   font-size: 12px;
-  font-weight: 700;
-  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
-  margin: 2px 0 10px;
-  border-color: #111827;
-  box-shadow: none;
+  font-weight: 760;
+  box-shadow: 0 6px 16px rgba(55, 111, 246, .18);
 }
 
 .newResearchAction:hover {
-  background: #0b0f16;
-  border-color: #0b0f16;
+  background: var(--color-action-primary-hover);
+  border-color: var(--color-action-primary-hover);
   color: #ffffff;
+  box-shadow: 0 8px 20px rgba(55, 111, 246, .24);
 }
 
 .nav {
   position: relative;
   width: 100%;
-  min-height: 40px;
+  min-height: 42px;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 10px;
-  border: 1px solid var(--color-border);
+  padding: 9px 11px;
+  border: 1px solid var(--color-control-border);
   border-radius: 9px;
-  background: #ffffff;
-  color: var(--color-text-secondary);
+  background: var(--color-control-bg);
+  color: var(--color-control-text);
   text-align: left;
   cursor: pointer;
-  font-weight: 650;
-  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+  font-weight: 720;
+  box-shadow: var(--shadow-control);
 }
 
 .nav:hover {
-  color: var(--color-action-primary);
-  background: var(--color-action-subtle);
-  border-color: color-mix(in srgb, var(--color-action-primary) 26%, var(--color-border));
+  color: #ffffff;
+  background: var(--color-control-hover);
+  border-color: var(--color-control-hover);
+  box-shadow: 0 6px 14px rgba(55, 111, 246, .18);
 }
 
 .nav.active {
-  color: var(--color-text-primary);
-  background: #ffffff;
-  box-shadow: var(--shadow-sm);
-  border-color: var(--color-border);
+  color: #ffffff;
+  background: #111827;
+  box-shadow: 0 6px 15px rgba(17, 24, 39, .16);
+  border-color: #111827;
 }
 
 .recent {
@@ -2664,28 +2728,30 @@ body {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  padding: 9px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
+  padding: 10px 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 9px;
   background: #ffffff;
   color: var(--color-text-secondary);
   text-align: left;
   cursor: pointer;
-  font-weight: 650;
-  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
-  min-height: 44px;
+  font-weight: 700;
+  min-height: 46px;
+  box-shadow: var(--shadow-sm);
 }
 
 .recent:hover {
   color: var(--color-action-primary);
-  background: var(--color-action-subtle);
-  border-color: color-mix(in srgb, var(--color-action-primary) 26%, var(--color-border));
+  background: var(--color-control-bg);
+  border-color: var(--color-control-border);
+  box-shadow: var(--shadow-control);
 }
 
 .recent.selected {
-  background: #ffffff;
-  box-shadow: inset 2px 0 0 var(--color-live);
-  border-color: var(--color-border);
+  color: var(--color-control-text);
+  background: var(--color-control-bg-strong);
+  box-shadow: inset 4px 0 0 var(--color-action-primary), var(--shadow-control);
+  border-color: var(--color-control-border);
 }
 
 .recent strong {
@@ -2785,11 +2851,18 @@ main {
 
 .headerNewResearch {
   white-space: nowrap;
-  min-height: 34px;
-  border-color: #111827;
-  background: #ffffff;
-  color: #111827;
-  font-weight: 650;
+  min-height: 36px;
+  border-color: var(--color-action-primary);
+  background: var(--color-action-primary);
+  color: #ffffff;
+  font-weight: 740;
+  box-shadow: 0 4px 12px rgba(55, 111, 246, .14);
+}
+
+.headerNewResearch:hover {
+  border-color: var(--color-action-primary-hover);
+  background: var(--color-action-primary-hover);
+  color: #ffffff;
 }
 
 .panel {
@@ -3019,26 +3092,26 @@ main {
 }
 
 .composerAdvanced > summary {
-  min-height: 43px;
+  min-height: 44px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 9px 10px;
-  border: 1px solid var(--color-border);
+  padding: 9px 11px;
+  border: 1px solid var(--color-control-border);
   border-radius: 8px;
-  background: var(--color-bg-surface);
-  color: var(--color-text-primary);
+  background: var(--color-control-bg);
+  color: var(--color-control-text);
   cursor: pointer;
   list-style: none;
-  font-weight: 650;
-  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+  font-weight: 720;
+  box-shadow: var(--shadow-control);
 }
 
 .composerAdvanced > summary:hover {
-  color: var(--color-action-primary);
-  border-color: color-mix(in srgb, var(--color-action-primary) 30%, var(--color-border));
-  background: var(--color-action-subtle);
+  color: #ffffff;
+  border-color: var(--color-control-hover);
+  background: var(--color-control-hover);
 }
 
 .composerAdvancedBody {
@@ -3250,21 +3323,21 @@ main {
   align-items: center;
   gap: 5px;
   padding: 5px 8px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-control-border);
   border-radius: 7px;
-  background: var(--color-bg-surface);
-  color: var(--color-text-primary);
+  background: var(--color-control-bg);
+  color: var(--color-control-text);
   cursor: pointer;
   font-size: 10px;
-  font-weight: 650;
-  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+  font-weight: 700;
+  box-shadow: var(--shadow-control);
 }
 
 .datasetSecondaryAction:hover,
 .historySecondary:hover {
-  color: var(--color-action-primary);
-  border-color: color-mix(in srgb, var(--color-action-primary) 28%, var(--color-border));
-  background: var(--color-action-subtle);
+  color: #ffffff;
+  border-color: var(--color-control-hover);
+  background: var(--color-control-hover);
 }
 
 .historyPrimary {
@@ -3273,19 +3346,20 @@ main {
   align-items: center;
   gap: 5px;
   padding: 5px 8px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-action-primary);
   border-radius: 7px;
-  background: #ffffff;
-  color: var(--color-text-primary);
+  background: var(--color-action-primary);
+  color: #ffffff;
   cursor: pointer;
   font-size: 10px;
-  font-weight: 650;
+  font-weight: 720;
+  box-shadow: 0 4px 10px rgba(55, 111, 246, .14);
 }
 
 .historyPrimary:hover {
-  color: var(--color-action-primary);
-  border-color: color-mix(in srgb, var(--color-action-primary) 30%, var(--color-border));
-  background: var(--color-action-subtle);
+  color: #ffffff;
+  border-color: var(--color-action-primary-hover);
+  background: var(--color-action-primary-hover);
 }
 
 .historyPanel {
@@ -3365,22 +3439,29 @@ main {
   grid-template-columns: 34px minmax(0, 1fr) 90px 86px;
   align-items: center;
   gap: 12px;
-  margin: 6px 0;
+  margin: 7px 0;
   padding: 11px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-bg-surface);
-  color: var(--color-text-primary);
+  border: 1px solid var(--color-control-border);
+  border-radius: 9px;
+  background: var(--color-control-bg);
+  color: var(--color-control-text);
   cursor: pointer;
   text-align: left;
-  font-weight: 650;
-  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+  font-weight: 700;
+  box-shadow: var(--shadow-control);
 }
 
 .sourceIndexRow:hover {
-  color: var(--color-action-primary);
-  border-color: color-mix(in srgb, var(--color-action-primary) 28%, var(--color-border));
-  background: var(--color-action-subtle);
+  color: #ffffff;
+  border-color: var(--color-control-hover);
+  background: var(--color-control-hover);
+  box-shadow: 0 6px 14px rgba(55, 111, 246, .15);
+}
+
+.sourceIndexRow:hover small,
+.sourceIndexRow:hover .sourceIndexTime,
+.sourceIndexRow:hover .sourceIndexOpen {
+  color: rgba(255, 255, 255, .88);
 }
 
 .sourceIndexGlyph {
@@ -3454,20 +3535,20 @@ main {
 }
 
 .sourceAction a {
-  min-height: 30px;
+  min-height: 31px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 5px 7px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: var(--color-bg-surface);
-  color: var(--color-action-primary);
+  padding: 5px 8px;
+  border: 1px solid var(--color-control-border);
+  border-radius: 7px;
+  background: var(--color-control-bg);
+  color: var(--color-control-text);
   font-size: 10px;
-  font-weight: 650;
+  font-weight: 720;
   text-decoration: none;
   justify-content: flex-end;
-  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+  box-shadow: var(--shadow-control);
 }
 
 .sourceHost {
@@ -3488,25 +3569,25 @@ main {
 }
 
 .evidenceSource a {
-  min-height: 30px;
+  min-height: 31px;
   display: inline-flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 5px 7px;
-  padding: 5px 7px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: var(--color-bg-surface);
-  color: var(--color-action-primary);
-  font-weight: 650;
+  padding: 5px 8px;
+  border: 1px solid var(--color-control-border);
+  border-radius: 7px;
+  background: var(--color-control-bg);
+  color: var(--color-control-text);
+  font-weight: 720;
   text-decoration: none;
-  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+  box-shadow: var(--shadow-control);
 }
 
 .evidenceSource a:hover {
-  color: var(--color-action-primary-hover);
-  border-color: color-mix(in srgb, var(--color-action-primary) 30%, var(--color-border));
-  background: var(--color-action-subtle);
+  color: #ffffff;
+  border-color: var(--color-control-hover);
+  background: var(--color-control-hover);
 }
 
 @keyframes spin {
