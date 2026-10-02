@@ -266,4 +266,3 @@ function sourceScopeSummary(demoMode: boolean, sourceCount: number): string {
   if (sourceCount > 0) return `${sourceCount} public ${sourceCount === 1 ? 'source' : 'sources'} configured`
   return 'Required before live research can run'
 }
-
