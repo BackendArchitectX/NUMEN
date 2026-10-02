@@ -6,11 +6,13 @@ import ai.numen.dto.DatasetRecordResponse;
 import ai.numen.dto.DatasetSummaryResponse;
 import ai.numen.dto.SourceSummaryResponse;
 import ai.numen.dto.RunChangeSummaryResponse;
+import ai.numen.dto.ResearchBriefResponse;
 import ai.numen.dto.TaskEventResponse;
 import ai.numen.dto.TaskResponse;
 import ai.numen.dto.TaskTimelineEventResponse;
 import ai.numen.service.DatasetExportService;
 import ai.numen.service.TaskEventHub;
+import ai.numen.service.ResearchBriefService;
 import ai.numen.service.TaskService;
 import ai.numen.entity.CollectionTask;
 import jakarta.validation.Valid;
@@ -40,11 +42,16 @@ public class TaskController {
     private final TaskService service;
     private final TaskEventHub events;
     private final DatasetExportService exports;
+    private final ResearchBriefService briefs;
 
-    public TaskController(TaskService service, TaskEventHub events, DatasetExportService exports) {
+    public TaskController(TaskService service,
+                          TaskEventHub events,
+                          DatasetExportService exports,
+                          ResearchBriefService briefs) {
         this.service = service;
         this.events = events;
         this.exports = exports;
+        this.briefs = briefs;
     }
 
     @PostMapping
@@ -115,6 +122,11 @@ public class TaskController {
     @GetMapping("/{id}/changes")
     public RunChangeSummaryResponse changes(@PathVariable UUID id) {
         return RunChangeSummaryResponse.from(service.changes(id));
+    }
+
+    @GetMapping("/{id}/brief")
+    public ResearchBriefResponse brief(@PathVariable UUID id) {
+        return briefs.brief(id);
     }
 
     @GetMapping("/{id}/timeline")
