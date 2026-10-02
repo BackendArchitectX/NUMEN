@@ -17,7 +17,7 @@ class DatasetRecordTest {
         DatasetRecord changedContent = record("https://source-a.example/page", "Evidence body changed", "identity-c");
 
         assertThat(first.getEvidenceHash()).hasSize(64);
-        assertThat(first.getEvidenceHashAlgorithm()).isEqualTo("SHA-256 canonical-text-v1");
+        assertThat(first.getEvidenceHashAlgorithm()).isEqualTo("SHA-256 canonical-text-v2");
         assertThat(first.getEvidenceHash()).isEqualTo(sameContentDifferentOrigin.getEvidenceHash());
         assertThat(first.getEvidenceHash()).isNotEqualTo(changedContent.getEvidenceHash());
         assertThat(first.getFingerprint()).isNotEqualTo(sameContentDifferentOrigin.getFingerprint());

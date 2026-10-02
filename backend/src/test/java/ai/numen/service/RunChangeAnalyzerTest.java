@@ -70,6 +70,24 @@ class RunChangeAnalyzerTest {
     }
 
     @Test
+    void hashAlgorithmChangesAreIncomparableRatherThanSourceChanges() {
+        assertThat(RunChangeAnalyzer.compatibleHashAlgorithms(
+                Set.of("SHA-256 canonical-text-v2"),
+                Set.of("SHA-256 canonical-text-v1")
+        )).isFalse();
+
+        assertThat(RunChangeAnalyzer.compatibleHashAlgorithms(
+                Set.of("SHA-256 canonical-text-v2"),
+                Set.of("SHA-256 canonical-text-v2")
+        )).isTrue();
+
+        assertThat(RunChangeAnalyzer.compatibleHashAlgorithms(
+                Set.of("SHA-256 canonical-text-v2", "legacy"),
+                Set.of("SHA-256 canonical-text-v2")
+        )).isFalse();
+    }
+
+    @Test
     void distinguishesNewlyObservedFromChanged() {
         DatasetRecord current = record("https://a.example", "body", "cur-a");
 

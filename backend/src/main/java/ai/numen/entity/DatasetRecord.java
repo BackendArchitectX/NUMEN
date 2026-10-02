@@ -13,6 +13,8 @@ import java.util.UUID;
         indexes = @Index(name = "idx_records_task", columnList = "task_id"),
         uniqueConstraints = @UniqueConstraint(name = "uk_task_fingerprint", columnNames = {"task_id", "fingerprint"}))
 public class DatasetRecord {
+    private static final String EVIDENCE_HASH_ALGORITHM = "SHA-256 canonical-text-v2";
+
     @Id private UUID id;
     @Column(name = "task_id", nullable = false) private UUID taskId;
     private String title;
@@ -47,7 +49,7 @@ public class DatasetRecord {
         this.qualityScore = qualityScore;
         this.fingerprint = fingerprint;
         this.evidenceHash = evidenceSnapshotHash(title, excerpt);
-        this.evidenceHashAlgorithm = "SHA-256 canonical-text-v1";
+        this.evidenceHashAlgorithm = EVIDENCE_HASH_ALGORITHM;
         this.collectedAt = Instant.now();
     }
 

@@ -45,6 +45,10 @@ final class RunChangeAnalyzer {
                 unhashable++;
                 continue;
             }
+            if (!compatibleHashAlgorithms(currentGroup, baselineGroup)) {
+                unhashable++;
+                continue;
+            }
 
             if (evidenceHashes(currentGroup).equals(evidenceHashes(baselineGroup))) unchanged++;
             else changed++;
@@ -80,7 +84,22 @@ final class RunChangeAnalyzer {
     }
 
     private static boolean allHashable(List<DatasetRecord> records) {
-        return !records.isEmpty() && records.stream().allMatch(record -> hasText(record.getEvidenceHash()));
+        return !records.isEmpty() && records.stream()
+                .allMatch(record -> hasText(record.getEvidenceHash()) && hasText(record.getEvidenceHashAlgorithm()));
+    }
+
+    private static boolean compatibleHashAlgorithms(List<DatasetRecord> current, List<DatasetRecord> baseline) {
+        return compatibleHashAlgorithms(
+                current.stream().map(DatasetRecord::getEvidenceHashAlgorithm).collect(java.util.stream.Collectors.toSet()),
+                baseline.stream().map(DatasetRecord::getEvidenceHashAlgorithm).collect(java.util.stream.Collectors.toSet())
+        );
+    }
+
+    static boolean compatibleHashAlgorithms(Set<String> currentAlgorithms, Set<String> baselineAlgorithms) {
+        return currentAlgorithms.size() == 1
+                && baselineAlgorithms.size() == 1
+                && currentAlgorithms.equals(baselineAlgorithms)
+                && currentAlgorithms.stream().allMatch(RunChangeAnalyzer::hasText);
     }
 
     private static List<String> evidenceHashes(List<DatasetRecord> records) {

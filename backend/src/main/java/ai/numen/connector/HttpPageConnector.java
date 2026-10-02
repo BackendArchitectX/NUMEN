@@ -30,6 +30,8 @@ import java.util.concurrent.ThreadLocalRandom;
 public class HttpPageConnector implements SourceConnector {
     private static final Logger log = LoggerFactory.getLogger(HttpPageConnector.class);
     private static final int MAX_BODY_BYTES = 1_500_000;
+    private static final int MAX_TITLE_LENGTH = 255;
+    private static final int MAX_WEBSITE_LENGTH = 255;
 
     private final UrlSafetyGuard safetyGuard;
     private final NumenProperties properties;
@@ -112,6 +114,11 @@ public class HttpPageConnector implements SourceConnector {
                 if (!isRetryableStatus(ex.getStatusCode()) || attempt == maxAttempts) throw ex;
                 log.info("source_collection_retry taskId={} sourceHost={} attempt={} status={}",
                         taskId, safeHost(raw), attempt, ex.getStatusCode());
+            } catch (SourceAccessBarrierException
+                     | SourceContentTypeException
+                     | SourceContentTooLargeException
+                     | UnsupportedMimeTypeException ex) {
+                throw ex;
             } catch (IOException ex) {
                 if (attempt == maxAttempts) throw ex;
                 log.info("source_collection_retry taskId={} sourceHost={} attempt={} error={}",
@@ -184,15 +191,18 @@ public class HttpPageConnector implements SourceConnector {
             if (excerpt.length() > 420) excerpt = excerpt.substring(0, 420) + "…";
         }
 
+        title = bounded(clean(title), MAX_TITLE_LENGTH);
+        String sourceUrl = uri.toString();
         String sourceHost = uri.getHost() == null ? "" : uri.getHost();
-        double quality = score(title, excerpt, uri.toString());
+        String website = bounded(uri.getScheme() + "://" + uri.getRawAuthority(), MAX_WEBSITE_LENGTH);
+        double quality = score(title, excerpt, sourceUrl);
         return new DatasetRecord(
                 taskId,
                 title,
                 "",
                 "",
-                uri.toString(),
-                uri.toString(),
+                website,
+                sourceUrl,
                 sourceHost,
                 "WEB",
                 excerpt,

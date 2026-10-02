@@ -46,7 +46,25 @@ class HttpPageConnectorTest {
         assertThat(record.getSourceName()).isEqualTo("example.com");
         assertThat(record.getSourceType()).isEqualTo("WEB");
         assertThat(record.getSourceUrl()).isEqualTo("https://example.com/");
+        assertThat(record.getWebsite()).isEqualTo("https://example.com");
         assertThat(record.getQualityScore()).isEqualTo(77);
+    }
+
+    @Test
+    void boundsPersistedWebMetadataWithoutTruncatingSourceProvenance() {
+        String longTitle = "T".repeat(400);
+        String longPath = "segment-".repeat(50);
+        URI uri = URI.create("https://example.com/" + longPath);
+
+        var record = HttpPageConnector.recordFromDocument(
+                UUID.randomUUID(),
+                uri,
+                Jsoup.parse("<html><title>" + longTitle + "</title><body><p>Public research evidence with enough detail for collection.</p></body></html>")
+        );
+
+        assertThat(record.getTitle()).hasSize(255).endsWith("…");
+        assertThat(record.getWebsite()).isEqualTo("https://example.com");
+        assertThat(record.getSourceUrl()).isEqualTo(uri.toString()).hasSizeGreaterThan(255);
     }
 
     @Test
