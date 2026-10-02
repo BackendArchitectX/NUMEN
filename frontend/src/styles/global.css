@@ -4361,3 +4361,156 @@ to { transform: rotate(360deg); }
     flex-direction: column;
   }
 }
+
+
+/* Conservative cross-source disagreement disclosure */
+.briefDisagreements {
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  background: #fffaf0;
+}
+
+.briefDisagreementHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px 10px;
+}
+
+.briefDisagreementHeader > svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--color-error);
+}
+
+.briefDisagreementHeader span {
+  display: block;
+  color: var(--color-error);
+  font-size: 9.5px;
+  font-weight: 720;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
+.briefDisagreementHeader h4 {
+  margin: 3px 0 0;
+  color: var(--color-text-primary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.briefDisagreementHeader p {
+  max-width: 900px;
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 9.75px;
+  line-height: 1.5;
+}
+
+.briefDisagreementList {
+  display: grid;
+  gap: 8px;
+  padding: 0 16px 13px;
+}
+
+.briefDisagreementCard {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: var(--color-bg-surface);
+}
+
+.briefDisagreementTitle {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-subtle);
+}
+
+.briefDisagreementTitle span {
+  color: var(--color-text-muted);
+  font-size: 9px;
+  font-weight: 650;
+}
+
+.briefDisagreementTitle strong {
+  color: var(--color-text-primary);
+  font-size: 10px;
+}
+
+.briefDisagreementSides {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.briefDisagreementSide {
+  min-width: 0;
+  padding: 10px;
+}
+
+.briefDisagreementSide + .briefDisagreementSide {
+  border-left: 1px solid var(--color-border);
+}
+
+.briefDisagreementSide > span {
+  display: block;
+  color: var(--color-text-subtle);
+  font-size: 8.75px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.briefDisagreementSide > p {
+  margin: 5px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 10.5px;
+  line-height: 1.55;
+}
+
+.briefDisagreementMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.briefDisagreementMeta small {
+  color: var(--color-text-subtle);
+  font-size: 8.75px;
+}
+
+.briefIntegrity {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px 14px;
+  flex-wrap: wrap;
+}
+
+.briefIntegrity > span {
+  flex: 0 0 auto;
+  color: var(--color-text-subtle);
+  font-size: 8.75px;
+  font-weight: 700;
+}
+
+.briefIntegrity > p {
+  min-width: 220px;
+  flex: 1 1 500px;
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .briefDisagreementSides {
+    grid-template-columns: 1fr;
+  }
+
+  .briefDisagreementSide + .briefDisagreementSide {
+    border-top: 1px solid var(--color-border);
+    border-left: 0;
+  }
+}

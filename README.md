@@ -63,7 +63,8 @@ NUMEN combines those steps into one managed workflow with explicit source proven
 - Explicit permitted-source HTTP(S) collection behind a pluggable connector boundary.
 - SSRF and outbound URL policy, including reserved/private network, credential and non-standard-port rejection.
 - Source-backed records with separate record-identity fingerprints, evidence-content hashes, collection timestamps and clearly labelled record heuristics.
-- Deterministic evidence-backed briefs for general research: claim-level Purpose / Key capabilities / Common use cases / Relevant evidence sections, exact record citations and conservative multi-source equivalence grouping guarded by subject anchors, polarity, numeric facts and stricter list matching. Support counts never imply factual verification or source independence.
+- Deterministic evidence-backed briefs for general research: claim-level Purpose / Key capabilities / Common use cases / Relevant evidence sections, exact record citations and conservative multi-source equivalence grouping guarded by subject anchors, polarity, numeric facts and stricter list matching. Potential cross-source disagreements are surfaced for strong polarity, numeric or required-vs-optional conflicts without choosing a winner; support counts never imply factual verification or source independence.
+- Brief responses expose an independent projection version so evolving grouping/disagreement logic is distinguishable from immutable evidence-snapshot hash semantics.
 - Persisted per-source collection outcomes so unavailable configured sources remain visible instead of disappearing from successful partial research.
 - Server-paged, globally sorted dataset browsing with exact matching counts rather than a misleading first-window-only sort.
 - Database-backed workflow history and dataset persistence.

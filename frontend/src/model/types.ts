@@ -148,6 +148,9 @@ export interface ResearchBrief {
   findingCount: number
   contributingSources: number
   sections: ResearchBriefSection[]
+  projectionVersion: string
+  disagreementCount: number
+  disagreements: ResearchDisagreement[]
 }
 
 export interface ResearchBriefSection {
@@ -160,6 +163,14 @@ export interface ResearchBriefFinding {
   text: string
   supportingSources: number
   citations: ResearchCitation[]
+}
+
+export interface ResearchDisagreement {
+  sectionKey: string
+  sectionLabel: string
+  reason: 'POLARITY_CONFLICT' | 'NUMERIC_CONFLICT' | 'REQUIREMENT_CONFLICT' | string
+  left: ResearchBriefFinding
+  right: ResearchBriefFinding
 }
 
 export interface ResearchCitation {

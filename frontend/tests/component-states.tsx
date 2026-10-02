@@ -845,6 +845,9 @@ const researchBrief: ResearchBrief = {
   status: 'AVAILABLE',
   findingCount: 2,
   contributingSources: 2,
+  projectionVersion: 'evidence-brief-v2',
+  disagreementCount: 0,
+  disagreements: [],
   sections: [{
     key: 'purpose',
     label: 'Purpose',
@@ -902,10 +905,68 @@ includes(briefMarkup, '2 supporting sources', 'brief must expose support coverag
 includes(briefMarkup, '[1] spring.io', 'brief must attach source citations to each finding')
 includes(briefMarkup, '[2] raw.githubusercontent.com', 'brief must preserve multiple citations instead of collapsing provenance')
 includes(briefMarkup, 'using one source', 'semantic grouping must disclose that the displayed wording comes from one supporting source')
+includes(briefMarkup, 'Projection evidence-brief-v2', 'brief must expose its projection version independently of evidence snapshot hashes')
 includes(briefMarkup, 'not factual verification or source independence', 'brief must not equate multiple citations with truth or independence')
+excludes(briefMarkup, 'Potential source disagreement', 'briefs without detected conflicts must not render a disagreement warning')
 
 const briefLoading = renderToStaticMarkup(<ResearchBriefPanel state="loading" />)
 includes(briefLoading, 'Organizing published evidence', 'brief loading state must remain explicit without inventing content')
 
 const briefFailure = renderToStaticMarkup(<ResearchBriefPanel state="error" />)
 includes(briefFailure, 'Brief temporarily unavailable', 'brief failure must not hide the published source-backed dataset')
+
+
+const disagreementBrief: ResearchBrief = {
+  ...researchBrief,
+  findingCount: 2,
+  contributingSources: 2,
+  disagreementCount: 1,
+  disagreements: [{
+    sectionKey: 'relevant-evidence',
+    sectionLabel: 'Relevant evidence',
+    reason: 'NUMERIC_CONFLICT',
+    left: {
+      text: 'The runtime requires Java 17 for supported production deployments.',
+      supportingSources: 1,
+      citations: [{
+        recordId: '44444444-4444-4444-4444-444444444444',
+        title: 'Runtime Guide',
+        sourceName: 'a.example',
+        sourceUrl: 'https://a.example/runtime',
+        sourceType: 'WEB',
+        evidenceHash: 'd'.repeat(64),
+        evidenceHashAlgorithm: 'SHA-256 canonical-text-v3',
+        collectedAt: record.collectedAt
+      }]
+    },
+    right: {
+      text: 'The runtime requires Java 21 for supported production deployments.',
+      supportingSources: 1,
+      citations: [{
+        recordId: '55555555-5555-5555-5555-555555555555',
+        title: 'Runtime Guide',
+        sourceName: 'b.example',
+        sourceUrl: 'https://b.example/runtime',
+        sourceType: 'WEB',
+        evidenceHash: 'e'.repeat(64),
+        evidenceHashAlgorithm: 'SHA-256 canonical-text-v3',
+        collectedAt: record.collectedAt
+      }]
+    }
+  }],
+  sections: [{
+    key: 'relevant-evidence',
+    label: 'Relevant evidence',
+    findings: []
+  }]
+}
+
+const disagreementMarkup = renderToStaticMarkup(<ResearchBriefPanel brief={disagreementBrief} state="ready" />)
+includes(disagreementMarkup, 'Potential source disagreement', 'detected cross-source conflicts must be visible before normal findings')
+includes(disagreementMarkup, 'Different numeric facts', 'numeric conflicts need a plain-language reason')
+includes(disagreementMarkup, 'Java 17', 'the first conflicting source-backed claim must remain visible')
+includes(disagreementMarkup, 'Java 21', 'the second conflicting source-backed claim must remain visible')
+includes(disagreementMarkup, '[1] a.example', 'the first side must preserve its source citation')
+includes(disagreementMarkup, '[1] b.example', 'the second side must preserve its source citation')
+includes(disagreementMarkup, 'does not decide which source is correct', 'NUMEN must not adjudicate disagreement as truth')
+includes(disagreementMarkup, 'version, time, scope or source error', 'disagreement copy must acknowledge legitimate contextual explanations')
