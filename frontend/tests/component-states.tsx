@@ -908,9 +908,3 @@ includes(briefLoading, 'Organizing published evidence', 'brief loading state mus
 
 const briefFailure = renderToStaticMarkup(<ResearchBriefPanel state="error" />)
 includes(briefFailure, 'Brief temporarily unavailable', 'brief failure must not hide the published source-backed dataset')
-
-
-assert.ok(
-  true,
-  'ResearchBriefPanel component-state coverage is paired with App.tsx research-workspace mounting; keep the primary Research view integration when refactoring.'
-)
