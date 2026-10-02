@@ -77,7 +77,7 @@ class ResearchBriefServiceTest {
         assertThat(brief.contributingSources()).isEqualTo(2);
         assertThat(brief.sections()).hasSize(3);
         assertThat(brief.sections())
-                .allSatisfy(section -> section.findings().singleElement().satisfies(finding -> {
+                .allSatisfy(section -> assertThat(section.findings()).singleElement().satisfies(finding -> {
                     assertThat(finding.supportingSources()).isEqualTo(2);
                     assertThat(finding.citations()).hasSize(2);
                 }));
