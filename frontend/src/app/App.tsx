@@ -4,6 +4,7 @@ import { DatasetExplorer } from '../components/DatasetExplorer'
 import { DatasetLibrary } from '../components/DatasetLibrary'
 import { PromptComposer } from '../components/PromptComposer'
 import { ResearchOutcome } from '../components/ResearchOutcome'
+import { ResearchBriefPanel } from '../components/ResearchBriefPanel'
 import { Sidebar } from '../components/Sidebar'
 import { SourceExplorer } from '../components/SourceExplorer'
 import { SourceResearchIndex } from '../components/SourceResearchIndex'
@@ -198,6 +199,10 @@ export default function App() {
                 onRefine={() => refineResearch(workspace.selected!)}
                 onViewSources={() => selectAndOpen(workspace.selected!.id, 'sources')}
               />
+              {isGeneralResearchTask(workspace.selected) && <ResearchBriefPanel
+                brief={workspace.brief}
+                state={workspace.briefState}
+              />}
               <DatasetExplorer
                 records={workspace.records}
                 totalRecords={workspace.summary?.totalRecords ?? workspace.selected.recordCount}

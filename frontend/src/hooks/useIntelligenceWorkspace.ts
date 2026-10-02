@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { DatasetRecord, DatasetSortKey, DatasetSummary, LoadState, RunChangeSummary, SortDirection, SourceSummary, Task, TaskTimelineEvent } from '../model/types'
+import type { DatasetRecord, DatasetSortKey, DatasetSummary, LoadState, ResearchBrief, RunChangeSummary, SortDirection, SourceSummary, Task, TaskTimelineEvent } from '../model/types'
 import { intelligenceApi } from '../services/intelligenceApi'
+import { isGeneralResearchTask } from '../shared/research'
 
 export function useIntelligenceWorkspace() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -18,9 +19,11 @@ export function useIntelligenceWorkspace() {
   const [summary, setSummary] = useState<DatasetSummary>()
   const [sources, setSources] = useState<SourceSummary[]>([])
   const [changes, setChanges] = useState<RunChangeSummary>()
+  const [brief, setBrief] = useState<ResearchBrief>()
   const [summaryState, setSummaryState] = useState<LoadState>('idle')
   const [sourcesState, setSourcesState] = useState<LoadState>('idle')
   const [changesState, setChangesState] = useState<LoadState>('idle')
+  const [briefState, setBriefState] = useState<LoadState>('idle')
   const [prompt, setPrompt] = useState('')
   const [demoMode, setDemoMode] = useState(false)
   const [sourceUrls, setSourceUrls] = useState<string[]>([])
@@ -215,6 +218,36 @@ export function useIntelligenceWorkspace() {
       controller.abort()
     }
   }, [selectedId, selected?.status])
+
+  useEffect(() => {
+    if (!selectedId || selected?.status !== 'COMPLETED' || !selected || !isGeneralResearchTask(selected)) {
+      setBrief(undefined)
+      setBriefState('idle')
+      return
+    }
+
+    let active = true
+    const controller = new AbortController()
+    setBrief(undefined)
+    setBriefState('loading')
+
+    void intelligenceApi.getBrief(selectedId, controller.signal)
+      .then(nextBrief => {
+        if (!active) return
+        setBrief(nextBrief)
+        setBriefState('ready')
+      })
+      .catch(() => {
+        if (!active) return
+        setBrief(undefined)
+        setBriefState('error')
+      })
+
+    return () => {
+      active = false
+      controller.abort()
+    }
+  }, [selectedId, selected?.status, selected?.planJson])
 
   useEffect(() => {
     if (!selectedId || selected?.status !== 'COMPLETED') {
@@ -439,9 +472,11 @@ export function useIntelligenceWorkspace() {
     summary,
     sources,
     changes,
+    brief,
     summaryState,
     sourcesState,
     changesState,
+    briefState,
     prompt,
     demoMode,
     sourceUrls,
