@@ -146,6 +146,11 @@ export default function App() {
                 onCancel={id => void workspace.cancelTask(id)}
               />}
 
+          {selectedComplete && isGeneralResearchTask(workspace.selected) && <ResearchBriefPanel
+            brief={workspace.brief}
+            state={workspace.briefState}
+          />}
+
           {selectedTerminalWithDiagnostics && <SourceExplorer
             sources={workspace.sources}
             totalRecords={workspace.selected.recordCount}
