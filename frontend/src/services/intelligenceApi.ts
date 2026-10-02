@@ -1,4 +1,4 @@
-import type { DatasetPage, DatasetRecord, DatasetSortKey, DatasetSummary, HealthResponse, RunChangeSummary, SortDirection, SourceSummary, Task, TaskTimelineEvent } from '../model/types'
+import type { DatasetPage, DatasetRecord, DatasetSortKey, DatasetSummary, HealthResponse, ResearchBrief, RunChangeSummary, SortDirection, SourceSummary, Task, TaskTimelineEvent } from '../model/types'
 
 const API = '/api/v1'
 const DEFAULT_TIMEOUT_MS = 10_000
@@ -61,6 +61,7 @@ export const intelligenceApi = {
   getSummary: (id: string, signal?: AbortSignal) => request<DatasetSummary>(`${API}/tasks/${id}/summary`, { signal }),
   getSources: (id: string, signal?: AbortSignal) => request<SourceSummary[]>(`${API}/tasks/${id}/sources`, { signal }),
   getChanges: (id: string, signal?: AbortSignal) => request<RunChangeSummary>(`${API}/tasks/${id}/changes`, { signal }),
+  getBrief: (id: string, signal?: AbortSignal) => request<ResearchBrief>(`${API}/tasks/${id}/brief`, { signal }),
   createTask: (prompt: string, demoMode: boolean, sourceUrls: string[], idempotencyKey: string) => request<Task>(`${API}/tasks`, {
     method: 'POST',
     headers: {

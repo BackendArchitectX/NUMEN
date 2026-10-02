@@ -139,3 +139,36 @@ export interface RunChangeSummary {
   unhashableSources: number
   completeObservation: boolean
 }
+
+
+export interface ResearchBrief {
+  taskId: string
+  question: string
+  status: 'AVAILABLE' | 'EMPTY' | 'NOT_APPLICABLE' | 'CURRENT_NOT_COMPLETED' | string
+  findingCount: number
+  contributingSources: number
+  sections: ResearchBriefSection[]
+}
+
+export interface ResearchBriefSection {
+  key: string
+  label: string
+  findings: ResearchBriefFinding[]
+}
+
+export interface ResearchBriefFinding {
+  text: string
+  supportingSources: number
+  citations: ResearchCitation[]
+}
+
+export interface ResearchCitation {
+  recordId: string
+  title: string
+  sourceName: string
+  sourceUrl: string
+  sourceType: string
+  evidenceHash?: string | null
+  evidenceHashAlgorithm?: string | null
+  collectedAt: string
+}
