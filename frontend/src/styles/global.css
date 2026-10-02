@@ -4209,3 +4209,155 @@ to { transform: rotate(360deg); }
     padding-left: 10px;
   }
 }
+
+
+/* Evidence-backed general-research brief */
+.researchBrief {
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.briefHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 16px;
+}
+
+.briefHeader > svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--color-intelligence);
+}
+
+.briefHeader > div {
+  min-width: 0;
+}
+
+.briefHeader span {
+  display: block;
+  color: var(--color-intelligence);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
+.briefHeader h3 {
+  margin: 3px 0 0;
+  color: var(--color-text-primary);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.briefHeader p {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+
+.briefSections {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.briefSection {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.briefSection h4 {
+  margin: 0 0 8px;
+  color: var(--color-text-primary);
+  font-size: 11px;
+  font-weight: 720;
+}
+
+.briefFindings {
+  display: grid;
+  gap: 8px;
+}
+
+.briefFinding {
+  padding: 10px 11px;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: var(--color-bg-subtle);
+}
+
+.briefFinding > p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.briefFindingMeta {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.briefFindingMeta > span {
+  color: var(--color-text-subtle);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.briefCitations {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.briefCitations a,
+.briefCitationStatic {
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  background: var(--color-bg-surface);
+  color: var(--color-action-primary);
+  font-size: 9px;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.briefCitations a:hover {
+  border-color: color-mix(in srgb, var(--color-action-primary) 30%, var(--color-border));
+  background: var(--color-action-subtle);
+}
+
+.briefCitationStatic {
+  color: var(--color-text-muted);
+}
+
+.briefIntegrity {
+  padding: 9px 16px;
+  background: var(--color-intelligence-subtle);
+  color: var(--color-text-muted);
+  font-size: 9.5px;
+  line-height: 1.5;
+}
+
+.briefError .briefHeader > svg,
+.briefError .briefHeader span {
+  color: var(--color-error);
+}
+
+@media (max-width: 720px) {
+  .briefFindingMeta {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

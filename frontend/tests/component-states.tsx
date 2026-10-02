@@ -4,12 +4,13 @@ import { DatasetExplorer } from '../src/components/DatasetExplorer'
 import { DatasetLibrary } from '../src/components/DatasetLibrary'
 import { PromptComposer } from '../src/components/PromptComposer'
 import { ResearchOutcome } from '../src/components/ResearchOutcome'
+import { ResearchBriefPanel } from '../src/components/ResearchBriefPanel'
 import { Sidebar } from '../src/components/Sidebar'
 import { SourceExplorer } from '../src/components/SourceExplorer'
 import { SourceResearchIndex } from '../src/components/SourceResearchIndex'
 import { WorkflowHistory } from '../src/components/WorkflowHistory'
 import { WorkflowPanel } from '../src/components/WorkflowPanel'
-import type { DatasetRecord, DatasetSummary, SourceSummary, Task, TaskTimelineEvent } from '../src/model/types'
+import type { DatasetRecord, DatasetSummary, ResearchBrief, SourceSummary, Task, TaskTimelineEvent } from '../src/model/types'
 import { groupResearchTasks } from '../src/shared/research'
 import { formatInstant, formatRelativeInstant } from '../src/shared/time'
 import { normalizePublicHttpUrl, safeExternalHttpUrl, sourceHostname, sourceUrlValidationMessage } from '../src/shared/sourceUrl'
@@ -836,3 +837,74 @@ assert.equal(repeatedResearch[0].runs, 2, 'grouped research must preserve the re
 assert.equal(repeatedResearch[1].runs, 1, 'a different source scope must remain a distinct research entry')
 
 console.log('[NUMEN] frontend component-state tests passed')
+
+
+const researchBrief: ResearchBrief = {
+  taskId: 'task-completed',
+  question: 'Research Spring Boot',
+  status: 'AVAILABLE',
+  findingCount: 2,
+  contributingSources: 2,
+  sections: [{
+    key: 'purpose',
+    label: 'Purpose',
+    findings: [{
+      text: 'Spring Boot helps create production-grade Spring applications.',
+      supportingSources: 2,
+      citations: [
+        {
+          recordId: '11111111-1111-1111-1111-111111111111',
+          title: 'Spring Boot',
+          sourceName: 'spring.io',
+          sourceUrl: 'https://spring.io/projects/spring-boot',
+          sourceType: 'WEB',
+          evidenceHash: 'a'.repeat(64),
+          evidenceHashAlgorithm: 'SHA-256 canonical-text-v2',
+          collectedAt: record.collectedAt
+        },
+        {
+          recordId: '22222222-2222-2222-2222-222222222222',
+          title: 'Spring Boot',
+          sourceName: 'raw.githubusercontent.com',
+          sourceUrl: 'https://raw.githubusercontent.com/spring-projects/spring-boot/main/README.adoc',
+          sourceType: 'WEB',
+          evidenceHash: 'b'.repeat(64),
+          evidenceHashAlgorithm: 'SHA-256 canonical-text-v2',
+          collectedAt: record.collectedAt
+        }
+      ]
+    }]
+  }, {
+    key: 'capabilities',
+    label: 'Key capabilities',
+    findings: [{
+      text: 'Embedded servers, security, metrics and health checks.',
+      supportingSources: 1,
+      citations: [{
+        recordId: '33333333-3333-3333-3333-333333333333',
+        title: 'Spring Boot',
+        sourceName: 'raw.githubusercontent.com',
+        sourceUrl: 'https://raw.githubusercontent.com/spring-projects/spring-boot/main/README.adoc',
+        sourceType: 'WEB',
+        evidenceHash: 'c'.repeat(64),
+        evidenceHashAlgorithm: 'SHA-256 canonical-text-v2',
+        collectedAt: record.collectedAt
+      }]
+    }]
+  }]
+}
+
+const briefMarkup = renderToStaticMarkup(<ResearchBriefPanel brief={researchBrief} state="ready" />)
+includes(briefMarkup, 'Evidence-backed brief', 'general research must surface a first-class evidence-backed brief')
+includes(briefMarkup, 'What the configured sources support', 'brief language must avoid claiming unsupported synthesis')
+includes(briefMarkup, 'Spring Boot helps create production-grade Spring applications.', 'brief must render claim-level evidence')
+includes(briefMarkup, '2 supporting sources', 'brief must expose support coverage when identical findings occur across sources')
+includes(briefMarkup, '[1] spring.io', 'brief must attach source citations to each finding')
+includes(briefMarkup, '[2] raw.githubusercontent.com', 'brief must preserve multiple citations instead of collapsing provenance')
+includes(briefMarkup, 'not factual verification or source independence', 'brief must not equate multiple citations with truth or independence')
+
+const briefLoading = renderToStaticMarkup(<ResearchBriefPanel state="loading" />)
+includes(briefLoading, 'Organizing published evidence', 'brief loading state must remain explicit without inventing content')
+
+const briefFailure = renderToStaticMarkup(<ResearchBriefPanel state="error" />)
+includes(briefFailure, 'Brief temporarily unavailable', 'brief failure must not hide the published source-backed dataset')
