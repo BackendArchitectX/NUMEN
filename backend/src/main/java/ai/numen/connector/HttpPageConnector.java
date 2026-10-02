@@ -135,6 +135,10 @@ public class HttpPageConnector implements SourceConnector {
             throw new SourceAccessBarrierException(barrier);
         }
 
+        return recordFromDocument(taskId, uri, document);
+    }
+
+    static DatasetRecord recordFromDocument(java.util.UUID taskId, URI uri, Document document) {
         String title = clean(document.title());
         if (title.isBlank()) {
             title = clean(document.selectFirst("h1") == null ? uri.getHost() : document.selectFirst("h1").text());
@@ -144,15 +148,16 @@ public class HttpPageConnector implements SourceConnector {
         if (excerpt.isBlank()) excerpt = clean(document.body() == null ? "" : document.body().text());
         if (excerpt.length() > 420) excerpt = excerpt.substring(0, 420) + "…";
 
-        double quality = score(title, uri.getHost(), excerpt, uri.toString());
+        String sourceHost = uri.getHost() == null ? "" : uri.getHost();
+        double quality = score(title, sourceHost, excerpt, uri.toString());
         return new DatasetRecord(
                 taskId,
                 title,
-                uri.getHost(),
-                "Web",
+                "",
+                "",
                 uri.toString(),
                 uri.toString(),
-                uri.getHost(),
+                sourceHost,
                 "WEB",
                 excerpt,
                 quality,

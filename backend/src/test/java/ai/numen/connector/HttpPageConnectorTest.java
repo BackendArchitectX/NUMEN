@@ -4,6 +4,9 @@ import ai.numen.entity.SourceCollectionStatus;
 import org.jsoup.Jsoup;
 import org.junit.jupiter.api.Test;
 
+import java.net.URI;
+import java.util.UUID;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class HttpPageConnectorTest {
@@ -27,6 +30,22 @@ class HttpPageConnectorTest {
         assertThat(HttpPageConnector.collectionStatusForHttpStatus(302)).isEqualTo(SourceCollectionStatus.REJECTED);
         assertThat(HttpPageConnector.collectionStatusForHttpStatus(404)).isEqualTo(SourceCollectionStatus.UNAVAILABLE);
         assertThat(HttpPageConnector.collectionStatusForHttpStatus(503)).isEqualTo(SourceCollectionStatus.UNAVAILABLE);
+    }
+
+    @Test
+    void genericWebPageDoesNotInventOrganizationOrLocationMetadata() {
+        var record = HttpPageConnector.recordFromDocument(
+                UUID.randomUUID(),
+                URI.create("https://example.com/"),
+                Jsoup.parse("<html><title>Example Domain</title><body><p>Public documentation example.</p></body></html>")
+        );
+
+        assertThat(record.getTitle()).isEqualTo("Example Domain");
+        assertThat(record.getOrganization()).isBlank();
+        assertThat(record.getLocation()).isBlank();
+        assertThat(record.getSourceName()).isEqualTo("example.com");
+        assertThat(record.getSourceType()).isEqualTo("WEB");
+        assertThat(record.getSourceUrl()).isEqualTo("https://example.com/");
     }
 
     @Test
