@@ -19,9 +19,8 @@ export function Sidebar({ tasks, selectedId, activeView, onNewResearch, onNaviga
     <div className="brand">
       <div className="brandMark" aria-hidden="true">
         <svg className="brandGlyph" viewBox="0 0 40 40" role="img">
-          <path className="brandGlyphPath" d="M9.5 29V11L30.5 29V11"/>
-          <circle className="brandGlyphNode brandGlyphNodeStart" cx="9.5" cy="11" r="2.4"/>
-          <circle className="brandGlyphNode brandGlyphNodeEnd" cx="30.5" cy="29" r="2.4"/>
+          <path className="brandGlyphLetter" d="M9 30V10h5.2l11.6 13.5V10H31v20h-5.1L14.1 16.4V30z"/>
+          <path className="brandGlyphSpark" d="M31.8 5.2l1.05 2.45 2.45 1.05-2.45 1.05-1.05 2.45-1.05-2.45-2.45-1.05 2.45-1.05z"/>
         </svg>
       </div>
       <div className="brandCopy"><b>NUMEN</b><span>Research intelligence</span></div>

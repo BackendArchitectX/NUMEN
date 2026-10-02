@@ -335,6 +335,21 @@ const paged = renderToStaticMarkup(
 includes(paged, '1–1 of 2 published', 'paged result ranges must state exactly what is visible')
 includes(paged, 'Page <strong>1</strong> of <strong>2</strong>', 'paged datasets must expose navigable page context')
 
+const composerAffordance = renderToStaticMarkup(
+  <PromptComposer
+    prompt=""
+    demoMode={false}
+    sourceUrls={[]}
+    busy={false}
+    online={true}
+    onPromptChange={noop}
+    onDemoModeChange={noop}
+    onSourceUrlsChange={noop}
+    onRun={noop}
+  />
+)
+includes(composerAffordance, 'class="disclosureAction">Configure', 'source scope disclosure must expose an explicit action cue instead of a bare chevron')
+
 const activeTask: Task = {
   id: 'task-active',
   prompt: 'Collect permitted public sources and return traceable records',
@@ -694,6 +709,7 @@ excludes(sidebar, 'Appearance', 'light-only NUMEN must not expose an appearance/
 excludes(sidebar, '>Dark<', 'light-only NUMEN must not expose a dark-theme action')
 includes(sidebar, 'Evidence-first research', 'sidebar footer should reinforce the workspace purpose instead of theme controls')
 includes(sidebar, 'class="brandGlyph"', 'NUMEN must expose a distinctive branded research-intelligence mark rather than a plain letter tile')
+includes(sidebar, 'class="brandGlyphLetter"', 'NUMEN brand mark must keep a clearly legible N monogram')
 
 const history = renderToStaticMarkup(
   <WorkflowHistory tasks={[completedTask]} onOpen={noop} onOpenDataset={noop} onOpenSources={noop} />

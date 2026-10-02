@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Activity, Database, History, Plus, Radio } from 'lucide-react'
+import { Activity, ArrowRight, Database, History, Plus, Radio } from 'lucide-react'
 import { DatasetExplorer } from '../components/DatasetExplorer'
 import { DatasetLibrary } from '../components/DatasetLibrary'
 import { PromptComposer } from '../components/PromptComposer'
@@ -325,7 +325,7 @@ function RecentResearch({ tasks, onOpen }: { tasks: Task[]; onOpen: (id: string)
       {groups.map(({ latest: task, runs }) => <button type="button" key={task.id} onClick={() => onOpen(task.id)}>
         <span className={`dot ${task.status.toLowerCase()}`} aria-hidden="true"/>
         <span className="recentResearchCopy"><strong>{task.prompt}</strong><small>{researchMeta(task, runs)}</small></span>
-        <span className="recentResearchStatus">{statusLabel(task.status)}</span>
+        <span className="recentResearchAction"><span>{statusLabel(task.status)}</span><strong>Open</strong><ArrowRight size={13} aria-hidden="true"/></span>
       </button>)}
     </div>
   </section>

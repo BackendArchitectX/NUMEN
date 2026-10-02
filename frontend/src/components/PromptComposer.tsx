@@ -155,7 +155,7 @@ export function PromptComposer({
             <small id="source-scope-summary">{sourceScopeSummary(demoMode, sourceUrls.length)}</small>
           </div>
         </div>
-        <ChevronDown size={15} aria-hidden="true"/>
+        <span className="disclosureAction">Configure <ChevronDown size={15} aria-hidden="true"/></span>
       </summary>
 
       <div className="composerAdvancedBody">

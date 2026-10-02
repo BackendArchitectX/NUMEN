@@ -252,12 +252,6 @@ a {
   display: none;
 }
 
-.chips button:hover {
-  color: var(--color-action-primary);
-  border-color: color-mix(in srgb, var(--color-action-primary) 25%, var(--color-border));
-  background: var(--color-action-subtle);
-}
-
 .composerControls {
   flex: 0 0 auto;
   display: flex;
@@ -507,22 +501,22 @@ tbody tr {
 
 .sortButton:hover {
   color: #ffffff;
-  border-color: var(--color-control-hover);
-  background: var(--color-control-hover);
+  border-color: var(--color-action-primary-hover);
+  background: var(--color-action-primary-hover);
 }
 
 .recordTitleButton {
   width: 100%;
   min-height: 44px;
-  border: 1px solid var(--color-control-border);
+  border: 1.5px solid var(--color-action-primary);
   border-radius: 8px;
   padding: 8px 10px;
-  background: var(--color-control-bg);
-  color: var(--color-control-text);
+  background: #ffffff;
+  color: var(--color-action-primary);
   text-align: left;
   cursor: pointer;
   font-weight: 720;
-  box-shadow: var(--shadow-control);
+  box-shadow: 0 2px 6px rgba(55, 111, 246, .08);
 }
 
 .recordTitleButton strong {
@@ -532,8 +526,8 @@ tbody tr {
 
 .recordTitleButton:hover {
   color: #ffffff;
-  border-color: var(--color-control-hover);
-  background: var(--color-control-hover);
+  border-color: var(--color-action-primary-hover);
+  background: var(--color-action-primary-hover);
   box-shadow: 0 6px 14px rgba(55, 111, 246, .15);
 }
 
@@ -548,20 +542,20 @@ td a {
   align-items: center;
   gap: 4px;
   padding: 5px 8px;
-  border: 1px solid var(--color-control-border);
+  border: 1.5px solid var(--color-action-primary);
   border-radius: 7px;
-  background: var(--color-control-bg);
-  color: var(--color-control-text);
+  background: #ffffff;
+  color: var(--color-action-primary);
   text-decoration: none;
   font-size: 10.5px;
   font-weight: 720;
-  box-shadow: var(--shadow-control);
+  box-shadow: 0 2px 5px rgba(55, 111, 246, .07);
 }
 
 td a:hover {
   color: #ffffff;
-  border-color: var(--color-control-hover);
-  background: var(--color-control-hover);
+  border-color: var(--color-action-primary-hover);
+  background: var(--color-action-primary-hover);
   text-decoration: none;
 }
 
@@ -765,25 +759,25 @@ td a:hover {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 7px 10px;
-  border: 1px solid var(--color-control-border);
+  padding: 7px 11px;
+  border: 1.5px solid var(--color-action-primary);
   border-radius: 8px;
-  background: var(--color-control-bg);
-  color: var(--color-control-text);
+  background: #ffffff;
+  color: var(--color-action-primary);
   cursor: pointer;
   text-decoration: none;
   font-size: 10.5px;
-  font-weight: 720;
-  box-shadow: var(--shadow-control);
+  font-weight: 740;
+  box-shadow: 0 2px 5px rgba(55, 111, 246, .08);
 }
 
 .secondaryAction:hover,
 .export:hover,
 .tableAction:hover {
   color: #ffffff;
-  border-color: var(--color-control-hover);
-  background: var(--color-control-hover);
-  box-shadow: 0 6px 14px rgba(55, 111, 246, .16);
+  border-color: var(--color-action-primary-hover);
+  background: var(--color-action-primary-hover);
+  box-shadow: 0 6px 14px rgba(55, 111, 246, .18);
 }
 
 .activityPulse {
@@ -853,8 +847,8 @@ td a:hover {
 
 .runDetails > summary:hover {
   color: #ffffff;
-  border-color: var(--color-control-hover);
-  background: var(--color-control-hover);
+  border-color: var(--color-action-primary-hover);
+  background: var(--color-action-primary-hover);
   box-shadow: 0 6px 14px rgba(55, 111, 246, .15);
 }
 
@@ -1135,11 +1129,41 @@ td a:hover {
   font-size: 9.5px;
 }
 
-.recentResearchStatus {
-  color: var(--color-text-subtle);
-  font-size: 9.5px;
-  font-weight: 600;
+.recentResearchAction {
+  min-width: 112px;
+  display: grid;
+  grid-template-columns: 1fr auto 14px;
+  align-items: center;
+  gap: 7px;
+  color: var(--color-text-muted);
   white-space: nowrap;
+}
+
+.recentResearchAction > span {
+  font-size: 9.5px;
+  font-weight: 650;
+}
+
+.recentResearchAction > strong {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border: 1.5px solid var(--color-action-primary);
+  border-radius: 7px;
+  background: #ffffff;
+  color: var(--color-action-primary);
+  font-size: 9.75px;
+  font-weight: 760;
+}
+
+.recentResearchList > button:hover .recentResearchAction > strong {
+  background: var(--color-action-primary);
+  color: #ffffff;
+}
+
+.recentResearchList > button:hover .recentResearchAction > svg {
+  color: var(--color-action-primary);
 }
 
 .sourcesPanel {
@@ -1220,8 +1244,8 @@ td a:hover {
 
 .sourceAction a:hover {
   color: #ffffff;
-  border-color: var(--color-control-hover);
-  background: var(--color-control-hover);
+  border-color: var(--color-action-primary-hover);
+  background: var(--color-action-primary-hover);
   text-decoration: none;
 }
 
@@ -1453,8 +1477,8 @@ td a:hover {
 
 .pageControls button:hover:not(:disabled) {
   color: #ffffff;
-  border-color: var(--color-control-hover);
-  background: var(--color-control-hover);
+  border-color: var(--color-action-primary-hover);
+  background: var(--color-action-primary-hover);
 }
 
 .pageControls span {
@@ -2285,27 +2309,36 @@ tbody tr.selectedRow {
   font-size: 9.75px;
 }
 
+.recentResearchList {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  background: #f8fafc;
+}
+
 .recentResearchList > button {
   min-width: 0;
-  min-height: 68px;
+  min-height: 72px;
   display: grid;
   grid-template-columns: 10px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 9px;
-  padding: 13px 16px;
-  border: 0;
-  border-bottom: 1px solid var(--color-border);
+  gap: 11px;
+  padding: 13px 14px;
+  border: 1px solid #ccd6e3;
+  border-radius: 10px;
   background: #ffffff;
   color: var(--color-text-secondary);
   text-align: left;
   cursor: pointer;
-  font-weight: 650;
-  transition: background 120ms ease, color 120ms ease;
+  font-weight: 700;
+  box-shadow: 0 2px 7px rgba(17, 24, 39, .045);
 }
 
 .recentResearchList > button:hover {
+  border-color: var(--color-action-primary);
   background: var(--color-action-subtle);
   color: var(--color-action-primary);
+  box-shadow: 0 7px 16px rgba(55, 111, 246, .10);
 }
 
 .recentResearchCopy strong {
@@ -2628,25 +2661,13 @@ body {
   overflow: visible;
 }
 
-.brandGlyphPath {
-  fill: none;
-  stroke: #ffffff;
-  stroke-width: 3.1;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.brandGlyphLetter {
+  fill: #ffffff;
 }
 
-.brandGlyphNode {
-  stroke: #0b1220;
-  stroke-width: 1.2;
-}
-
-.brandGlyphNodeStart {
+.brandGlyphSpark {
   fill: #53d6ff;
-}
-
-.brandGlyphNodeEnd {
-  fill: #8b7cff;
+  filter: drop-shadow(0 0 3px rgba(83, 214, 255, .45));
 }
 
 .brandCopy b {
@@ -2699,20 +2720,20 @@ body {
   align-items: center;
   gap: 10px;
   padding: 9px 11px;
-  border: 1px solid var(--color-control-border);
+  border: 1px solid #c7d2df;
   border-radius: 9px;
-  background: var(--color-control-bg);
-  color: var(--color-control-text);
+  background: #ffffff;
+  color: #172033;
   text-align: left;
   cursor: pointer;
   font-weight: 720;
-  box-shadow: var(--shadow-control);
+  box-shadow: 0 1px 2px rgba(17, 24, 39, .05);
 }
 
 .nav:hover {
   color: #ffffff;
-  background: var(--color-control-hover);
-  border-color: var(--color-control-hover);
+  background: var(--color-action-primary);
+  border-color: var(--color-action-primary);
   box-shadow: 0 6px 14px rgba(55, 111, 246, .18);
 }
 
@@ -2891,10 +2912,10 @@ main {
   max-width: 760px;
   margin: 7px 0 0;
   color: var(--color-text-primary);
-  font-size: clamp(38px, 4.6vw, 52px);
-  font-weight: 750;
-  line-height: 1.01;
-  letter-spacing: -.052em;
+  font-size: clamp(34px, 4vw, 46px);
+  font-weight: 760;
+  line-height: 1.04;
+  letter-spacing: -.045em;
   margin-top: 8px;
 }
 
@@ -2981,14 +3002,13 @@ main {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: var(--color-text-muted);
+  color: var(--color-text-subtle);
   font-size: 9.5px;
   font-weight: 600;
   white-space: nowrap;
-  padding: 5px 8px;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  background: #ffffff;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .composerInputShell {
@@ -3092,26 +3112,49 @@ main {
 }
 
 .composerAdvanced > summary {
-  min-height: 44px;
+  min-height: 46px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 9px 11px;
-  border: 1px solid var(--color-control-border);
-  border-radius: 8px;
-  background: var(--color-control-bg);
-  color: var(--color-control-text);
+  border: 1.5px solid var(--color-action-primary);
+  border-radius: 9px;
+  background: #ffffff;
+  color: #172033;
   cursor: pointer;
   list-style: none;
   font-weight: 720;
-  box-shadow: var(--shadow-control);
+  box-shadow: 0 2px 6px rgba(55, 111, 246, .08);
 }
 
 .composerAdvanced > summary:hover {
   color: #ffffff;
-  border-color: var(--color-control-hover);
-  background: var(--color-control-hover);
+  border-color: var(--color-action-primary-hover);
+  background: var(--color-action-primary-hover);
+}
+
+.composerAdvanced > summary:hover .advancedSummaryCopy span,
+.composerAdvanced > summary:hover .advancedSummaryCopy small {
+  color: #ffffff;
+}
+
+.disclosureAction {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 7px;
+  background: var(--color-action-primary);
+  color: #ffffff;
+  font-size: 9.75px;
+  font-weight: 760;
+}
+
+.composerAdvanced > summary:hover .disclosureAction {
+  background: #ffffff;
+  color: var(--color-action-primary-hover);
 }
 
 .composerAdvancedBody {
@@ -3228,17 +3271,23 @@ main {
 
 .chips button {
   flex: 0 0 auto;
-  min-height: 30px;
-  padding: 5px 9px;
-  border: 1px solid var(--color-border);
+  min-height: 31px;
+  padding: 5px 10px;
+  border: 1px solid #c8d3e0;
   border-radius: 7px;
   background: #ffffff;
-  color: var(--color-text-secondary);
+  color: #172033;
   cursor: pointer;
   font-size: 9.75px;
-  font-weight: 650;
+  font-weight: 700;
   white-space: nowrap;
-  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+  box-shadow: 0 1px 3px rgba(17, 24, 39, .045);
+}
+
+.chips button:hover {
+  color: #ffffff;
+  border-color: var(--color-action-primary);
+  background: var(--color-action-primary);
 }
 
 .recentResearch,
@@ -3336,8 +3385,8 @@ main {
 .datasetSecondaryAction:hover,
 .historySecondary:hover {
   color: #ffffff;
-  border-color: var(--color-control-hover);
-  background: var(--color-control-hover);
+  border-color: var(--color-action-primary-hover);
+  background: var(--color-action-primary-hover);
 }
 
 .historyPrimary {
@@ -3453,8 +3502,8 @@ main {
 
 .sourceIndexRow:hover {
   color: #ffffff;
-  border-color: var(--color-control-hover);
-  background: var(--color-control-hover);
+  border-color: var(--color-action-primary-hover);
+  background: var(--color-action-primary-hover);
   box-shadow: 0 6px 14px rgba(55, 111, 246, .15);
 }
 
@@ -3540,15 +3589,15 @@ main {
   align-items: center;
   gap: 5px;
   padding: 5px 8px;
-  border: 1px solid var(--color-control-border);
+  border: 1.5px solid var(--color-action-primary);
   border-radius: 7px;
-  background: var(--color-control-bg);
-  color: var(--color-control-text);
+  background: #ffffff;
+  color: var(--color-action-primary);
   font-size: 10px;
   font-weight: 720;
   text-decoration: none;
   justify-content: flex-end;
-  box-shadow: var(--shadow-control);
+  box-shadow: 0 2px 5px rgba(55, 111, 246, .07);
 }
 
 .sourceHost {
@@ -3575,19 +3624,19 @@ main {
   align-items: center;
   gap: 5px 7px;
   padding: 5px 8px;
-  border: 1px solid var(--color-control-border);
+  border: 1.5px solid var(--color-action-primary);
   border-radius: 7px;
-  background: var(--color-control-bg);
-  color: var(--color-control-text);
+  background: #ffffff;
+  color: var(--color-action-primary);
   font-weight: 720;
   text-decoration: none;
-  box-shadow: var(--shadow-control);
+  box-shadow: 0 2px 5px rgba(55, 111, 246, .07);
 }
 
 .evidenceSource a:hover {
   color: #ffffff;
-  border-color: var(--color-control-hover);
-  background: var(--color-control-hover);
+  border-color: var(--color-action-primary-hover);
+  background: var(--color-action-primary-hover);
 }
 
 @keyframes spin {
