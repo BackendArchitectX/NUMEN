@@ -124,6 +124,29 @@ class TaskIdempotencyIntegrationTest {
                 .andExpect(status().isConflict());
     }
 
+    @Test
+    void rejectsCredentialBearingExplicitSourceBeforeTaskPersistence() throws Exception {
+        long before = tasks.count();
+
+        mvc.perform(post("/api/v1/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Idempotency-Key", "credential-source-rejection")
+                        .content("{\"prompt\":\"Research the supplied public source with evidence\",\"sourceUrls\":[\"https://user:pass@example.com/research\"]}"))
+                .andExpect(status().isBadRequest());
+
+        assertThat(tasks.count()).isEqualTo(before);
+    }
+
+    @Test
+    void canonicalizesExplicitSourceIdentityBeforePersistence() throws Exception {
+        mvc.perform(post("/api/v1/tasks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Idempotency-Key", "canonical-source-identity")
+                        .content("{\"prompt\":\"Research the supplied public source with evidence\",\"sourceUrls\":[\"HTTPS://Example.COM:443/a/../research#fragment\"]}"))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.sourceUrls[0]").value("https://example.com/research"));
+    }
+
     private static String extractId(String json) {
         int start = json.indexOf("\"id\":\"") + 6;
         int end = json.indexOf('"', start);

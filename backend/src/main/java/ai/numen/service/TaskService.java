@@ -13,6 +13,7 @@ import ai.numen.exception.ResourceNotFoundException;
 import ai.numen.exception.WorkflowCapacityException;
 import ai.numen.repository.CollectionTaskRepository;
 import ai.numen.repository.DatasetRecordRepository;
+import ai.numen.security.SourceUrlIdentity;
 import org.springframework.core.task.TaskRejectedException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -26,6 +27,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -176,6 +178,21 @@ public class TaskService {
                 .filter(record -> hasText(record.getSourceUrl()) && hasText(record.getExcerpt()))
                 .count();
 
+        int evidenceHashedRecords = (int) dataset.stream()
+                .filter(record -> hasText(record.getEvidenceHash()))
+                .count();
+
+        Map<String, Set<String>> evidenceHashSources = dataset.stream()
+                .filter(record -> hasText(record.getEvidenceHash()))
+                .collect(Collectors.groupingBy(
+                        DatasetRecord::getEvidenceHash,
+                        LinkedHashMap::new,
+                        Collectors.mapping(TaskService::sourceKey, Collectors.toSet())
+                ));
+        int matchingEvidenceSnapshotGroups = (int) evidenceHashSources.values().stream()
+                .filter(sourceKeys -> sourceKeys.stream().filter(TaskService::hasText).distinct().count() > 1)
+                .count();
+
         int demoRecords = (int) dataset.stream()
                 .filter(record -> "DEMO".equalsIgnoreCase(record.getSourceType()))
                 .count();
@@ -266,6 +283,8 @@ public class TaskService {
                 notAttemptedSources,
                 sourceCoverageState,
                 evidenceLinked,
+                evidenceHashedRecords,
+                matchingEvidenceSnapshotGroups,
                 demoRecords,
                 latestCollectedAt,
                 topLocations
@@ -338,6 +357,123 @@ public class TaskService {
                 .sorted(Comparator.comparingInt(SourceSummary::records).reversed()
                         .thenComparing(SourceSummary::name, String.CASE_INSENSITIVE_ORDER))
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public RunChangeSummary changes(UUID id) {
+        CollectionTask current = get(id);
+        if (current.getStatus() != ai.numen.entity.TaskStatus.COMPLETED) {
+            return RunChangeSummary.unavailable("CURRENT_NOT_COMPLETED");
+        }
+
+        CollectionTask baseline = findComparableBaseline(current);
+        if (baseline == null) {
+            return RunChangeSummary.unavailable("NO_BASELINE");
+        }
+
+        List<DatasetRecord> currentRecords = records.findByTaskIdOrderByQualityScoreDesc(current.getId());
+        List<DatasetRecord> baselineRecords = records.findByTaskIdOrderByQualityScoreDesc(baseline.getId());
+        List<SourceCollectionAttempt> currentAttempts = sourceAttempts.forTask(current.getId());
+        List<SourceCollectionAttempt> baselineAttempts = sourceAttempts.forTask(baseline.getId());
+
+        Set<String> expectedSourceKeys = new LinkedHashSet<>();
+        expectedSourceKeys.addAll(normalizedSourceSet(current.getSourceUrls()));
+        expectedSourceKeys.addAll(normalizedSourceSet(baseline.getSourceUrls()));
+        currentAttempts.stream().map(SourceCollectionAttempt::getSourceUrl).filter(TaskService::hasText).map(String::trim).forEach(expectedSourceKeys::add);
+        baselineAttempts.stream().map(SourceCollectionAttempt::getSourceUrl).filter(TaskService::hasText).map(String::trim).forEach(expectedSourceKeys::add);
+        currentRecords.stream().map(TaskService::sourceKey).filter(TaskService::hasText).forEach(expectedSourceKeys::add);
+        baselineRecords.stream().map(TaskService::sourceKey).filter(TaskService::hasText).forEach(expectedSourceKeys::add);
+
+        Set<String> currentObserved = observedSourceKeys(currentRecords, currentAttempts, current.isDemoMode());
+        Set<String> baselineObserved = observedSourceKeys(baselineRecords, baselineAttempts, baseline.isDemoMode());
+        RunChangeAnalyzer.Analysis analysis = RunChangeAnalyzer.analyze(
+                expectedSourceKeys,
+                currentRecords,
+                baselineRecords,
+                currentObserved,
+                baselineObserved
+        );
+
+        String status = analysis.completeObservation() ? "AVAILABLE" : "PARTIAL";
+        return new RunChangeSummary(
+                status,
+                baseline.getId(),
+                baseline.getCompletedAt(),
+                analysis.expectedSources(),
+                analysis.comparedSources(),
+                analysis.changedSources(),
+                analysis.unchangedSources(),
+                analysis.newlyObservedSources(),
+                analysis.unobservedCurrentSources(),
+                analysis.unhashableSources(),
+                analysis.completeObservation()
+        );
+    }
+
+    private CollectionTask findComparableBaseline(CollectionTask current) {
+        int page = 0;
+        while (page < 20) {
+            Page<CollectionTask> candidates = tasks.findByStatusAndDemoModeAndCreatedAtBeforeOrderByCreatedAtDesc(
+                    ai.numen.entity.TaskStatus.COMPLETED,
+                    current.isDemoMode(),
+                    current.getCreatedAt(),
+                    PageRequest.of(page, 50)
+            );
+
+            for (CollectionTask candidate : candidates.getContent()) {
+                if (sameResearchIntent(current, candidate)) return candidate;
+            }
+            if (!candidates.hasNext()) return null;
+            page++;
+        }
+        return null;
+    }
+
+    private static boolean sameResearchIntent(CollectionTask left, CollectionTask right) {
+        if (!normalizePrompt(left.getPrompt()).equals(normalizePrompt(right.getPrompt()))) return false;
+        return normalizedSourceSet(left.getSourceUrls()).equals(normalizedSourceSet(right.getSourceUrls()));
+    }
+
+    private static String normalizePrompt(String value) {
+        return value == null ? "" : value.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
+    }
+
+    private static Set<String> normalizedSourceSet(List<String> urls) {
+        if (urls == null || urls.isEmpty()) return Set.of();
+        return urls.stream()
+                .filter(TaskService::hasText)
+                .map(TaskService::canonicalSourceKey)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private static Set<String> observedSourceKeys(List<DatasetRecord> dataset,
+                                                  List<SourceCollectionAttempt> attempts,
+                                                  boolean demoMode) {
+        Set<String> observed = new LinkedHashSet<>();
+        if (demoMode) {
+            dataset.stream().map(TaskService::sourceKey).filter(TaskService::hasText).forEach(observed::add);
+            return observed;
+        }
+
+        Set<String> attemptedUrls = attempts.stream()
+                .map(SourceCollectionAttempt::getSourceUrl)
+                .filter(TaskService::hasText)
+                .map(String::trim)
+                .collect(Collectors.toSet());
+
+        attempts.stream()
+                .filter(attempt -> attempt.getStatus() == SourceCollectionStatus.SUCCEEDED)
+                .map(SourceCollectionAttempt::getSourceUrl)
+                .filter(TaskService::hasText)
+                .map(String::trim)
+                .forEach(observed::add);
+
+        dataset.stream()
+                .map(TaskService::sourceKey)
+                .filter(TaskService::hasText)
+                .filter(source -> !attemptedUrls.contains(source))
+                .forEach(observed::add);
+        return observed;
     }
 
     private static SourceSummary sourceSummary(List<DatasetRecord> group,
@@ -414,10 +550,9 @@ public class TaskService {
 
         List<String> normalized = new ArrayList<>();
         for (String value : values) {
-            if (value == null) continue;
-            String trimmed = value.trim();
-            if (trimmed.isEmpty() || normalized.contains(trimmed)) continue;
-            normalized.add(trimmed);
+            if (value == null || value.trim().isEmpty()) continue;
+            String canonical = SourceUrlIdentity.normalizeForPersistence(value);
+            if (!normalized.contains(canonical)) normalized.add(canonical);
         }
         return List.copyOf(normalized);
     }
@@ -502,10 +637,19 @@ public class TaskService {
     }
 
     private static String sourceKey(DatasetRecord record) {
-        if (hasText(record.getSourceUrl())) return record.getSourceUrl().trim();
+        if (hasText(record.getSourceUrl())) return canonicalSourceKey(record.getSourceUrl());
         if (hasText(record.getSourceName())) return record.getSourceName().trim();
         if (hasText(record.getSourceType())) return record.getSourceType().trim();
         return record.getId().toString();
+    }
+
+    private static String canonicalSourceKey(String value) {
+        if (!hasText(value)) return "";
+        try {
+            return SourceUrlIdentity.normalizeForPersistence(value);
+        } catch (IllegalArgumentException ex) {
+            return value.trim();
+        }
     }
 
     public record TaskCreation(CollectionTask task, boolean replayed) { }
@@ -535,9 +679,28 @@ public class TaskService {
             int notAttemptedSources,
             String sourceCoverageState,
             int evidenceLinkedRecords,
+            int evidenceHashedRecords,
+            int matchingEvidenceSnapshotGroups,
             int demoRecords,
             Instant latestCollectedAt,
             List<ValueCount> topLocations) { }
+
+    public record RunChangeSummary(
+            String status,
+            UUID baselineTaskId,
+            Instant baselineCompletedAt,
+            int expectedSources,
+            int comparedSources,
+            int changedSources,
+            int unchangedSources,
+            int newlyObservedSources,
+            int unobservedCurrentSources,
+            int unhashableSources,
+            boolean completeObservation) {
+        private static RunChangeSummary unavailable(String status) {
+            return new RunChangeSummary(status, null, null, 0, 0, 0, 0, 0, 0, 0, false);
+        }
+    }
 
     public record SourceSummary(
             String name,

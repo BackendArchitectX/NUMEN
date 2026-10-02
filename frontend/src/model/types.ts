@@ -58,6 +58,8 @@ export interface DatasetRecord {
   excerpt: string
   qualityScore: number
   fingerprint: string
+  evidenceHash?: string | null
+  evidenceHashAlgorithm?: string | null
   collectedAt: string
 }
 
@@ -97,6 +99,8 @@ export interface DatasetSummary {
   notAttemptedSources: number
   sourceCoverageState: SourceCoverageState | string
   evidenceLinkedRecords: number
+  evidenceHashedRecords?: number
+  matchingEvidenceSnapshotGroups?: number
   demoRecords: number
   latestCollectedAt?: string | null
   topLocations: Array<{ value: string; count: number }>
@@ -118,4 +122,20 @@ export interface SourceSummary {
   capabilities: string[]
   demo: boolean
   configured: boolean
+}
+
+export type RunChangeStatus = 'AVAILABLE' | 'PARTIAL' | 'NO_BASELINE' | 'CURRENT_NOT_COMPLETED' | string
+
+export interface RunChangeSummary {
+  status: RunChangeStatus
+  baselineTaskId?: string | null
+  baselineCompletedAt?: string | null
+  expectedSources: number
+  comparedSources: number
+  changedSources: number
+  unchangedSources: number
+  newlyObservedSources: number
+  unobservedCurrentSources: number
+  unhashableSources: number
+  completeObservation: boolean
 }

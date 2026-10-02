@@ -19,7 +19,7 @@ public class DatasetExportService {
     public CsvExport export(UUID taskId) {
         CollectionTask task = tasks.get(taskId);
         StringBuilder csv = new StringBuilder("\uFEFF");
-        csv.append("title,organization,location,website,source_url,source_name,source_type,quality_score,collected_at\r\n");
+        csv.append("title,organization,location,website,source_url,source_name,source_type,record_heuristic_score,identity_fingerprint,evidence_hash,evidence_hash_algorithm,collected_at\r\n");
 
         for (DatasetRecord record : tasks.allRecords(taskId)) {
             csv.append(cell(record.getTitle())).append(',')
@@ -30,6 +30,9 @@ public class DatasetExportService {
                     .append(cell(record.getSourceName())).append(',')
                     .append(cell(record.getSourceType())).append(',')
                     .append(record.getQualityScore()).append(',')
+                    .append(cell(record.getFingerprint())).append(',')
+                    .append(cell(record.getEvidenceHash())).append(',')
+                    .append(cell(record.getEvidenceHashAlgorithm())).append(',')
                     .append(record.getCollectedAt()).append("\r\n");
         }
 

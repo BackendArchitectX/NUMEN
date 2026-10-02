@@ -56,7 +56,7 @@ public class TaskRunner {
             publish(state.advance(taskId, TaskStatus.PROCESSING, "Validating and deduplicating", 72));
             if (state.isCancelled(taskId)) return;
 
-            publish(state.advance(taskId, TaskStatus.PROCESSING, "Publishing verified dataset", 90));
+            publish(state.advance(taskId, TaskStatus.PROCESSING, "Publishing evidence-linked dataset", 90));
             if (state.isCancelled(taskId)) return;
 
             CollectionTask completed = publisher.publish(taskId, collected);

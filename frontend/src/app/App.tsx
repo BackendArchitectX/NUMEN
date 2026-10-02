@@ -131,6 +131,8 @@ export default function App() {
                 task={workspace.selected}
                 summary={workspace.summary}
                 summaryState={workspace.summaryState}
+                changes={workspace.changes}
+                changesState={workspace.changesState}
                 exportUrl={workspace.exportUrl}
                 onRefine={() => refineResearch(workspace.selected!)}
                 onViewSources={() => selectAndOpen(workspace.selected!.id, 'sources')}
@@ -189,6 +191,8 @@ export default function App() {
                 task={workspace.selected}
                 summary={workspace.summary}
                 summaryState={workspace.summaryState}
+                changes={workspace.changes}
+                changesState={workspace.changesState}
                 exportUrl={workspace.exportUrl}
                 onRefine={() => refineResearch(workspace.selected!)}
                 onViewSources={() => selectAndOpen(workspace.selected!.id, 'sources')}

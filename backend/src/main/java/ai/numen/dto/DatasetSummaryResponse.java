@@ -21,6 +21,8 @@ public record DatasetSummaryResponse(
         int notAttemptedSources,
         String sourceCoverageState,
         int evidenceLinkedRecords,
+        int evidenceHashedRecords,
+        int matchingEvidenceSnapshotGroups,
         int demoRecords,
         Instant latestCollectedAt,
         List<ValueCountResponse> topLocations) {
@@ -42,6 +44,8 @@ public record DatasetSummaryResponse(
                 summary.notAttemptedSources(),
                 summary.sourceCoverageState(),
                 summary.evidenceLinkedRecords(),
+                summary.evidenceHashedRecords(),
+                summary.matchingEvidenceSnapshotGroups(),
                 summary.demoRecords(),
                 summary.latestCollectedAt(),
                 summary.topLocations().stream().map(ValueCountResponse::from).toList()

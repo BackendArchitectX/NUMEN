@@ -85,3 +85,17 @@ Frontend component-state verification protects the corresponding user semantics:
 - active workflow progress counts checked sources and reports limitations without exposing fake milestone percentages.
 
 A future federated, partner, sovereign or air-gapped feature is not considered covered by these tests merely because this source-boundary foundation exists. Such a feature must add the relevant AURORA X¹² acceptance tests before it is presented as supported.
+
+## Aurora X42 snapshot/change integrity
+
+Backend verification additionally covers:
+
+- evidence-content hashes that are stable under whitespace/Bidi normalization and change when captured evidence changes;
+- separation between source/record identity and evidence-content integrity;
+- multi-record-per-source change comparison;
+- incomplete-observation behavior that blocks a false overall “unchanged” result;
+- newly observed sources versus changed sources;
+- canonical source-URL persistence and rejection of credential-bearing or recognized signed/token URLs;
+- safe audit references that do not persist credential/query secrets.
+
+Frontend component-state verification additionally covers complete versus partial previous-run comparison language and requires the UI to describe hashes as change-detection aids rather than factual confidence or source authentication.

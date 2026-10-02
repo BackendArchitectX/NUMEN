@@ -411,6 +411,8 @@ const summary: DatasetSummary = {
   notAttemptedSources: 0,
   sourceCoverageState: 'COMPLETE',
   evidenceLinkedRecords: 1,
+  evidenceHashedRecords: 1,
+  matchingEvidenceSnapshotGroups: 0,
   demoRecords: 0,
   latestCollectedAt: record.collectedAt,
   topLocations: [{ value: 'Remote', count: 1 }]
@@ -444,7 +446,64 @@ includes(outcome, 'Export CSV', 'completed research must expose its export actio
 includes(outcome, 'Refine research', 'completed research must expose a real refine action')
 includes(outcome, 'View sources', 'completed research must expose a real source-navigation action')
 includes(outcome, 'Last evidence collected', 'outcome must label dataset collection time explicitly instead of calling it a generic update')
+includes(outcome, '1/1 evidence-content hashes available', 'outcome must distinguish snapshot-integrity coverage from factual confidence')
+includes(outcome, 'do not prove source authenticity, independence or factual truth', 'hashes must never be presented as truth or source authentication')
 excludes(outcome, '<span>Updated</span>', 'outcome must not collapse collection, completion and update semantics into one timestamp label')
+
+const stableChangeOutcome = renderToStaticMarkup(
+  <ResearchOutcome
+    task={completedTask}
+    summary={summary}
+    summaryState="ready"
+    changes={{
+      status: 'AVAILABLE',
+      baselineTaskId: 'task-baseline',
+      baselineCompletedAt: '2026-09-29T00:01:00Z',
+      expectedSources: 1,
+      comparedSources: 1,
+      changedSources: 0,
+      unchangedSources: 1,
+      newlyObservedSources: 0,
+      unobservedCurrentSources: 0,
+      unhashableSources: 0,
+      completeObservation: true
+    }}
+    changesState="ready"
+    exportUrl="/api/v1/tasks/task-completed/export.csv"
+    onRefine={noop}
+    onViewSources={noop}
+  />
+)
+includes(stableChangeOutcome, 'No captured snapshot changes detected across 1 observed source', 'complete comparison may report no captured snapshot changes')
+includes(stableChangeOutcome, 'not real-world facts or source independence', 'run comparison must keep snapshot-change semantics distinct from real-world truth')
+
+const partialChangeOutcome = renderToStaticMarkup(
+  <ResearchOutcome
+    task={completedTask}
+    summary={summary}
+    summaryState="ready"
+    changes={{
+      status: 'PARTIAL',
+      baselineTaskId: 'task-baseline',
+      baselineCompletedAt: '2026-09-29T00:01:00Z',
+      expectedSources: 2,
+      comparedSources: 1,
+      changedSources: 0,
+      unchangedSources: 1,
+      newlyObservedSources: 0,
+      unobservedCurrentSources: 1,
+      unhashableSources: 0,
+      completeObservation: false
+    }}
+    changesState="ready"
+    exportUrl="/api/v1/tasks/task-completed/export.csv"
+    onRefine={noop}
+    onViewSources={noop}
+  />
+)
+includes(partialChangeOutcome, 'Partial previous-run comparison', 'incomplete source observation must produce a partial comparison state')
+includes(partialChangeOutcome, '1 not successfully observed now', 'partial comparison must explain the missing observation')
+includes(partialChangeOutcome, 'does not call the research unchanged', 'missing observations must block an overall unchanged claim')
 
 const limitedOutcome = renderToStaticMarkup(
   <ResearchOutcome

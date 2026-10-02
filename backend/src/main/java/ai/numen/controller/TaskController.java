@@ -5,6 +5,7 @@ import ai.numen.dto.DatasetPageResponse;
 import ai.numen.dto.DatasetRecordResponse;
 import ai.numen.dto.DatasetSummaryResponse;
 import ai.numen.dto.SourceSummaryResponse;
+import ai.numen.dto.RunChangeSummaryResponse;
 import ai.numen.dto.TaskEventResponse;
 import ai.numen.dto.TaskResponse;
 import ai.numen.dto.TaskTimelineEventResponse;
@@ -109,6 +110,11 @@ public class TaskController {
         return service.sources(id).stream()
                 .map(SourceSummaryResponse::from)
                 .toList();
+    }
+
+    @GetMapping("/{id}/changes")
+    public RunChangeSummaryResponse changes(@PathVariable UUID id) {
+        return RunChangeSummaryResponse.from(service.changes(id));
     }
 
     @GetMapping("/{id}/timeline")

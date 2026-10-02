@@ -546,7 +546,7 @@ td a:hover {
   font-size: 10.5px;
 }
 
-.evidenceTrust {
+.evidenceProvenance {
   margin-bottom: 10px;
   display: flex;
   align-items: center;
@@ -556,8 +556,8 @@ td a:hover {
   font-size: 9.5px;
 }
 
-.trustSource,
-.trustDemo {
+.provenanceSource,
+.provenanceDemo {
   display: inline-flex;
   align-items: center;
   min-height: 24px;
@@ -566,12 +566,13 @@ td a:hover {
   font-weight: 650;
 }
 
-.trustSource {
-  color: var(--color-success-strong);
-  background: var(--color-success-subtle);
+.provenanceSource {
+  color: var(--color-text-secondary);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
 }
 
-.trustDemo {
+.provenanceDemo {
   color: var(--color-intelligence);
   background: var(--color-intelligence-subtle);
 }
@@ -3850,5 +3851,110 @@ to { transform: rotate(360deg); }
   .sourceIndexOpen {
     grid-column: 2;
     justify-content: flex-start;
+  }
+}
+
+.outcomeIntegrity,
+.changeContext {
+  padding: 11px 18px;
+  border-top: 1px solid var(--color-border);
+  background: #ffffff;
+}
+
+.outcomeIntegrity {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.outcomeIntegrity > div {
+  min-width: 0;
+}
+
+.outcomeIntegrity span,
+.changeContext > span {
+  display: block;
+  color: var(--color-text-subtle);
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: .02em;
+}
+
+.outcomeIntegrity strong,
+.changeContext strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--color-text-primary);
+  font-size: 11.25px;
+  font-weight: 680;
+  line-height: 1.45;
+}
+
+.outcomeIntegrity small,
+.changeContext small {
+  display: block;
+  max-width: 820px;
+  margin-top: 3px;
+  color: var(--color-text-muted);
+  font-size: 9.75px;
+  line-height: 1.5;
+}
+
+.outcomeIntegrity p {
+  max-width: 420px;
+  margin: 0;
+  padding-left: 14px;
+  border-left: 2px solid var(--color-intelligence);
+  color: var(--color-text-secondary);
+  font-size: 9.75px;
+  line-height: 1.5;
+}
+
+.changeContext {
+  position: relative;
+  padding-left: 30px;
+}
+
+.changeContext::before {
+  content: "";
+  position: absolute;
+  left: 18px;
+  top: 16px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-text-subtle);
+}
+
+.changeContext.stable::before {
+  background: var(--color-live-strong);
+}
+
+.changeContext.changed::before {
+  background: var(--color-intelligence);
+}
+
+.changeContext.limited::before {
+  background: var(--color-text-muted);
+}
+
+.evidenceHashNote {
+  margin: 8px 0 0;
+  padding: 0 2px;
+  color: var(--color-text-muted);
+  font-size: 9.5px;
+  line-height: 1.55;
+}
+
+@media (max-width: 760px) {
+  .outcomeIntegrity {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .outcomeIntegrity p {
+    max-width: none;
+    padding-left: 10px;
   }
 }

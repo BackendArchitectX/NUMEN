@@ -203,8 +203,8 @@ export function DatasetExplorer({
           <button type="button" className="iconAction" onClick={() => setSelectedRecordId(undefined)} aria-label="Close record evidence"><X size={17} aria-hidden="true"/></button>
         </div>
 
-        <div className="evidenceTrust">
-          <span className={selectedRecord.sourceType === 'DEMO' ? 'trustDemo' : 'trustSource'}>
+        <div className="evidenceProvenance">
+          <span className={selectedRecord.sourceType === 'DEMO' ? 'provenanceDemo' : 'provenanceSource'}>
             {selectedRecord.sourceType === 'DEMO' ? 'Demo record' : 'Source-backed record'}
           </span>
           <span title={formatInstant(selectedRecord.collectedAt)}>NUMEN collected {formatRelativeInstant(selectedRecord.collectedAt)}</span>
@@ -216,8 +216,12 @@ export function DatasetExplorer({
           <Detail label="Record heuristic" value={selectedRecord.sourceType === 'DEMO' ? 'Not scored · demo' : `${Math.round(selectedRecord.qualityScore)}/100 · not factual confidence`}/>
           <Detail label="Source type" value={selectedRecord.sourceType || '—'}/>
           <Detail label="Collected by NUMEN" value={formatInstant(selectedRecord.collectedAt)}/>
-          <Detail label="Fingerprint" value={selectedRecord.fingerprint || '—'} code/>
+          <Detail label="Record identity key" value={selectedRecord.fingerprint || '—'} code/>
+          <Detail label="Evidence content hash" value={selectedRecord.evidenceHash || 'Unavailable · legacy record'} code/>
+          <Detail label="Hash method" value={selectedRecord.evidenceHashAlgorithm || 'Unavailable'} code/>
         </div>
+
+        <p className="evidenceHashNote">The evidence-content hash helps detect whether NUMEN captured identical normalized content across runs. It does not authenticate the source or establish factual truth.</p>
 
         <div className="evidenceExcerpt">
           <span>Captured evidence</span>

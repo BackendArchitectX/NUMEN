@@ -79,7 +79,7 @@ Selecting a result opens the evidence inspector without losing dataset context. 
 
 Collection time is not publication time, event time or effective time.
 
-Source evidence and NUMEN interpretation must never be visually interchangeable.
+Source evidence and NUMEN interpretation must never be visually interchangeable. A source-backed record is a provenance state, not a success/trust verdict, so provenance labels must not borrow Emerald “success” semantics.
 
 ## Sources workspace
 
@@ -136,7 +136,7 @@ Maintain:
 
 A response may update the interface only while it still belongs to the current user intent. A late response from research A must not overwrite a newer draft, selection or research B.
 
-Cancelable read requests use AbortSignal ownership where supported. Page/tab resume revalidates connectivity and task state rather than assuming old state is current.
+Cancelable read requests use AbortSignal ownership where supported. Page/tab resume revalidates connectivity and task state rather than assuming old state is current. A selected deep-linked run remains addressable even when it is older than the bounded recent-run list; absence from recents is not deletion. Terminal tasks close their SSE stream instead of retaining live infrastructure indefinitely.
 
 ## CSS architecture
 

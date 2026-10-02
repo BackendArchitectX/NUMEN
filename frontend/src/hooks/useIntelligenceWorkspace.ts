@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { DatasetRecord, DatasetSortKey, DatasetSummary, LoadState, SortDirection, SourceSummary, Task, TaskTimelineEvent } from '../model/types'
+import type { DatasetRecord, DatasetSortKey, DatasetSummary, LoadState, RunChangeSummary, SortDirection, SourceSummary, Task, TaskTimelineEvent } from '../model/types'
 import { intelligenceApi } from '../services/intelligenceApi'
 
 export function useIntelligenceWorkspace() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [selectedId, setSelectedId] = useState<string>()
+  const [selectedSnapshot, setSelectedSnapshot] = useState<Task>()
   const [records, setRecords] = useState<DatasetRecord[]>([])
   const [recordsState, setRecordsState] = useState<LoadState>('idle')
   const [matchedRecords, setMatchedRecords] = useState(0)
@@ -16,8 +17,10 @@ export function useIntelligenceWorkspace() {
   const [timeline, setTimeline] = useState<TaskTimelineEvent[]>([])
   const [summary, setSummary] = useState<DatasetSummary>()
   const [sources, setSources] = useState<SourceSummary[]>([])
+  const [changes, setChanges] = useState<RunChangeSummary>()
   const [summaryState, setSummaryState] = useState<LoadState>('idle')
   const [sourcesState, setSourcesState] = useState<LoadState>('idle')
+  const [changesState, setChangesState] = useState<LoadState>('idle')
   const [prompt, setPrompt] = useState('')
   const [demoMode, setDemoMode] = useState(false)
   const [sourceUrls, setSourceUrls] = useState<string[]>([])
@@ -31,14 +34,14 @@ export function useIntelligenceWorkspace() {
   const intentEpoch = useRef(0)
   const refreshSequence = useRef(0)
 
-  const selected = useMemo(() => tasks.find(task => task.id === selectedId), [tasks, selectedId])
+  const selected = useMemo(() => tasks.find(task => task.id === selectedId) ?? (selectedSnapshot?.id === selectedId ? selectedSnapshot : undefined), [tasks, selectedId, selectedSnapshot])
 
   const refresh = async (signal?: AbortSignal) => {
     const sequence = ++refreshSequence.current
     const next = await intelligenceApi.listTasks(signal)
     if (sequence !== refreshSequence.current || signal?.aborted) return
     setTasks(next)
-    setSelectedId(current => current && next.some(task => task.id === current) ? current : undefined)
+    if (selectedId && next.some(task => task.id === selectedId)) setSelectedSnapshot(undefined)
   }
 
   const ping = async (signal?: AbortSignal) => {
@@ -47,6 +50,7 @@ export function useIntelligenceWorkspace() {
       if (signal?.aborted) return
       setOnline(health.status === 'UP' && health.service === 'NUMEN')
     } catch {
+      if (signal?.aborted) return
       setOnline(false)
     }
   }
@@ -59,6 +63,31 @@ export function useIntelligenceWorkspace() {
     void ping(controller.signal)
     return () => controller.abort()
   }, [])
+
+  useEffect(() => {
+    if (!selectedId || tasks.some(task => task.id === selectedId)) {
+      setSelectedSnapshot(undefined)
+      return
+    }
+
+    let active = true
+    const controller = new AbortController()
+    void intelligenceApi.getTask(selectedId, controller.signal)
+      .then(task => {
+        if (!active) return
+        setSelectedSnapshot(task)
+      })
+      .catch(cause => {
+        if (!active || controller.signal.aborted) return
+        setSelectedSnapshot(undefined)
+        setError(cause instanceof Error ? cause.message : 'Selected research could not be loaded')
+      })
+
+    return () => {
+      active = false
+      controller.abort()
+    }
+  }, [selectedId, tasks])
 
   useEffect(() => {
     let cancelled = false
@@ -188,6 +217,36 @@ export function useIntelligenceWorkspace() {
   }, [selectedId, selected?.status])
 
   useEffect(() => {
+    if (!selectedId || selected?.status !== 'COMPLETED') {
+      setChanges(undefined)
+      setChangesState('idle')
+      return
+    }
+
+    let active = true
+    const controller = new AbortController()
+    setChanges(undefined)
+    setChangesState('loading')
+
+    void intelligenceApi.getChanges(selectedId, controller.signal)
+      .then(nextChanges => {
+        if (!active) return
+        setChanges(nextChanges)
+        setChangesState('ready')
+      })
+      .catch(() => {
+        if (!active) return
+        setChanges(undefined)
+        setChangesState('error')
+      })
+
+    return () => {
+      active = false
+      controller.abort()
+    }
+  }, [selectedId, selected?.status])
+
+  useEffect(() => {
     if (!selectedId) {
       setSources([])
       setSourcesState('idle')
@@ -197,6 +256,7 @@ export function useIntelligenceWorkspace() {
     let active = true
     let timer: number | undefined
     let controller = new AbortController()
+    let sequence = 0
     const terminal = selected?.status === 'COMPLETED' || selected?.status === 'FAILED' || selected?.status === 'CANCELLED'
 
     const loadSources = async (initial: boolean) => {
@@ -205,19 +265,24 @@ export function useIntelligenceWorkspace() {
         setSourcesState('loading')
       }
 
+      controller.abort()
+      const requestController = new AbortController()
+      controller = requestController
+      const requestSequence = ++sequence
+
       try {
-        controller.abort()
-        controller = new AbortController()
-        const nextSources = await intelligenceApi.getSources(selectedId, controller.signal)
-        if (!active) return
+        const nextSources = await intelligenceApi.getSources(selectedId, requestController.signal)
+        if (!active || requestSequence !== sequence) return
         setSources(nextSources)
         setSourcesState('ready')
       } catch {
-        if (!active) return
+        if (!active || requestController.signal.aborted || requestSequence !== sequence) return
         if (initial) setSources([])
         setSourcesState('error')
       } finally {
-        if (active && !terminal) timer = window.setTimeout(() => void loadSources(false), 1500)
+        if (active && requestSequence === sequence && !terminal) {
+          timer = window.setTimeout(() => void loadSources(false), 1500)
+        }
       }
     }
 
@@ -225,20 +290,22 @@ export function useIntelligenceWorkspace() {
 
     return () => {
       active = false
+      sequence++
       controller.abort()
       if (timer !== undefined) window.clearTimeout(timer)
     }
   }, [selectedId, selected?.status])
 
   useEffect(() => {
-    if (!selectedId) return
+    if (!selectedId || !selected || ['COMPLETED', 'FAILED', 'CANCELLED'].includes(selected.status)) return
     const stream = new EventSource(intelligenceApi.eventsUrl(selectedId))
     stream.addEventListener('progress', () => void refresh().catch(() => undefined))
     return () => stream.close()
-  }, [selectedId])
+  }, [selectedId, selected?.status])
 
   const selectTask = (id?: string) => {
     intentEpoch.current += 1
+    setSelectedSnapshot(undefined)
     setSelectedId(id)
     setQuery('')
     setMinQuality(0)
@@ -371,8 +438,10 @@ export function useIntelligenceWorkspace() {
     timeline,
     summary,
     sources,
+    changes,
     summaryState,
     sourcesState,
+    changesState,
     prompt,
     demoMode,
     sourceUrls,

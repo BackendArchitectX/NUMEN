@@ -4,6 +4,7 @@ import ai.numen.domain.SourceCapability;
 import ai.numen.entity.SourceCollectionAttempt;
 import ai.numen.entity.SourceCollectionStatus;
 import ai.numen.repository.SourceCollectionAttemptRepository;
+import ai.numen.security.SourceUrlIdentity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,8 +25,9 @@ public class SourceCollectionAttemptService {
                           String sourceUrl,
                           String connectorId,
                           Set<SourceCapability> capabilities) {
-        SourceCollectionAttempt attempt = attempts.findByTaskIdAndSourceKey(taskId, SourceCollectionAttempt.sourceKey(sourceUrl))
-                .orElseGet(() -> new SourceCollectionAttempt(UUID.randomUUID(), taskId, sourceUrl));
+        String safeSourceUrl = SourceUrlIdentity.safeAuditReference(sourceUrl);
+        SourceCollectionAttempt attempt = attempts.findByTaskIdAndSourceKey(taskId, SourceCollectionAttempt.sourceKey(safeSourceUrl))
+                .orElseGet(() -> new SourceCollectionAttempt(UUID.randomUUID(), taskId, safeSourceUrl));
         attempt.succeeded(connectorId, capabilities);
         attempts.save(attempt);
     }
@@ -38,8 +40,9 @@ public class SourceCollectionAttemptService {
                        String errorMessage,
                        String connectorId,
                        Set<SourceCapability> capabilities) {
-        SourceCollectionAttempt attempt = attempts.findByTaskIdAndSourceKey(taskId, SourceCollectionAttempt.sourceKey(sourceUrl))
-                .orElseGet(() -> new SourceCollectionAttempt(UUID.randomUUID(), taskId, sourceUrl));
+        String safeSourceUrl = SourceUrlIdentity.safeAuditReference(sourceUrl);
+        SourceCollectionAttempt attempt = attempts.findByTaskIdAndSourceKey(taskId, SourceCollectionAttempt.sourceKey(safeSourceUrl))
+                .orElseGet(() -> new SourceCollectionAttempt(UUID.randomUUID(), taskId, safeSourceUrl));
         attempt.failed(status, errorCode, clip(errorMessage, 512), connectorId, capabilities);
         attempts.save(attempt);
     }

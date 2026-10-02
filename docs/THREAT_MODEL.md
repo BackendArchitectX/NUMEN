@@ -74,15 +74,17 @@ Controls: optimistic locking on workflow state and transactional result replacem
 
 Risk: collected public information may be inaccurate or adversarial.
 
-Controls: every record retains source identity, source type, collection time, excerpt, quality score and fingerprint. Demo records are explicitly labelled `DEMO` and use `urn:numen:demo:...` provenance rather than masquerading as live data.
+Controls: every record retains source identity, source type, collection time, captured excerpt, a record-identity fingerprint and (for newly collected records) a normalized evidence-content SHA-256 hash. The record heuristic is explicitly not factual confidence. Demo records are explicitly labelled `DEMO` and use `urn:numen:demo:...` provenance rather than masquerading as live data.
 
-Residual risk: provenance does not establish truth. Production use needs source allowlists, confidence policies and domain-specific validation.
+Exact matching evidence-content hashes across different source URLs are treated only as a possible non-independence/syndication signal. A hash establishes neither source authenticity nor factual truth, and a changed hash establishes only that NUMEN's persisted captured content changed.
+
+Residual risk: provenance and content integrity do not establish truth. Production use needs domain-specific source authority policy, independence analysis and validation.
 
 ### Secret leakage
 
 Risk: generated local credentials, credential-bearing URLs or environment files could be exposed through repository history, logs or user-visible errors.
 
-Controls: `.env` is ignored, repository quality checks reject tracked local environment files, launchers generate/repair placeholder credentials, Unix launchers restrict local `.env` permissions where supported, source URLs with embedded credentials are rejected, and URL-safety errors do not echo the raw rejected URL.
+Controls: `.env` is ignored, repository quality checks reject tracked local environment files, launchers generate/repair placeholder credentials, Unix launchers restrict local `.env` permissions where supported, explicit source URLs with embedded credentials or recognized signed/token query parameters are rejected before task persistence, unsafe attempt references are reduced to credential/query-free audit references, and URL-safety errors do not echo the raw rejected URL.
 
 ### Repository and branch drift
 
