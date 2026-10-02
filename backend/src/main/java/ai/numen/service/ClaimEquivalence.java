@@ -15,7 +15,7 @@ final class ClaimEquivalence {
 
     private static final Pattern TOKEN = Pattern.compile("[\\p{L}\\p{N}+#]+");
     private static final Pattern NUMBER = Pattern.compile("(?<![\\p{L}\\p{N}])\\d+(?:\\.\\d+)*(?![\\p{L}\\p{N}])");
-    private static final Pattern LIST_LIKE = Pattern.compile("(?i)[,;]|\\b(?:including|such as|for example)\\b");
+    private static final Pattern LIST_CUE = Pattern.compile("(?i)\\b(?:including|such as|for example)\\b");
 
     private static final Set<String> STOP_WORDS = Set.of(
             "a", "an", "and", "are", "as", "at", "be", "been", "being", "by", "can", "could",
@@ -107,8 +107,15 @@ final class ClaimEquivalence {
                 negated,
                 Set.copyOf(hardQualifiers),
                 titleAnchors(title),
-                LIST_LIKE.matcher(normalizeText(text)).find()
+                isListLike(text)
         );
+    }
+
+    private static boolean isListLike(String text) {
+        String normalized = normalizeText(text);
+        if (LIST_CUE.matcher(normalized).find() || normalized.indexOf(';') >= 0) return true;
+        long commas = normalized.chars().filter(character -> character == ',').count();
+        return commas >= 2;
     }
 
     private static Set<String> contentTokens(String normalized) {
