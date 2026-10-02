@@ -98,21 +98,28 @@ final class ResearchEvidenceExtractor {
     }
 
     private static List<Candidate> candidates(String rawText, Document document) {
-        List<Candidate> candidates = new ArrayList<>();
-        int order = 0;
+        List<Candidate> structured = structuredCandidates(document);
+        if (structured.size() >= 2) return structured;
 
+        List<Candidate> candidates = new ArrayList<>(structured);
+        int order = candidates.size();
         for (String block : rawText.split("(?:\\R\\s*){2,}")) {
             boolean contextualNote = contextualBlock(block);
             String cleaned = cleanBlock(block);
-            if (usable(cleaned)) candidates.add(new Candidate(cleaned, order++, contextualNote));
+            if (usable(cleaned) && candidates.stream().noneMatch(candidate -> candidate.text().equals(cleaned))) {
+                candidates.add(new Candidate(cleaned, order++, contextualNote));
+            }
         }
+        return candidates;
+    }
 
-        if (candidates.size() < 2) {
-            for (Element element : document.select("main p, main li, article p, article li, body p, body li")) {
-                String cleaned = cleanBlock(element.text());
-                if (usable(cleaned) && candidates.stream().noneMatch(candidate -> candidate.text().equals(cleaned))) {
-                    candidates.add(new Candidate(cleaned, order++, contextualElement(element)));
-                }
+    private static List<Candidate> structuredCandidates(Document document) {
+        List<Candidate> candidates = new ArrayList<>();
+        int order = 0;
+        for (Element element : document.select("main p, main li, article p, article li, body p, body li")) {
+            String cleaned = cleanBlock(element.text());
+            if (usable(cleaned) && candidates.stream().noneMatch(candidate -> candidate.text().equals(cleaned))) {
+                candidates.add(new Candidate(cleaned, order++, contextualElement(element)));
             }
         }
         return candidates;
