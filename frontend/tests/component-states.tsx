@@ -935,7 +935,7 @@ const disagreementBrief: ResearchBrief = {
         sourceUrl: 'https://a.example/runtime',
         sourceType: 'WEB',
         evidenceHash: 'd'.repeat(64),
-        evidenceHashAlgorithm: 'SHA-256 canonical-text-v3',
+        evidenceHashAlgorithm: 'SHA-256 canonical-text-v4',
         collectedAt: record.collectedAt
       }]
     },
@@ -949,7 +949,7 @@ const disagreementBrief: ResearchBrief = {
         sourceUrl: 'https://b.example/runtime',
         sourceType: 'WEB',
         evidenceHash: 'e'.repeat(64),
-        evidenceHashAlgorithm: 'SHA-256 canonical-text-v3',
+        evidenceHashAlgorithm: 'SHA-256 canonical-text-v4',
         collectedAt: record.collectedAt
       }]
     }
@@ -970,3 +970,73 @@ includes(disagreementMarkup, '[1] a.example', 'the first side must preserve its 
 includes(disagreementMarkup, '[1] b.example', 'the second side must preserve its source citation')
 includes(disagreementMarkup, 'does not decide which source is correct', 'NUMEN must not adjudicate disagreement as truth')
 includes(disagreementMarkup, 'version, time, scope or source error', 'disagreement copy must acknowledge legitimate contextual explanations')
+
+
+const sameHostBrief: ResearchBrief = {
+  ...researchBrief,
+  taskId: 'task-same-host',
+  findingCount: 2,
+  contributingSources: 2,
+  sections: [{
+    key: 'relevant-evidence',
+    label: 'Relevant evidence',
+    findings: [{
+      text: 'Claim supported by two distinct same-host documents.',
+      supportingSources: 2,
+      citations: [{
+        recordId: '66666666-6666-6666-6666-666666666666',
+        title: 'Fixture A',
+        sourceName: 'raw.githubusercontent.com',
+        sourceUrl: 'https://raw.githubusercontent.com/BackendArchitectX/NUMEN/main/docs/acceptance/source-disagreement-a.md',
+        sourceType: 'WEB',
+        evidenceHash: 'f'.repeat(64),
+        evidenceHashAlgorithm: 'SHA-256 canonical-text-v4',
+        collectedAt: record.collectedAt
+      }, {
+        recordId: '77777777-7777-7777-7777-777777777777',
+        title: 'Fixture B',
+        sourceName: 'raw.githubusercontent.com',
+        sourceUrl: 'https://raw.githubusercontent.com/BackendArchitectX/NUMEN/main/docs/acceptance/source-disagreement-b.md',
+        sourceType: 'WEB',
+        evidenceHash: '1'.repeat(64),
+        evidenceHashAlgorithm: 'SHA-256 canonical-text-v4',
+        collectedAt: record.collectedAt
+      }]
+    }]
+  }],
+  disagreementCount: 0,
+  disagreements: []
+}
+
+const sameHostBriefMarkup = renderToStaticMarkup(<ResearchBriefPanel brief={sameHostBrief} state="ready" />)
+includes(sameHostBriefMarkup, 'acceptance/source-disagreement-a.md', 'same-host brief citations must expose a compact path identity')
+includes(sameHostBriefMarkup, 'acceptance/source-disagreement-b.md', 'same-host brief citations must distinguish the second source path')
+
+const sameHostDataset = renderToStaticMarkup(
+  <DatasetExplorer
+    records={[
+      { ...record, id: 'same-host-a', sourceName: 'raw.githubusercontent.com', sourceUrl: 'https://raw.githubusercontent.com/BackendArchitectX/NUMEN/main/docs/acceptance/source-disagreement-a.md' },
+      { ...record, id: 'same-host-b', sourceName: 'raw.githubusercontent.com', sourceUrl: 'https://raw.githubusercontent.com/BackendArchitectX/NUMEN/main/docs/acceptance/source-disagreement-b.md' }
+    ]}
+    totalRecords={2}
+    matchedRecords={2}
+    demoRecords={0}
+    generalResearch={true}
+    status="COMPLETED"
+    loadState="ready"
+    query=""
+    minQuality={0}
+    page={0}
+    pageSize={50}
+    totalPages={1}
+    sortKey="qualityScore"
+    sortDirection="desc"
+    onQueryChange={noop}
+    onMinQualityChange={noop}
+    onSort={noop}
+    onPageChange={noop}
+    onPageSizeChange={noop}
+  />
+)
+includes(sameHostDataset, 'acceptance/source-disagreement-a.md', 'same-host result provenance must distinguish the first URL')
+includes(sameHostDataset, 'acceptance/source-disagreement-b.md', 'same-host result provenance must distinguish the second URL')

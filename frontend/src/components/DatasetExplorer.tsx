@@ -3,7 +3,7 @@ import { ArrowDown, ArrowUp, ArrowUpRight, ChevronLeft, ChevronRight, FileSearch
 import type { DatasetRecord, DatasetSortKey, LoadState, SortDirection, TaskStatus } from '../model/types'
 import { clip } from '../shared/text'
 import { formatInstant, formatRelativeInstant } from '../shared/time'
-import { safeExternalHttpUrl, sourceHostname } from '../shared/sourceUrl'
+import { safeExternalHttpUrl, sourceHostname, sourceProvenanceLabel } from '../shared/sourceUrl'
 
 interface DatasetExplorerProps {
   records: DatasetRecord[]
@@ -52,9 +52,23 @@ export function DatasetExplorer({
   const inspectorRef = useRef<HTMLElement>(null)
 
   const selectedRecord = records.find(record => record.id === selectedRecordId)
+  const sourceUrlsByLabel = new Map<string, Set<string>>()
+  for (const record of records) {
+    const base = (record.sourceName?.trim() || sourceHostname(record.sourceUrl) || 'source').toLowerCase()
+    const urls = sourceUrlsByLabel.get(base) ?? new Set<string>()
+    if (record.sourceUrl) urls.add(record.sourceUrl)
+    sourceUrlsByLabel.set(base, urls)
+  }
   const selectedSourceHref = selectedRecord ? safeExternalHttpUrl(selectedRecord.sourceUrl) : undefined
   const selectedSourceHost = selectedRecord ? sourceHostname(selectedRecord.sourceUrl) : ''
-  const selectedSourceLabel = selectedRecord?.sourceName?.trim() || selectedSourceHost
+  const selectedSourceBaseLabel = selectedRecord?.sourceName?.trim() || selectedSourceHost
+  const selectedSourceLabel = selectedRecord
+    ? sourceProvenanceLabel(
+        selectedRecord.sourceName,
+        selectedRecord.sourceUrl,
+        (sourceUrlsByLabel.get((selectedSourceBaseLabel || 'source').toLowerCase())?.size ?? 0) > 1
+      )
+    : ''
   const selectedSourceHasDistinctHost = Boolean(
     selectedSourceHost && selectedSourceLabel && selectedSourceHost.toLowerCase() !== selectedSourceLabel.toLowerCase()
   )
@@ -169,9 +183,14 @@ export function DatasetExplorer({
           : records.map(record => {
             const sourceHref = safeExternalHttpUrl(record.sourceUrl)
             const sourceHost = sourceHostname(record.sourceUrl)
-            const sourceLabel = record.sourceName?.trim() || sourceHost
+            const sourceBaseLabel = record.sourceName?.trim() || sourceHost
+            const sourceLabel = sourceProvenanceLabel(
+              record.sourceName,
+              record.sourceUrl,
+              (sourceUrlsByLabel.get((sourceBaseLabel || 'source').toLowerCase())?.size ?? 0) > 1
+            )
             const sourceHasDistinctHost = Boolean(
-              sourceHost && sourceLabel && sourceHost.toLowerCase() !== sourceLabel.toLowerCase()
+              sourceHost && sourceBaseLabel && sourceHost.toLowerCase() !== sourceBaseLabel.toLowerCase()
             )
             return <tr key={record.id} className={record.id === selectedRecordId ? 'selectedRow' : undefined}>
             <td><button type="button" className="recordTitleButton" aria-haspopup="dialog" onClick={() => setSelectedRecordId(record.id)}><strong>{record.title}</strong><small>{clip(record.excerpt, 78)}</small></button></td>

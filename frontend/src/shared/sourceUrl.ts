@@ -51,6 +51,41 @@ export function sourceHostname(value?: string | null): string {
   }
 }
 
+export function sourceProvenanceLabel(
+  sourceName: string | null | undefined,
+  value: string | null | undefined,
+  forcePath = false,
+  maxPathLength = 42
+): string {
+  const safe = safeExternalHttpUrl(value)
+  const explicitName = sourceName?.trim() ?? ''
+  if (!safe) return explicitName || 'Source'
+
+  const url = new URL(safe)
+  const host = url.hostname
+  const base = explicitName || host || 'Source'
+  const baseIsHost = Boolean(host && base.toLowerCase() === host.toLowerCase())
+  if (!forcePath && !baseIsHost) return base
+
+  const segments = url.pathname
+    .split('/')
+    .filter(Boolean)
+    .map(segment => {
+      try {
+        return decodeURIComponent(segment)
+      } catch {
+        return segment
+      }
+    })
+
+  if (!segments.length) return base
+  let tail = segments.slice(-2).join('/')
+  if (tail.length > maxPathLength) {
+    tail = '…' + tail.slice(-(Math.max(2, maxPathLength - 1)))
+  }
+  return base + ' · ' + tail
+}
+
 export function sourceDisplayLabel(value: string, maxPathLength = 28): string {
   const safe = safeExternalHttpUrl(value)
   if (!safe) return 'Invalid source'

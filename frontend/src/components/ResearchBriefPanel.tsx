@@ -1,17 +1,30 @@
 import { BookOpenText, ExternalLink, TriangleAlert } from 'lucide-react'
 import type { LoadState, ResearchBrief, ResearchBriefFinding, ResearchCitation } from '../model/types'
-import { safeExternalHttpUrl, sourceHostname } from '../shared/sourceUrl'
+import { safeExternalHttpUrl, sourceHostname, sourceProvenanceLabel } from '../shared/sourceUrl'
 
 interface ResearchBriefPanelProps {
   brief?: ResearchBrief
   state: LoadState
 }
 
-function citationLinks(citations: ResearchCitation[], label: string) {
+function citationLinks(citations: ResearchCitation[], label: string, forceDetailed = false) {
+  const sourceUrlsByLabel = new Map<string, Set<string>>()
+  for (const citation of citations) {
+    const base = (citation.sourceName?.trim() || sourceHostname(citation.sourceUrl) || 'source').toLowerCase()
+    const urls = sourceUrlsByLabel.get(base) ?? new Set<string>()
+    if (citation.sourceUrl) urls.add(citation.sourceUrl)
+    sourceUrlsByLabel.set(base, urls)
+  }
+
   return <div className="briefCitations" aria-label={label}>
     {citations.map((citation, citationIndex) => {
       const href = safeExternalHttpUrl(citation.sourceUrl)
-      const sourceLabel = citation.sourceName?.trim() || sourceHostname(citation.sourceUrl) || 'Source ' + (citationIndex + 1)
+      const base = (citation.sourceName?.trim() || sourceHostname(citation.sourceUrl) || 'source').toLowerCase()
+      const sourceLabel = sourceProvenanceLabel(
+        citation.sourceName,
+        citation.sourceUrl,
+        forceDetailed || (sourceUrlsByLabel.get(base)?.size ?? 0) > 1
+      ) || 'Source ' + (citationIndex + 1)
       const recordRef = citation.recordId.slice(0, 8)
       return href
         ? <a key={citation.recordId} href={href} target="_blank" rel="noreferrer" title={'Evidence record ' + recordRef}>
@@ -39,7 +52,7 @@ function disagreementSide(finding: ResearchBriefFinding, side: string) {
     <p>{finding.text}</p>
     <div className="briefDisagreementMeta">
       <small>{finding.supportingSources} supporting {finding.supportingSources === 1 ? 'source' : 'sources'}</small>
-      {citationLinks(finding.citations, side + ' sources')}
+      {citationLinks(finding.citations, side + ' sources', true)}
     </div>
   </div>
 }
