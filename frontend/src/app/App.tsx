@@ -103,12 +103,12 @@ export default function App() {
         <button type="button" className={view === 'history' ? 'active' : ''} onClick={() => navigateWorkspace('history')}><History size={15} aria-hidden="true"/> Runs</button>
       </nav>
 
-      <WorkspaceHeader
+      {(view !== 'research' || workspace.selected) && <WorkspaceHeader
         view={view}
         online={workspace.online}
         showNewResearch={view !== 'research' || Boolean(workspace.selected)}
         onNewResearch={startNewResearch}
-      />
+      />}
       {workspace.error && <div className="error" role="alert">{workspace.error}</div>}
 
       {view === 'research' && <>
@@ -295,14 +295,14 @@ function WorkspaceHeader({
 function ResearchIntro() {
   return <section className="researchIntro" aria-labelledby="research-intro-title">
     <div>
-      <span className="eyebrow">Research intelligence workspace</span>
+      <span className="eyebrow">NUMEN research</span>
       <h2 id="research-intro-title">Turn a research question into evidence you can inspect.</h2>
       <p>Define the outcome, attach the public sources NUMEN should inspect and keep every published result connected to its evidence.</p>
     </div>
     <div className="researchIntroSignals" aria-label="NUMEN research capabilities">
-      <span>Source-bounded collection</span>
-      <span>Evidence-level provenance</span>
-      <span>Reusable structured results</span>
+      <span>Explicit source scope</span>
+      <span>Evidence stays attached</span>
+      <span>Structured results</span>
     </div>
   </section>
 }

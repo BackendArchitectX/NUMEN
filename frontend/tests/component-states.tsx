@@ -41,6 +41,24 @@ function excludes(markup: string, fragment: string, message: string) {
   assert.ok(!markup.includes(fragment), message + '\nRendered markup:\n' + markup)
 }
 
+const emptyPrompt = renderToStaticMarkup(
+  <PromptComposer
+    prompt=""
+    demoMode={false}
+    sourceUrls={[]}
+    busy={false}
+    online={true}
+    onPromptChange={noop}
+    onDemoModeChange={noop}
+    onSourceUrlsChange={noop}
+    onRun={noop}
+  />
+)
+includes(emptyPrompt, 'Start with a research question', 'untouched research must begin with neutral question-first guidance')
+includes(emptyPrompt, 'Enter a question', 'untouched research must label the disabled primary action without scolding the user')
+excludes(emptyPrompt, 'open=""', 'source configuration should not expand before the question is ready')
+excludes(emptyPrompt, 'Research question needs more detail', 'untouched research must not present validation-like language')
+
 const offlinePrompt = renderToStaticMarkup(
   <PromptComposer
     prompt="Collect traceable public intelligence"

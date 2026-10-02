@@ -40,6 +40,7 @@ export function PromptComposer({
   const validDraft = normalizePublicHttpUrl(sourceDraft)
   const sourceDraftIssue = sourceUrlValidationMessage(sourceDraft)
   const hasCollectionMode = sourceUrls.length > 0 || demoMode
+  const promptStarted = prompt.trim().length > 0
   const promptValid = prompt.trim().length >= 10 && length <= 4000
   const runnable = online && !busy && promptValid && hasCollectionMode
   const primaryDisabled = !online || busy || !promptValid
@@ -81,8 +82,10 @@ export function PromptComposer({
     ? 'Starting research…'
     : !online
       ? 'Service unavailable'
-      : !promptValid
-        ? 'Add more detail'
+      : !promptStarted
+        ? 'Enter a question'
+        : !promptValid
+          ? 'Add more detail'
         : !hasCollectionMode
           ? 'Add source to run'
           : 'Run research'
@@ -92,12 +95,11 @@ export function PromptComposer({
       <div className="composerTitle">
         <span className="composerIcon"><Search size={16} aria-hidden="true"/></span>
         <div>
-          <span className="composerEyebrow">New research</span>
           <strong id="prompt-label">Ask NUMEN</strong>
           <small>Describe the outcome you need. NUMEN keeps the source scope and captured evidence attached to the resulting dataset.</small>
         </div>
       </div>
-      <span className="composerHint"><MessageSquareText size={13} aria-hidden="true"/> Natural language</span>
+      <span className="composerHint"><MessageSquareText size={13} aria-hidden="true"/> Research brief</span>
     </div>
 
     <div className="composerInputShell">
@@ -138,13 +140,13 @@ export function PromptComposer({
       </button>
     </div>
 
-    <div id="run-readiness" className={`runReadiness ${runnable ? 'ready' : hasCollectionMode ? 'waiting' : 'needsSource'}`} role="status">
+    <div id="run-readiness" className={`runReadiness ${!promptStarted ? 'idle' : runnable ? 'ready' : hasCollectionMode ? 'waiting' : 'needsSource'}`} role="status">
       <span className="runReadinessDot" aria-hidden="true"/>
-      <strong>{runReadinessTitle({ online, busy, promptValid, hasCollectionMode })}</strong>
-      <span>{runReadinessDetail({ online, busy, promptValid, demoMode, sourceCount: sourceUrls.length })}</span>
+      <strong>{runReadinessTitle({ online, busy, promptStarted, promptValid, hasCollectionMode })}</strong>
+      <span>{runReadinessDetail({ online, busy, promptStarted, promptValid, demoMode, sourceCount: sourceUrls.length })}</span>
     </div>
 
-    <details ref={sourceDetailsRef} open={!hasCollectionMode ? true : undefined} className={`composerAdvanced ${hasCollectionMode ? 'configured' : 'needsSetup'}`}>
+    <details ref={sourceDetailsRef} open={!hasCollectionMode && promptValid ? true : undefined} className={`composerAdvanced ${hasCollectionMode ? 'configured' : 'needsSetup'}`}>
       <summary>
         <div className="advancedSummaryCopy">
           <Link2 size={14} aria-hidden="true"/>
@@ -233,28 +235,32 @@ export function PromptComposer({
   </section>
 }
 
-function runReadinessTitle({ online, busy, promptValid, hasCollectionMode }: {
+function runReadinessTitle({ online, busy, promptStarted, promptValid, hasCollectionMode }: {
   online: boolean
   busy: boolean
+  promptStarted: boolean
   promptValid: boolean
   hasCollectionMode: boolean
 }): string {
   if (!online) return 'NUMEN service is unavailable'
   if (busy) return 'Starting research'
-  if (!promptValid) return 'Research question needs more detail'
+  if (!promptStarted) return 'Start with a research question'
+  if (!promptValid) return 'Add a little more detail'
   if (!hasCollectionMode) return 'One more step: choose the source scope'
   return 'Ready to run'
 }
 
-function runReadinessDetail({ online, busy, promptValid, demoMode, sourceCount }: {
+function runReadinessDetail({ online, busy, promptStarted, promptValid, demoMode, sourceCount }: {
   online: boolean
   busy: boolean
+  promptStarted: boolean
   promptValid: boolean
   demoMode: boolean
   sourceCount: number
 }): string {
   if (!online) return 'Wait for the Connected status before submitting.'
   if (busy) return 'Your request is being submitted once.'
+  if (!promptStarted) return 'Describe the outcome you want to research; source scope comes next.'
   if (!promptValid) return 'Enter at least 10 characters so NUMEN has a clear research intent.'
   if (!demoMode && sourceCount === 0) return 'Add a public HTTP(S) URL below, or choose explicit demo data.'
   if (demoMode) return 'Demo mode is selected; the output will be clearly labeled sample data.'
