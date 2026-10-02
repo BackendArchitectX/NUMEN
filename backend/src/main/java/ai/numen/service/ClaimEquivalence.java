@@ -19,6 +19,9 @@ final class ClaimEquivalence {
     private static final Pattern TOKEN = Pattern.compile("[\\p{L}\\p{N}+#]+");
     private static final Pattern NUMBER = Pattern.compile("(?<![\\p{L}\\p{N}])\\d+(?:\\.\\d+)*(?![\\p{L}\\p{N}])");
     private static final Pattern LIST_CUE = Pattern.compile("(?i)\\b(?:including|such as|for example)\\b");
+    private static final Pattern LEADING_VERSION_SCOPE = Pattern.compile(
+            "^\\s*([\\p{L}][\\p{L}\\p{N}+#.-]*(?:\\s+[\\p{L}][\\p{L}\\p{N}+#.-]*){0,2})\\s+(\\d+(?:\\.\\d+){1,3})\\b"
+    );
 
     private static final Set<String> STOP_WORDS = Set.of(
             "a", "an", "and", "are", "as", "at", "be", "been", "being", "by", "can", "could",
@@ -93,6 +96,7 @@ final class ClaimEquivalence {
             return Optional.empty();
         }
         if (!anchorsCompatible(left.titleAnchors(), right.titleAnchors())) return Optional.empty();
+        if (differentExplicitVersionScopes(left.explicitScope(), right.explicitScope())) return Optional.empty();
 
         Similarity topicSimilarity = similarity(topicTokens(left), topicTokens(right));
         if (topicSimilarity.overlap() < MIN_DISAGREEMENT_OVERLAP
@@ -104,6 +108,7 @@ final class ClaimEquivalence {
             return Optional.of(DisagreementReason.POLARITY_CONFLICT);
         }
         if (!left.numbers().isEmpty() && !right.numbers().isEmpty()
+                && left.numbers().size() == right.numbers().size()
                 && !left.numbers().equals(right.numbers())) {
             return Optional.of(DisagreementReason.NUMERIC_CONFLICT);
         }
@@ -159,8 +164,26 @@ final class ClaimEquivalence {
                 Set.copyOf(hardQualifiers),
                 titleAnchors(title),
                 isListLike(text),
-                requirementMode
+                requirementMode,
+                explicitScope(text)
         );
+    }
+
+    private static ExplicitScope explicitScope(String text) {
+        Matcher matcher = LEADING_VERSION_SCOPE.matcher(normalizeText(text));
+        if (!matcher.find()) return null;
+        return new ExplicitScope(
+                canonicalSurface(matcher.group(1)),
+                matcher.group(2)
+        );
+    }
+
+    private static boolean differentExplicitVersionScopes(ExplicitScope left, ExplicitScope right) {
+        return left != null
+                && right != null
+                && !left.subject().isBlank()
+                && left.subject().equals(right.subject())
+                && !left.version().equals(right.version());
     }
 
     private static Set<String> topicTokens(Signature signature) {
@@ -196,7 +219,7 @@ final class ClaimEquivalence {
         Matcher matcher = TOKEN.matcher(normalized);
         while (matcher.find()) {
             String token = stem(matcher.group().toLowerCase(Locale.ROOT));
-            if (token.length() < 2 || STOP_WORDS.contains(token)) continue;
+            if (token.length() < 2 || STOP_WORDS.contains(token) || token.chars().allMatch(Character::isDigit)) continue;
             tokens.add(token);
         }
         return Set.copyOf(tokens);
@@ -268,6 +291,8 @@ final class ClaimEquivalence {
 
     private record Similarity(double overlap, double jaccard) { }
 
+    private record ExplicitScope(String subject, String version) { }
+
     private record Signature(
             Set<String> tokens,
             Set<String> numbers,
@@ -275,5 +300,6 @@ final class ClaimEquivalence {
             Set<String> hardQualifiers,
             Set<String> titleAnchors,
             boolean listLike,
-            RequirementMode requirementMode) { }
+            RequirementMode requirementMode,
+            ExplicitScope explicitScope) { }
 }
