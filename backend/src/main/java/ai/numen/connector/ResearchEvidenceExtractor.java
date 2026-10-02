@@ -16,6 +16,8 @@ import java.util.regex.Pattern;
 final class ResearchEvidenceExtractor {
     private static final int MAX_FACET_LENGTH = 320;
     private static final int MAX_EXCERPT_LENGTH = 1_100;
+    private static final int MIN_SECONDARY_GENERAL_SCORE = 10;
+    private static final int CONTEXTUAL_NOTE_PENALTY = 18;
     private static final Pattern TOKEN = Pattern.compile("[\\p{L}\\p{N}][\\p{L}\\p{N}+#.-]*");
     private static final Pattern ASCIIDOC_TITLE = Pattern.compile("^\\s*=+\\s+(.+?)\\s*$");
     private static final Pattern MARKDOWN_TITLE = Pattern.compile("^\\s*#\\s+(.+?)\\s*$");
@@ -100,15 +102,16 @@ final class ResearchEvidenceExtractor {
         int order = 0;
 
         for (String block : rawText.split("(?:\\R\\s*){2,}")) {
+            boolean contextualNote = contextualBlock(block);
             String cleaned = cleanBlock(block);
-            if (usable(cleaned)) candidates.add(new Candidate(cleaned, order++));
+            if (usable(cleaned)) candidates.add(new Candidate(cleaned, order++, contextualNote));
         }
 
         if (candidates.size() < 2) {
             for (Element element : document.select("main p, main li, article p, article li, body p, body li")) {
                 String cleaned = cleanBlock(element.text());
                 if (usable(cleaned) && candidates.stream().noneMatch(candidate -> candidate.text().equals(cleaned))) {
-                    candidates.add(new Candidate(cleaned, order++));
+                    candidates.add(new Candidate(cleaned, order++, contextualElement(element)));
                 }
             }
         }
@@ -161,7 +164,9 @@ final class ResearchEvidenceExtractor {
                 parts.add(clip(first.text(), 520));
             }
             Candidate second = best(candidates, subjectTerms, Facet.GENERAL, used);
-            if (second != null) parts.add(clip(second.text(), 420));
+            if (second != null && score(second, subjectTerms, Facet.GENERAL) >= MIN_SECONDARY_GENERAL_SCORE) {
+                parts.add(clip(second.text(), 420));
+            }
         }
 
         return String.join(" ", parts);
@@ -177,7 +182,7 @@ final class ResearchEvidenceExtractor {
         for (String sentence : sentences) {
             String cleaned = cleanInline(sentence);
             if (cleaned.length() < 35) continue;
-            Candidate fragment = new Candidate(cleaned, order++);
+            Candidate fragment = new Candidate(cleaned, order++, candidate.contextualNote());
             int score = score(fragment, subjectTerms, facet);
             if (score > bestScore) {
                 best = fragment;
@@ -212,6 +217,7 @@ final class ResearchEvidenceExtractor {
         score += facetCueScore(lower, facet);
         if (lower.contains("image:") || lower.contains("badge")) score -= 20;
         if (lower.contains("@restcontroller") || lower.contains("public static void") || lower.contains("./gradlew")) score -= 8;
+        if (candidate.contextualNote()) score -= CONTEXTUAL_NOTE_PENALTY;
         return score;
     }
 
@@ -277,6 +283,31 @@ final class ResearchEvidenceExtractor {
         return cleanInline(withoutBadges.replace("`", ""));
     }
 
+    private static boolean contextualBlock(String value) {
+        if (value == null || value.isBlank()) return false;
+        String trimmed = value.stripLeading();
+        if (trimmed.startsWith(">")) return true;
+        return Pattern.compile("(?im)^\\s*(?:\\[(?:NOTE|TIP|IMPORTANT|WARNING|CAUTION)[^]]*]|(?:NOTE|TIP|IMPORTANT|WARNING|CAUTION):)")
+                .matcher(value)
+                .find();
+    }
+
+    private static boolean contextualElement(Element element) {
+        for (Element parent : element.parents()) {
+            String tag = parent.tagName().toLowerCase(Locale.ROOT);
+            if ("blockquote".equals(tag) || "aside".equals(tag)) return true;
+            if (parent.hasClass("admonition")
+                    || parent.hasClass("note")
+                    || parent.hasClass("tip")
+                    || parent.hasClass("important")
+                    || parent.hasClass("warning")
+                    || parent.hasClass("caution")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static String cleanBlock(String value) {
         if (value == null) return "";
         return cleanInline(value
@@ -288,6 +319,7 @@ final class ResearchEvidenceExtractor {
                 .replaceAll("\\{[^}]+}", "")
                 .replaceAll("(?m)^\\s*=+\\s+", "")
                 .replaceAll("(?m)^\\s*[*+-]\\s+", "")
+                .replaceAll("(?m)^\\s*>\\s?", "")
                 .replace("`", ""));
     }
 
@@ -309,7 +341,7 @@ final class ResearchEvidenceExtractor {
 
     record ExtractedEvidence(String title, String excerpt) { }
 
-    private record Candidate(String text, int order) { }
+    private record Candidate(String text, int order, boolean contextualNote) { }
 
     private enum Facet { PURPOSE, CAPABILITIES, USE_CASES, GENERAL }
 }

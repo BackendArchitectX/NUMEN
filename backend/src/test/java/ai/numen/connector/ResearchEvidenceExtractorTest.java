@@ -102,6 +102,53 @@ class ResearchEvidenceExtractorTest {
     }
 
     @Test
+    void genericResearchDoesNotPromoteContextualSourceNotesIntoEvidence() {
+        Document document = Jsoup.parse("<html><body></body></html>");
+        document.body().appendElement("pre").text("""
+                # NUMEN Synthetic Compatibility Fixture
+
+                > Synthetic acceptance fixture for NUMEN disagreement detection. This is test data, not factual product documentation.
+
+                Acme Runtime 2.0 requires at least Java 17 and is compatible with versions up to and including Java 25. Protocol 1.2 is also required for production deployments.
+                """);
+
+        var extracted = ResearchEvidenceExtractor.extract(
+                URI.create("https://raw.githubusercontent.com/BackendArchitectX/NUMEN/main/docs/acceptance/source-disagreement-a.md"),
+                document,
+                "Compare the Java compatibility stated by the provided Acme Runtime 2.0 sources. Identify any disagreement."
+        );
+
+        assertThat(extracted.excerpt())
+                .contains("Acme Runtime 2.0")
+                .contains("Java 25")
+                .doesNotContain("Synthetic acceptance fixture")
+                .doesNotContain("not factual product documentation")
+                .doesNotContain(">");
+    }
+
+    @Test
+    void genericResearchKeepsASecondPassageWhenItIsSubstantivelyRelevant() {
+        Document document = Jsoup.parse("""
+                <html><head><title>Vector Search Notes</title></head><body>
+                <p>Vector search combines embeddings with nearest-neighbor retrieval for semantic matching.</p>
+                <p>Vector search indexing choices affect retrieval latency and recall across large collections.</p>
+                <p>Account navigation links are available in the documentation header.</p>
+                </body></html>
+                """);
+
+        var extracted = ResearchEvidenceExtractor.extract(
+                URI.create("https://example.com/vector"),
+                document,
+                "Explain vector search retrieval and indexing."
+        );
+
+        assertThat(extracted.excerpt())
+                .contains("nearest-neighbor retrieval")
+                .contains("indexing choices")
+                .doesNotContain("Account navigation");
+    }
+
+    @Test
     void collapsesRepeatedHtmlDocumentTitlesWithoutHidingDistinctQualifiers() {
         Document repeated = Jsoup.parse("""
                 <html><head><title>Spring Boot :: Spring Boot</title></head>
