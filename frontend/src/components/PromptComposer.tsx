@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { ChevronDown, FlaskConical, Link2, LoaderCircle, MessageSquareText, Play, Plus, Search, X } from 'lucide-react'
 import { examplePrompts } from '../model/prompts'
 import { clip } from '../shared/text'
+import { extractPublicHttpUrls, normalizePublicHttpUrl, sourceDisplayLabel, sourceUrlValidationMessage } from '../shared/sourceUrl'
 
 interface PromptComposerProps {
   prompt: string
@@ -33,10 +34,11 @@ export function PromptComposer({
   const sourceInputRef = useRef<HTMLInputElement>(null)
   const length = prompt.length
   const detectedPromptUrls = useMemo(
-    () => extractHttpUrls(prompt).filter(url => !sourceUrls.includes(url)),
+    () => extractPublicHttpUrls(prompt).filter(url => !sourceUrls.includes(url)),
     [prompt, sourceUrls]
   )
-  const validDraft = normalizeUrl(sourceDraft)
+  const validDraft = normalizePublicHttpUrl(sourceDraft)
+  const sourceDraftIssue = sourceUrlValidationMessage(sourceDraft)
   const hasCollectionMode = sourceUrls.length > 0 || demoMode
   const promptValid = prompt.trim().length >= 10 && length <= 4000
   const runnable = online && !busy && promptValid && hasCollectionMode
@@ -46,7 +48,7 @@ export function PromptComposer({
     if (demoMode) return
     const next = [...sourceUrls]
     for (const value of values) {
-      const normalized = normalizeUrl(value)
+      const normalized = normalizePublicHttpUrl(value)
       if (!normalized || next.includes(normalized) || next.length >= MAX_SOURCES) continue
       next.push(normalized)
     }
@@ -106,6 +108,7 @@ export function PromptComposer({
         aria-describedby="prompt-help source-scope-summary"
         onChange={event => onPromptChange(event.target.value)}
         onKeyDown={event => {
+          if (event.nativeEvent.isComposing) return
           if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
             if (runnable) {
               event.preventDefault()
@@ -175,6 +178,7 @@ export function PromptComposer({
               placeholder={demoMode ? 'Disable Demo mode to add live sources' : 'https://example.com/research-source'}
               onChange={event => setSourceDraft(event.target.value)}
               onKeyDown={event => {
+                if (event.nativeEvent.isComposing) return
                 if (event.key === 'Enter' && validDraft) {
                   event.preventDefault()
                   addSources([sourceDraft])
@@ -186,12 +190,12 @@ export function PromptComposer({
             </button>
           </div>
 
-          {sourceDraft.trim() && !validDraft && !demoMode && <p className="sourceValidation" role="status">Use a complete public HTTP(S) URL.</p>}
+          {sourceDraftIssue && !demoMode && <p className="sourceValidation" role="status">{sourceDraftIssue}</p>}
 
           {sourceUrls.length > 0 && <div className="sourceChips" aria-label="Configured public sources">
             {sourceUrls.map(url => <span key={url}>
               <Link2 size={12} aria-hidden="true"/>
-              <span title={url}>{sourceLabel(url)}</span>
+              <bdi dir="ltr" title={url}>{sourceDisplayLabel(url)}</bdi>
               <button type="button" aria-label={`Remove source ${url}`} onClick={() => onSourceUrlsChange(sourceUrls.filter(item => item !== url))}><X size={12} aria-hidden="true"/></button>
             </span>)}
           </div>}
@@ -203,18 +207,11 @@ export function PromptComposer({
 
         <div className={`sourceModeNotice ${demoMode ? 'demo' : sourceUrls.length ? 'live' : 'missing'}`}>
           {demoMode
-            ? <><FlaskConical size={13} aria-hidden="true"/><span><strong>Demo mode</strong> uses clearly labeled sample records and does not perform live public-source collection.</span></>
+            ? <><FlaskConical size={13} aria-hidden="true"/><span><strong>Demo data selected.</strong> No public source will be contacted for this run.</span><button type="button" className="inlineDemoAction" onClick={() => setDemo(false)}>Use public sources</button></>
             : sourceUrls.length
-              ? <><Link2 size={13} aria-hidden="true"/><span><strong>{sourceUrls.length} public {sourceUrls.length === 1 ? 'source' : 'sources'} configured.</strong> NUMEN will collect only this explicit source scope.</span></>
-              : <><Search size={13} aria-hidden="true"/><span><strong>Source scope required.</strong> Add at least one public HTTP(S) source, or explicitly use Demo mode for labeled sample data.</span><button type="button" className="inlineDemoAction" onClick={() => setDemo(true)}>Use demo data</button></>}
+              ? <><Link2 size={13} aria-hidden="true"/><span>Only the {sourceUrls.length} configured public {sourceUrls.length === 1 ? 'source' : 'sources'} will be collected.</span><button type="button" className="inlineDemoAction" onClick={() => setDemo(true)}>Use demo data</button></>
+              : <><Search size={13} aria-hidden="true"/><span><strong>Source scope required.</strong> Add a public HTTP(S) URL, or use explicit demo data.</span><button type="button" className="inlineDemoAction" onClick={() => setDemo(true)}>Use demo data</button></>}
         </div>
-
-        <label className="demoToggle">
-          <input type="checkbox" checked={demoMode} onChange={event => setDemo(event.target.checked)}/>
-          <FlaskConical size={13} aria-hidden="true"/>
-          <span>Demo mode</span>
-          <small>Use labeled sample records instead of live source collection.</small>
-        </label>
       </div>
     </details>
 
@@ -270,35 +267,3 @@ function sourceScopeSummary(demoMode: boolean, sourceCount: number): string {
   return 'Required before live research can run'
 }
 
-function normalizeUrl(value: string): string | undefined {
-  const trimmed = value.trim()
-  if (!trimmed) return undefined
-
-  try {
-    const parsed = new URL(trimmed)
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return undefined
-    return parsed.toString()
-  } catch {
-    return undefined
-  }
-}
-
-function extractHttpUrls(value: string): string[] {
-  const matches = value.match(/https?:\/\/[^\s,;]+/gi) ?? []
-  const unique: string[] = []
-  for (const match of matches) {
-    const normalized = normalizeUrl(match.replace(/[.)]+$/, ''))
-    if (normalized && !unique.includes(normalized)) unique.push(normalized)
-  }
-  return unique
-}
-
-function sourceLabel(value: string): string {
-  try {
-    const url = new URL(value)
-    const path = url.pathname === '/' ? '' : url.pathname
-    return `${url.hostname}${clip(path, 28)}`
-  } catch {
-    return clip(value, 40)
-  }
-}

@@ -2,7 +2,7 @@
 
 This document records the approved product-interface reference corpus for NUMEN. These references are used for principles, interaction models, hierarchy and product ergonomics only. NUMEN must not copy logos, proprietary assets, exact layouts, trade dress, copy, illustrations or signature animations.
 
-Observed/reviewed: 2026-10-01.
+Observed/reviewed: 2026-10-02.
 
 | Reference | Principle brought into NUMEN |
 | --- | --- |
@@ -62,6 +62,22 @@ For the product shell this means:
 - denser, highly scannable lists/tables once the user enters datasets, sources and run history;
 - one dominant workbench/composer on Research rather than a collection of competing cards;
 - evidence and source state remain literal and inspectable.
+
+## Aurora X41 implementation mapping
+
+The focused 11-site corpus was re-checked for this implementation. The following mappings are now tied to concrete shipped surfaces rather than being design-only notes:
+
+| Reference principle | NUMEN surface | Implementation evidence | Render status |
+| --- | --- | --- | --- |
+| ElevenLabs / Fish Audio: one dominant interactive work surface with configuration close to execution | Research / Ask NUMEN | `PromptComposer.tsx`, compact source scope, question → source → run hierarchy | Automated markup/build pending; browser screenshot review required separately |
+| Sarvam / xAI: restrained AI presentation and direct product access | Research shell | light-only canvas, deep-ink primary action, reduced decorative AI chrome | Browser screenshot review required separately |
+| Faire: repeated-object scanability | Datasets / Recent research / Sources index | compact repeated rows, quieter secondary actions, source-set index | Browser screenshot review required separately |
+| Ramp / Stripe: operational precision and one dominant row action | Runs / Datasets | `WorkflowHistory.tsx`, `DatasetLibrary.tsx` action hierarchy | Automated component verification pending |
+| Scale / Waymo: inspectable trust rather than confidence theater | Evidence / Sources | actual destination hostname, captured evidence, collection timestamps, exact source outcomes | Component/backend tests pending |
+| Celonis: operational context remains attached to work | Sources / Runs | source-set research context, persisted run lifecycle and source contribution | Automated/full-stack verification pending |
+| Moonshot: research-first calm and complex work behind direct language | Research | primary research nouns remain Question, Source scope, Results, Evidence; engine internals remain secondary | Browser screenshot review required separately |
+
+“Pending” above is intentional. A principle is not marked visually verified until the final built application is rendered and inspected.
 
 ## Synthesis applied to the product
 

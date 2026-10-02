@@ -56,7 +56,7 @@ export function DatasetLibrary({ tasks, onOpen, onOpenSources, onNewResearch }: 
         </div>
 
         <div className="datasetLibraryActions">
-          <button type="button" className="tableAction" onClick={() => onOpenSources(task.id)}>
+          <button type="button" className="datasetSecondaryAction" onClick={() => onOpenSources(task.id)}>
             <Radio size={13} aria-hidden="true"/> Sources
           </button>
           <button type="button" className="tableAction primaryTableAction" onClick={() => onOpen(task.id)}>

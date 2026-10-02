@@ -6,11 +6,13 @@ import { PromptComposer } from '../components/PromptComposer'
 import { ResearchOutcome } from '../components/ResearchOutcome'
 import { Sidebar } from '../components/Sidebar'
 import { SourceExplorer } from '../components/SourceExplorer'
+import { SourceResearchIndex } from '../components/SourceResearchIndex'
 import { WorkflowHistory } from '../components/WorkflowHistory'
 import { WorkflowPanel } from '../components/WorkflowPanel'
 import { useIntelligenceWorkspace } from '../hooks/useIntelligenceWorkspace'
 import type { Task, WorkspaceView } from '../model/types'
 import { groupResearchTasks } from '../shared/research'
+import { formatRelativeInstant } from '../shared/time'
 
 interface WorkspaceRoute {
   view: WorkspaceView
@@ -220,15 +222,21 @@ export default function App() {
       </>}
 
       {view === 'sources' && <>
-        <RunSelector
-          label="Research source set"
-          description="Inspect configured sources and collection outcomes, including partial or failed research."
-          tasks={sourceTasks}
-          selectedId={workspace.selectedId}
-          onSelect={id => selectAndOpen(id, 'sources')}/>
         {workspace.selected && ['COMPLETED', 'FAILED', 'CANCELLED'].includes(workspace.selected.status)
-          ? <SourceExplorer sources={workspace.sources} totalRecords={workspace.summary?.totalRecords ?? workspace.selected.recordCount} state={workspace.sourcesState}/>
-          : <section className="emptyState panel"><Radio aria-hidden="true"/><h2>Select research with source activity</h2><p>Configured sources, collection outcomes and evidence contribution are visible here even when a run could not publish results.</p></section>}
+          ? <>
+              <div className="contextToolbar">
+                <button type="button" className="secondaryAction" onClick={() => { workspace.selectTask(undefined); navigate('sources') }}>All source sets</button>
+                <span>Provenance for selected research</span>
+              </div>
+              <RunSelector
+                label="Research source set"
+                description="Switch research without losing the source workspace."
+                tasks={sourceTasks}
+                selectedId={workspace.selectedId}
+                onSelect={id => selectAndOpen(id, 'sources')}/>
+              <SourceExplorer sources={workspace.sources} totalRecords={workspace.summary?.totalRecords ?? workspace.selected.recordCount} state={workspace.sourcesState}/>
+            </>
+          : <SourceResearchIndex tasks={sourceTasks} onOpen={id => selectAndOpen(id, 'sources')} onNewResearch={startNewResearch}/>}
       </>}
 
       {view === 'history' && <WorkflowHistory
@@ -352,10 +360,10 @@ function buildHash(view: WorkspaceView, taskId?: string): string {
 
 function researchMeta(task: Task, runs: number): string {
   const runCount = runs > 1 ? ` · ${runs} runs` : ''
-  if (task.status === 'COMPLETED') return `${task.demoMode ? 'Demo · ' : ''}${task.recordCount} published ${task.recordCount === 1 ? 'record' : 'records'}${runCount} · ${formatRelative(task.completedAt || task.createdAt)}`
+  if (task.status === 'COMPLETED') return `${task.demoMode ? 'Demo · ' : ''}${task.recordCount} published ${task.recordCount === 1 ? 'record' : 'records'}${runCount} · ${formatRelativeInstant(task.completedAt || task.createdAt)}`
   if (task.status === 'FAILED') return `Stopped before a complete outcome was published${runCount}`
   if (task.status === 'CANCELLED') return `Cancelled${runCount}`
-  return `${statusLabel(task.status)}${runCount} · ${formatRelative(task.startedAt || task.createdAt)}`
+  return `${statusLabel(task.status)}${runCount} · ${formatRelativeInstant(task.startedAt || task.createdAt)}`
 }
 
 function statusLabel(status: Task['status']): string {
@@ -368,17 +376,6 @@ function statusLabel(status: Task['status']): string {
     case 'CANCELLED': return 'Cancelled'
     case 'FAILED': return 'Needs attention'
   }
-}
-
-function formatRelative(value: string): string {
-  const time = Date.parse(value)
-  if (!Number.isFinite(time)) return 'recently'
-  const minutes = Math.max(0, Math.round((Date.now() - time) / 60_000))
-  if (minutes < 1) return 'now'
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.round(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  return `${Math.round(hours / 24)}d ago`
 }
 
 function focusResearchComposer() {

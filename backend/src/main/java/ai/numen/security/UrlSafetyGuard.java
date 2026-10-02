@@ -37,7 +37,7 @@ public class UrlSafetyGuard {
             }
             return uri;
         } catch (UnknownHostException | IllegalArgumentException ex) {
-            throw new IllegalArgumentException("Unsafe or invalid source URL: " + raw);
+            throw new IllegalArgumentException("Unsafe or invalid source URL");
         }
     }
 

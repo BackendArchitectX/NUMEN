@@ -6,11 +6,13 @@ import { PromptComposer } from '../src/components/PromptComposer'
 import { ResearchOutcome } from '../src/components/ResearchOutcome'
 import { Sidebar } from '../src/components/Sidebar'
 import { SourceExplorer } from '../src/components/SourceExplorer'
+import { SourceResearchIndex } from '../src/components/SourceResearchIndex'
 import { WorkflowHistory } from '../src/components/WorkflowHistory'
 import { WorkflowPanel } from '../src/components/WorkflowPanel'
 import type { DatasetRecord, DatasetSummary, SourceSummary, Task, TaskTimelineEvent } from '../src/model/types'
 import { groupResearchTasks } from '../src/shared/research'
 import { formatInstant, formatRelativeInstant } from '../src/shared/time'
+import { normalizePublicHttpUrl, safeExternalHttpUrl, sourceHostname, sourceUrlValidationMessage } from '../src/shared/sourceUrl'
 
 const noop = () => undefined
 
@@ -21,6 +23,15 @@ assert.equal(
   'in 1m',
   'relative time formatting must preserve future direction rather than clamping future timestamps to now'
 )
+
+assert.equal(normalizePublicHttpUrl('https://example.com/research#section'), 'https://example.com/research', 'source URL normalization must remove fragments')
+assert.equal(safeExternalHttpUrl('javascript:alert(1)'), undefined, 'unsafe external schemes must never become clickable links')
+assert.equal(safeExternalHttpUrl('https://user:pass@example.com/private'), undefined, 'credential-bearing URLs must not become clickable links')
+assert.equal(safeExternalHttpUrl('http://127.0.0.1/admin'), undefined, 'obviously local source URLs must be rejected in the browser before submission')
+assert.equal(safeExternalHttpUrl('https://example.com:8443/data'), undefined, 'non-standard source ports must be rejected before submission')
+assert.equal(normalizePublicHttpUrl('https://fcdomain.com/'), 'https://fcdomain.com/', 'ordinary hostnames beginning with IPv6-like letters must remain valid')
+assert.equal(sourceHostname('https://Example.com/research'), 'example.com', 'source identity must expose the actual parsed hostname')
+assert.equal(sourceUrlValidationMessage('file:///etc/passwd'), 'Only HTTP(S) source URLs are supported.', 'unsupported URL schemes need a precise validation message')
 
 function includes(markup: string, fragment: string, message: string) {
   assert.ok(markup.includes(fragment), message + '\nRendered markup:\n' + markup)
@@ -101,7 +112,8 @@ const liveSourcePrompt = renderToStaticMarkup(
     onRun={noop}
   />
 )
-includes(liveSourcePrompt, '1 public source configured.', 'composer must confirm the explicit live source scope')
+includes(liveSourcePrompt, '1 public source configured', 'composer must confirm the explicit live source scope')
+includes(liveSourcePrompt, '<bdi dir="ltr"', 'configured source identity must be isolated from bidirectional text spoofing')
 includes(liveSourcePrompt, 'class="run"', 'valid explicit-source research must expose the normal Run research action')
 excludes(liveSourcePrompt, 'class="run" disabled=""', 'valid explicit-source research must enable the Run research action when the service is online')
 includes(liveSourcePrompt, 'Ready to run', 'configured live research must expose positive readiness state')
@@ -120,6 +132,7 @@ const explicitDemoPrompt = renderToStaticMarkup(
   />
 )
 includes(explicitDemoPrompt, 'Demo mode', 'demo generation must require an explicit visible mode')
+includes(explicitDemoPrompt, 'Demo data selected.', 'demo mode must clearly state that no public source will be contacted')
 excludes(explicitDemoPrompt, 'class="run" disabled=""', 'explicit demo research may enable Run research without external URLs')
 includes(explicitDemoPrompt, 'Ready to run', 'explicit demo mode must expose positive readiness state')
 
@@ -187,11 +200,45 @@ const populated = renderToStaticMarkup(
   />
 )
 includes(populated, 'Backend Engineer', 'dataset explorer must render returned records')
-includes(populated, '95%', 'data-quality display should round the persisted score')
+includes(populated, '95/100', 'record heuristic display should round the persisted score without presenting it as factual confidence')
 includes(populated, 'target="_blank"', 'live provenance links should open separately')
 includes(populated, 'rel="noreferrer"', 'external provenance links must suppress referrer leakage')
-includes(populated, 'Data quality', 'quality terminology must be explicit rather than an unexplained percentage')
+includes(populated, 'Record heuristic', 'the persisted score must be labelled as a heuristic rather than generic data quality')
+includes(populated, 'not factual confidence', 'record heuristic must explicitly avoid factual-confidence semantics')
 includes(populated, 'aria-haspopup="dialog"', 'record rows must announce that evidence opens in a dialog')
+includes(populated, '<bdi class="sourceHost" dir="ltr">example.com</bdi>', 'record provenance must expose the parsed destination hostname with bidi isolation')
+
+const unsafeRecord: DatasetRecord = {
+  ...record,
+  id: 'record-unsafe-source',
+  sourceUrl: 'javascript:alert(1)',
+  sourceName: 'Open trusted source'
+}
+const unsafeDataset = renderToStaticMarkup(
+  <DatasetExplorer
+    records={[unsafeRecord]}
+    totalRecords={1}
+    matchedRecords={1}
+    demoRecords={0}
+    status="COMPLETED"
+    loadState="ready"
+    query=""
+    minQuality={0}
+    page={0}
+    pageSize={50}
+    totalPages={1}
+    sortKey="title"
+    sortDirection="asc"
+    onQueryChange={noop}
+    onMinQualityChange={noop}
+    onSort={noop}
+    onPageChange={noop}
+    onPageSizeChange={noop}
+  />
+)
+excludes(unsafeDataset, 'href="javascript:', 'unsafe source URLs must never render as clickable provenance')
+includes(unsafeDataset, 'External source URL unavailable', 'unsafe source URLs must degrade to a non-clickable source state without trusting a deceptive label')
+
 
 const demoRecord: DatasetRecord = { ...record, id: 'record-demo', sourceType: 'DEMO', sourceUrl: 'urn:numen:demo:test:1', sourceName: 'NUMEN Demo Catalog' }
 const demoDataset = renderToStaticMarkup(
@@ -218,7 +265,7 @@ const demoDataset = renderToStaticMarkup(
 )
 includes(demoDataset, 'Sample', 'demo records must not present arbitrary quality precision')
 includes(demoDataset, 'Demo records · no quality filter', 'demo-only datasets must disable misleading quality filtering')
-excludes(demoDataset, '95%', 'demo records must not display synthetic quality as verified precision')
+excludes(demoDataset, '95/100', 'demo records must not display synthetic heuristic precision')
 
 const paged = renderToStaticMarkup(
   <DatasetExplorer
@@ -437,6 +484,46 @@ includes(sources, 'Example Careers', 'source workspace must aggregate contributi
 includes(sources, '1/1', 'source workspace must expose evidence contribution')
 includes(sources, 'Open source', 'live sources must expose a real external-source action')
 includes(sources, 'Last success', 'successful source collection must expose the last successful observation separately from attempts')
+includes(sources, '<bdi class="sourceHost" dir="ltr">example.com</bdi>', 'source rows must show the parsed destination hostname')
+
+const unsafeSourceSummary: SourceSummary = {
+  ...sourceSummary,
+  name: 'Trusted-looking label',
+  url: 'javascript:alert(1)'
+}
+const unsafeSources = renderToStaticMarkup(<SourceExplorer sources={[unsafeSourceSummary]} totalRecords={1} state="ready" />)
+excludes(unsafeSources, 'href="javascript:', 'unsafe source-summary URLs must never render as links')
+includes(unsafeSources, 'No safe external URL', 'unsafe source-summary URLs must degrade without hiding the source record')
+
+const accessBarrierSource: SourceSummary = {
+  ...failedSourcePlaceholder(),
+  name: 'Challenge page',
+  url: 'https://challenge.example/',
+  collectionStatus: 'REJECTED',
+  errorCode: 'SOURCE_ACCESS_BARRIER',
+  errorMessage: 'Source presented an access barrier instead of usable public evidence'
+}
+const accessBarrierSources = renderToStaticMarkup(<SourceExplorer sources={[accessBarrierSource]} totalRecords={0} state="ready" />)
+includes(accessBarrierSources, 'Access barrier', 'HTTP-success access barriers must not be described as successful evidence collection')
+
+
+function failedSourcePlaceholder(): SourceSummary {
+  return {
+    name: 'Unavailable Careers',
+    url: 'https://unavailable.example/jobs',
+    type: 'WEB',
+    records: 0,
+    evidence: 0,
+    latestCollectedAt: null,
+    lastSuccessfulObservationAt: null,
+    collectionStatus: 'UNAVAILABLE',
+    errorCode: 'SOURCE_UNREACHABLE',
+    errorMessage: 'Source could not be reached after the configured retry policy',
+    lastAttemptedAt: record.collectedAt,
+    demo: false,
+    configured: true
+  }
+}
 
 const failedSource: SourceSummary = {
   name: 'Unavailable Careers',
@@ -491,12 +578,12 @@ const history = renderToStaticMarkup(
   <WorkflowHistory tasks={[completedTask]} onOpen={noop} onOpenDataset={noop} onOpenSources={noop} />
 )
 includes(history, 'Runs', 'history view must render persisted research runs')
-includes(history, 'class="tableAction">Open ', 'history rows must expose a functional run action')
+includes(history, 'class="historyPrimary">Open run', 'run history must expose one clearly primary open action')
 includes(history, '1 published record', 'run history must describe user outcomes instead of raw engine stages')
 includes(history, 'Dataset', 'completed runs with data must expose their dataset action')
 includes(history, 'Sources', 'completed runs with data must expose source coverage')
 includes(history, 'Run time', 'run history must label lifecycle time instead of using an ambiguous updated timestamp')
-includes(history, 'Completed', 'terminal run history must identify the lifecycle timestamp as completion time')
+excludes(history, '<small>Completed</small>', 'run history must not duplicate completion state inside the timestamp cell')
 
 console.log('[NUMEN] frontend component-state tests passed')
 
@@ -514,6 +601,25 @@ includes(datasetLibrary, '1', 'published dataset library must expose persisted r
 includes(datasetLibrary, 'Open dataset', 'published dataset library must expose a real open action')
 includes(datasetLibrary, 'Sources', 'published dataset library must keep provenance one action away')
 includes(datasetLibrary, '<span>Completed</span>', 'published datasets must show completion time rather than an ambiguous updated timestamp')
+includes(datasetLibrary, 'class="datasetSecondaryAction"', 'dataset provenance action must be visually secondary to opening the dataset')
+
+const sourceIndex = renderToStaticMarkup(
+  <SourceResearchIndex tasks={[completedTask, failedSourceTask()]} onOpen={noop} onNewResearch={noop} />
+)
+includes(sourceIndex, 'Choose research to inspect its sources', 'Sources must provide a useful provenance index before a research set is selected')
+includes(sourceIndex, 'Inspect', 'source index rows must offer a one-step path into provenance')
+includes(sourceIndex, '1 configured source', 'source index must expose source scope rather than a giant empty selection panel')
+
+
+function failedSourceTask(): Task {
+  return {
+    ...completedTask,
+    id: 'task-source-failed',
+    status: 'FAILED',
+    recordCount: 0,
+    completedAt: '2026-09-30T00:02:00Z'
+  }
+}
 
 const repeatedResearch = groupResearchTasks([
   completedTask,

@@ -3,6 +3,7 @@ import { ArrowDown, ArrowUp, ArrowUpRight, ChevronLeft, ChevronRight, FileSearch
 import type { DatasetRecord, DatasetSortKey, LoadState, SortDirection, TaskStatus } from '../model/types'
 import { clip } from '../shared/text'
 import { formatInstant, formatRelativeInstant } from '../shared/time'
+import { safeExternalHttpUrl, sourceHostname } from '../shared/sourceUrl'
 
 interface DatasetExplorerProps {
   records: DatasetRecord[]
@@ -126,17 +127,17 @@ export function DatasetExplorer({
           <Search size={15} aria-hidden="true"/>
           <input value={query} onChange={event => onQueryChange(event.target.value)} placeholder="Search results"/>
         </label>
-        <label className="srOnly" htmlFor="quality-filter">Minimum data quality</label>
+        <label className="srOnly" htmlFor="quality-filter">Minimum record heuristic</label>
         <select
           id="quality-filter"
-          aria-label={allDemo ? 'Data quality filter unavailable for demo records' : 'Minimum data quality'}
+          aria-label={allDemo ? 'Record heuristic filter unavailable for demo records' : 'Minimum record heuristic'}
           value={allDemo ? 0 : minQuality}
           disabled={allDemo}
           onChange={event => onMinQualityChange(Number(event.target.value))}
         >
           <option value={0}>{allDemo ? 'Demo records · no quality filter' : 'All records'}</option>
-          {!allDemo && <option value={80}>Quality 80%+</option>}
-          {!allDemo && <option value={90}>Quality 90%+</option>}
+          {!allDemo && <option value={80}>Record heuristic 80+</option>}
+          {!allDemo && <option value={90}>Record heuristic 90+</option>}
         </select>
         {filtered && <button type="button" className="clearFilters" onClick={clearFilters}>Clear</button>}
       </div>
@@ -151,23 +152,27 @@ export function DatasetExplorer({
         <SortableHeader label="Result" column="title" active={sortKey} direction={sortDirection} onSort={onSort}/>
         <SortableHeader label="Organization" column="organization" active={sortKey} direction={sortDirection} onSort={onSort}/>
         <SortableHeader label="Location" column="location" active={sortKey} direction={sortDirection} onSort={onSort}/>
-        <SortableHeader label="Data quality" column="qualityScore" active={sortKey} direction={sortDirection} onSort={onSort}/>
+        <SortableHeader label="Record heuristic" column="qualityScore" active={sortKey} direction={sortDirection} onSort={onSort}/>
         <SortableHeader label="Source" column="sourceName" active={sortKey} direction={sortDirection} onSort={onSort}/>
       </tr></thead>
       <tbody>
         {loadState === 'error'
           ? <tr><td colSpan={5} className="empty errorState">Results are temporarily unavailable. The research run remains persisted; retry by refreshing or reopening this dataset.</td></tr>
-          : records.map(record => <tr key={record.id} className={record.id === selectedRecordId ? 'selectedRow' : undefined}>
+          : records.map(record => {
+            const sourceHref = safeExternalHttpUrl(record.sourceUrl)
+            const sourceHost = sourceHostname(record.sourceUrl)
+            return <tr key={record.id} className={record.id === selectedRecordId ? 'selectedRow' : undefined}>
             <td><button type="button" className="recordTitleButton" aria-haspopup="dialog" onClick={() => setSelectedRecordId(record.id)}><strong>{record.title}</strong><small>{clip(record.excerpt, 78)}</small></button></td>
             <td>{record.organization || '—'}</td>
             <td>{record.location || '—'}</td>
             <td>{record.sourceType === 'DEMO'
               ? <span className="quality demoQuality" title="Demo records do not represent verified live-data quality">Sample</span>
-              : <span className="quality" title="Persisted record-quality score from source and field checks">{Math.round(record.qualityScore)}%</span>}</td>
-            <td>{record.sourceUrl.startsWith('http')
-              ? <a href={record.sourceUrl} target="_blank" rel="noreferrer" aria-label={`Open source ${record.sourceName} in a new tab`}>{record.sourceName}<ArrowUpRight size={13} aria-hidden="true"/></a>
-              : <span className="demoSource">{record.sourceName || 'Demo source'}</span>}</td>
-          </tr>)}
+              : <span className="quality" title="Persisted collection heuristic based on record/source fields; not factual confidence">{Math.round(record.qualityScore)}/100</span>}</td>
+            <td>{sourceHref
+              ? <a href={sourceHref} target="_blank" rel="noreferrer" aria-label={`Open source ${sourceHost || record.sourceName} in a new tab`}><span>{record.sourceName}</span><bdi className="sourceHost" dir="ltr">{sourceHost}</bdi><ArrowUpRight size={13} aria-hidden="true"/></a>
+              : <span className="demoSource">{record.sourceType === 'DEMO' ? record.sourceName || 'Demo source' : 'External source URL unavailable'}</span>}</td>
+          </tr>
+          })}
         {loadState !== 'error' && loadState !== 'loading' && !records.length && <tr><td colSpan={5} className="empty">{emptyMessage(status, query, minQuality)}</td></tr>}
         {loadState === 'loading' && !records.length && <tr><td colSpan={5} className="empty">Loading results…</td></tr>}
       </tbody>
@@ -208,7 +213,7 @@ export function DatasetExplorer({
         <div className="inspectorGrid">
           <Detail label="Organization" value={selectedRecord.organization || '—'}/>
           <Detail label="Location" value={selectedRecord.location || '—'}/>
-          <Detail label="Data quality" value={selectedRecord.sourceType === 'DEMO' ? 'Not scored · demo' : `${Math.round(selectedRecord.qualityScore)}%`}/>
+          <Detail label="Record heuristic" value={selectedRecord.sourceType === 'DEMO' ? 'Not scored · demo' : `${Math.round(selectedRecord.qualityScore)}/100 · not factual confidence`}/>
           <Detail label="Source type" value={selectedRecord.sourceType || '—'}/>
           <Detail label="Collected by NUMEN" value={formatInstant(selectedRecord.collectedAt)}/>
           <Detail label="Fingerprint" value={selectedRecord.fingerprint || '—'} code/>
@@ -221,9 +226,9 @@ export function DatasetExplorer({
 
         <div className="evidenceSource">
           <span>Source</span>
-          {selectedRecord.sourceUrl.startsWith('http')
-            ? <a href={selectedRecord.sourceUrl} target="_blank" rel="noreferrer">{selectedRecord.sourceName || selectedRecord.sourceUrl}<ArrowUpRight size={13} aria-hidden="true"/></a>
-            : <code>{selectedRecord.sourceUrl}</code>}
+          {safeExternalHttpUrl(selectedRecord.sourceUrl)
+            ? <a href={safeExternalHttpUrl(selectedRecord.sourceUrl)} target="_blank" rel="noreferrer"><span>{selectedRecord.sourceName || sourceHostname(selectedRecord.sourceUrl)}</span><bdi className="sourceHost" dir="ltr">{sourceHostname(selectedRecord.sourceUrl)}</bdi><ArrowUpRight size={13} aria-hidden="true"/></a>
+            : <code>{selectedRecord.sourceType === 'DEMO' ? selectedRecord.sourceUrl : 'External source URL unavailable'}</code>}
         </div>
       </aside>
     </>}

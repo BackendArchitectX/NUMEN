@@ -25,11 +25,11 @@ export function WorkflowHistory({ tasks, onOpen, onOpenDataset, onOpenSources }:
         <td>{durationLabel(task)}</td>
         <td>{historyTime(task)}</td>
         <td><div className="historyActions">
-          <button type="button" className="tableAction" onClick={() => onOpen(task.id)}>Open <ArrowRight size={13} aria-hidden="true"/></button>
+          <button type="button" className="historyPrimary" onClick={() => onOpen(task.id)}>Open run <ArrowRight size={13} aria-hidden="true"/></button>
           {task.status === 'COMPLETED' && task.recordCount > 0 &&
-            <button type="button" className="tableAction" onClick={() => onOpenDataset(task.id)}><Database size={13} aria-hidden="true"/> Dataset</button>}
+            <button type="button" className="historySecondary" onClick={() => onOpenDataset(task.id)}><Database size={13} aria-hidden="true"/> Dataset</button>}
           {isTerminal(task.status) && (task.sourceUrls.length > 0 || task.demoMode || task.recordCount > 0) &&
-            <button type="button" className="tableAction" onClick={() => onOpenSources(task.id)}><Radio size={13} aria-hidden="true"/> Sources</button>}
+            <button type="button" className="historySecondary" onClick={() => onOpenSources(task.id)}><Radio size={13} aria-hidden="true"/> Sources</button>}
         </div></td>
       </tr>)}</tbody>
     </table></div> : <div className="emptyState compact"><History aria-hidden="true"/><h2>No runs yet</h2><p>Research activity will appear here after you start your first run.</p></div>}
@@ -54,7 +54,9 @@ function durationLabel(task: Task): string {
   if (!Number.isFinite(start)) return '—'
   if (!Number.isFinite(end)) return task.status === 'COMPLETED' || task.status === 'FAILED' || task.status === 'CANCELLED' ? '—' : 'Running'
 
-  const seconds = Math.max(0, Math.round((end - start) / 1000))
+  const milliseconds = Math.max(0, end - start)
+  if (milliseconds > 0 && milliseconds < 1000) return '<1s'
+  const seconds = Math.max(0, Math.round(milliseconds / 1000))
   if (seconds < 60) return `${seconds}s`
   const minutes = Math.floor(seconds / 60)
   const remaining = seconds % 60
@@ -63,10 +65,7 @@ function durationLabel(task: Task): string {
 
 function historyTime(task: Task) {
   const reference = taskTemporalReference(task)
-  return <span title={formatInstant(reference.value)}>
-    <small>{reference.label}</small>{' '}
-    <time dateTime={reference.value}>{formatRelativeInstant(reference.value)}</time>
-  </span>
+  return <time dateTime={reference.value} title={`${reference.label}: ${formatInstant(reference.value)}`}>{formatRelativeInstant(reference.value)}</time>
 }
 
 function statusLabel(status: Task['status']): string {

@@ -28,18 +28,23 @@ export function useIntelligenceWorkspace() {
   const [online, setOnline] = useState<boolean | null>(null)
   const [error, setError] = useState('')
   const submitting = useRef(false)
+  const intentEpoch = useRef(0)
+  const refreshSequence = useRef(0)
 
   const selected = useMemo(() => tasks.find(task => task.id === selectedId), [tasks, selectedId])
 
-  const refresh = async () => {
-    const next = await intelligenceApi.listTasks()
+  const refresh = async (signal?: AbortSignal) => {
+    const sequence = ++refreshSequence.current
+    const next = await intelligenceApi.listTasks(signal)
+    if (sequence !== refreshSequence.current || signal?.aborted) return
     setTasks(next)
     setSelectedId(current => current && next.some(task => task.id === current) ? current : undefined)
   }
 
-  const ping = async () => {
+  const ping = async (signal?: AbortSignal) => {
     try {
-      const health = await intelligenceApi.health()
+      const health = await intelligenceApi.health(signal)
+      if (signal?.aborted) return
       setOnline(health.status === 'UP' && health.service === 'NUMEN')
     } catch {
       setOnline(false)
@@ -47,8 +52,12 @@ export function useIntelligenceWorkspace() {
   }
 
   useEffect(() => {
-    void refresh().catch(cause => setError(cause instanceof Error ? cause.message : 'Failed to load research'))
-    void ping()
+    const controller = new AbortController()
+    void refresh(controller.signal).catch(cause => {
+      if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : 'Failed to load research')
+    })
+    void ping(controller.signal)
+    return () => controller.abort()
   }, [])
 
   useEffect(() => {
@@ -73,6 +82,20 @@ export function useIntelligenceWorkspace() {
   }, [])
 
   useEffect(() => {
+    const onResume = () => {
+      if (document.visibilityState !== 'visible') return
+      void refresh().catch(() => undefined)
+      void ping()
+    }
+    document.addEventListener('visibilitychange', onResume)
+    window.addEventListener('pageshow', onResume)
+    return () => {
+      document.removeEventListener('visibilitychange', onResume)
+      window.removeEventListener('pageshow', onResume)
+    }
+  }, [])
+
+  useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQuery(query), 250)
     return () => window.clearTimeout(timer)
   }, [query])
@@ -87,9 +110,10 @@ export function useIntelligenceWorkspace() {
     }
 
     let active = true
+    const controller = new AbortController()
     setRecordsState('loading')
 
-    void intelligenceApi.getRecordPage(selectedId, debouncedQuery, minQuality, page, pageSize, sortBy, sortDirection)
+    void intelligenceApi.getRecordPage(selectedId, debouncedQuery, minQuality, page, pageSize, sortBy, sortDirection, controller.signal)
       .then(result => {
         if (!active) return
         setRecords(result.records)
@@ -109,7 +133,10 @@ export function useIntelligenceWorkspace() {
         setRecordsState('error')
       })
 
-    return () => { active = false }
+    return () => {
+      active = false
+      controller.abort()
+    }
   }, [selectedId, debouncedQuery, minQuality, page, pageSize, sortBy, sortDirection, selected?.status])
 
   useEffect(() => {
@@ -119,11 +146,15 @@ export function useIntelligenceWorkspace() {
     }
 
     let active = true
-    void intelligenceApi.getTimeline(selectedId)
+    const controller = new AbortController()
+    void intelligenceApi.getTimeline(selectedId, controller.signal)
       .then(events => { if (active) setTimeline(events) })
       .catch(() => { if (active) setTimeline([]) })
 
-    return () => { active = false }
+    return () => {
+      active = false
+      controller.abort()
+    }
   }, [selectedId, selected?.status, selected?.stage, selected?.progress])
 
   useEffect(() => {
@@ -134,10 +165,11 @@ export function useIntelligenceWorkspace() {
     }
 
     let active = true
+    const controller = new AbortController()
     setSummary(undefined)
     setSummaryState('loading')
 
-    void intelligenceApi.getSummary(selectedId)
+    void intelligenceApi.getSummary(selectedId, controller.signal)
       .then(nextSummary => {
         if (!active) return
         setSummary(nextSummary)
@@ -149,7 +181,10 @@ export function useIntelligenceWorkspace() {
         setSummaryState('error')
       })
 
-    return () => { active = false }
+    return () => {
+      active = false
+      controller.abort()
+    }
   }, [selectedId, selected?.status])
 
   useEffect(() => {
@@ -161,6 +196,7 @@ export function useIntelligenceWorkspace() {
 
     let active = true
     let timer: number | undefined
+    let controller = new AbortController()
     const terminal = selected?.status === 'COMPLETED' || selected?.status === 'FAILED' || selected?.status === 'CANCELLED'
 
     const loadSources = async (initial: boolean) => {
@@ -170,7 +206,9 @@ export function useIntelligenceWorkspace() {
       }
 
       try {
-        const nextSources = await intelligenceApi.getSources(selectedId)
+        controller.abort()
+        controller = new AbortController()
+        const nextSources = await intelligenceApi.getSources(selectedId, controller.signal)
         if (!active) return
         setSources(nextSources)
         setSourcesState('ready')
@@ -187,6 +225,7 @@ export function useIntelligenceWorkspace() {
 
     return () => {
       active = false
+      controller.abort()
       if (timer !== undefined) window.clearTimeout(timer)
     }
   }, [selectedId, selected?.status])
@@ -199,6 +238,7 @@ export function useIntelligenceWorkspace() {
   }, [selectedId])
 
   const selectTask = (id?: string) => {
+    intentEpoch.current += 1
     setSelectedId(id)
     setQuery('')
     setMinQuality(0)
@@ -222,6 +262,21 @@ export function useIntelligenceWorkspace() {
     setSourceUrls(task.demoMode ? [] : task.sourceUrls)
   }
 
+  const changePrompt = (value: string) => {
+    intentEpoch.current += 1
+    setPrompt(value)
+  }
+
+  const changeDemoMode = (enabled: boolean) => {
+    intentEpoch.current += 1
+    setDemoMode(enabled)
+  }
+
+  const changeSourceUrls = (urls: string[]) => {
+    intentEpoch.current += 1
+    setSourceUrls(urls)
+  }
+
   const createTask = async () => {
     const normalized = prompt.trim()
     if (normalized.length < 10 || normalized.length > 4000 || submitting.current) return
@@ -230,13 +285,17 @@ export function useIntelligenceWorkspace() {
       return
     }
 
+    const creationEpoch = intentEpoch.current
     submitting.current = true
     setBusy(true)
     setError('')
     const idempotencyKey = crypto.randomUUID()
+    const submittedSources = [...sourceUrls]
 
     try {
-      const task = await intelligenceApi.createTask(normalized, demoMode, sourceUrls, idempotencyKey)
+      const task = await intelligenceApi.createTask(normalized, demoMode, submittedSources, idempotencyKey)
+      await refresh()
+      if (creationEpoch !== intentEpoch.current) return
       setSelectedId(task.id)
       setQuery('')
       setMinQuality(0)
@@ -246,9 +305,10 @@ export function useIntelligenceWorkspace() {
       setPrompt('')
       setDemoMode(false)
       setSourceUrls([])
-      await refresh()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Failed to start research')
+      if (creationEpoch === intentEpoch.current) {
+        setError(cause instanceof Error ? cause.message : 'Failed to start research')
+      }
     } finally {
       submitting.current = false
       setBusy(false)
@@ -327,9 +387,9 @@ export function useIntelligenceWorkspace() {
     selectTask,
     startNewResearch,
     refineTask,
-    setPrompt,
-    setDemoMode,
-    setSourceUrls,
+    setPrompt: changePrompt,
+    setDemoMode: changeDemoMode,
+    setSourceUrls: changeSourceUrls,
     setQuery: changeQuery,
     setMinQuality: changeMinQuality,
     setPage,

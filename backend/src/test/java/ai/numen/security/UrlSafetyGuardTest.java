@@ -14,7 +14,10 @@ class UrlSafetyGuardTest {
     void blocksLoopbackNonHttpCredentialsAndNonStandardPorts() {
         assertThatThrownBy(() -> guard.requirePublicHttpUrl("http://127.0.0.1:8080/admin")).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> guard.requirePublicHttpUrl("file:///etc/passwd")).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> guard.requirePublicHttpUrl("https://user:pass@example.com/data")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> guard.requirePublicHttpUrl("https://user:pass@example.com/data"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Unsafe or invalid source URL")
+                .hasMessageNotContaining("user:pass");
         assertThatThrownBy(() -> guard.requirePublicHttpUrl("https://example.com:8443/data")).isInstanceOf(IllegalArgumentException.class);
     }
 

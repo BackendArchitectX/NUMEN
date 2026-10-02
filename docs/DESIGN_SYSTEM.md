@@ -1,221 +1,153 @@
-# NUMEN Aurora X Visual System
+# NUMEN Aurora X41 design system
 
-NUMEN uses **Aurora X**, a fresh, cool, premium analytical system built around Deep Ink structure, Frost workspaces, Azure interaction, Aqua live-state cues, Iris interpretation and Emerald verification.
-
-The full implementation directive is in [AURORA_X_VISUAL_DIRECTIVE.md](AURORA_X_VISUAL_DIRECTIVE.md).
+NUMEN is a **light-only, evidence-first research workspace**. The visual system exists to make research intent, source scope, results and provenance easier to understand; it must never imply factual certainty that the backend has not earned.
 
 ## Product hierarchy
 
-The default hierarchy is outcome-first:
+The default hierarchy is:
 
 1. research question,
-2. useful result,
-3. source/evidence trust,
-4. next action,
-5. technical execution detail.
+2. explicit source scope,
+3. primary research action,
+4. useful result,
+5. source/evidence provenance,
+6. next action,
+7. technical execution detail.
 
-Completed research must not lead with the workflow timeline or internal engine state.
+The **Ask NUMEN** workbench is the dominant creation surface. Completed research opens outcome-first; engine lifecycle and persisted plan remain secondary under **Run details**.
 
 ## Semantic color roles
 
-| Semantic token | Role | Light value |
-| --- | --- | --- |
-| `--color-bg-app` | Frost application background | `#F6F8FC` |
-| `--color-bg-surface` | primary analytical surface | `#FFFFFF` |
-| `--color-text-primary` | primary Ink typography | `#0F1728` |
-| `--color-text-secondary` | supporting typography | `#42506A` |
-| `--color-border` | cool structural separator | `#E1E7EF` |
-| `--color-action-primary` | decisive interaction / selected state | `#2F6BFF` |
-| `--color-live` | live, fresh, streaming, active research | `#18C3D6` |
-| `--color-intelligence` | interpretation, synthesis and review | `#685BF6` |
-| `--color-success` | verified, healthy and complete | `#11996F` |
-| `--color-error` | true failures and destructive feedback | `#D92D20` |
+| Semantic token | Role |
+| --- | --- |
+| Frost / `--color-bg-workspace` | continuous application canvas |
+| Paper / `--color-bg-surface` | primary working surface |
+| Ink / `--color-text-primary` | strongest hierarchy and primary text |
+| Slate / text/border tokens | secondary information and structure |
+| Azure / `--color-action-primary` | interaction, selection, focus and links |
+| Aqua / `--color-live` | active collection or observation state only |
+| Iris / `--color-intelligence` | NUMEN interpretation or analysis |
+| Emerald / `--color-success` | successful system outcome, never factual truth |
+| Crimson / `--color-error` | actual failure or destructive state |
 
-Components consume semantic tokens instead of scattering palette values through JSX.
+Aqua does **not** mean “fresh” or “current.” Emerald does **not** mean “verified fact.”
 
-## Palette prohibition
-
-Intentional orange, burnt orange, peach, copper, rust, terracotta, orange-red, warm beige and cream-dominant UI are prohibited.
-
-Aurora X is not a generic blue dashboard. Azure is scarce and action-oriented; Aqua is live/fresh; Iris is interpretation/review; Emerald is trust/completion; most analytical surfaces remain cool neutral.
-
-## Navigation
-
-The sidebar uses layered Deep Ink surfaces, compact rows and a narrow Azure selection indicator. Primary navigation uses plain product language:
-
-- Research
-- Datasets
-- Runs
-
-Recent research is outcome-oriented. Infrastructure/security controls do not occupy permanent primary-navigation space.
-
-## Research composer
-
-The composer is a compact productivity surface rather than a hero. It exposes:
-
-- a plain-language research prompt,
-- concise guidance,
-- example prompts,
-- one primary **Run research** action,
-- keyboard execution.
-
-## Research outcome
-
-A completed run receives a dedicated outcome summary derived only from persisted records:
-
-- results,
-- unique organizations,
-- unique sources,
-- unique locations,
-- evidence-linked records,
-- update time,
-- top locations where available.
-
-Demo records are explicitly labeled.
-
-## Active research
-
-The primary UI communicates what NUMEN is doing using human language such as **Searching sources** or **Validating results**.
-
-Fixed internal engine milestones are not shown as precise user-facing percentages.
-
-Timeline, plan and safeguards remain available under **Run details**.
-
-## Results and evidence
-
-Results are the dominant completed-research surface.
-
-Tables use compact rows, sticky headers, real sorting and actual search/filter behavior. Selecting a record opens a right-side evidence inspector without losing dataset context.
-
-The inspector shows only persisted data and clearly distinguishes source-backed records from demo records.
-
-## Typography and density
-
-Use the primary sans-serif stack for normal product text. Monospace is reserved for hashes, IDs, code and diagnostics.
-
-Typical working sizes:
-
-- page title: 24–30px,
-- panel title: 13–16px,
-- body: 11–14px,
-- table: 12–13px,
-- technical metadata: 9–11px.
-
-Avoid giant application headings, excessive uppercase, excessive letter spacing and nested cards.
-
-## Surfaces and radii
-
-Normal panels rely on cool borders and spacing rather than large shadows.
-
-- 4px technical micro-elements,
-- 6px controls,
-- 8px standard panels,
-- 10px floating surfaces.
-
-Floating drawers/popovers may use the stronger elevation token.
+Intentional orange, amber-orange, peach, copper, rust, terracotta, coral-orange, warm tan, beige and warm-cream identity are prohibited.
 
 ## Theme behavior
 
-Light and dark themes are both supported. Theme preference is persisted locally and initialized through a CSP-safe static script before the React application loads to avoid a visible theme flash.
+NUMEN has one theme: **light**.
 
-Dark mode uses layered Ink/navy rather than pure black and avoids neon treatment.
+There is no dark-mode setting, system-theme substitution, appearance menu or duplicate dark token tree. The static theme bootstrap exists only to remove obsolete `numen-theme` state and establish a stable light first paint.
 
-## Motion
+## Navigation
 
-Motion is quiet and purposeful. Most interactions should complete in roughly 120–240ms. Active research may use a subtle Aqua pulse; reduced-motion users receive effectively static behavior.
+Primary product navigation uses plain nouns:
 
-## Accessibility
+- Research
+- Datasets
+- Sources
+- Runs
 
-Maintain visible focus states, keyboard-operable controls, semantic tables/forms, non-color status cues, reduced motion, forced-colors resilience and sufficient contrast.
+The sidebar belongs to the same light canvas as the workspace and should not dominate the content. Recent research is compact and outcome-oriented.
 
-The right-side evidence inspector closes through its explicit close control, backdrop action or Escape key.
+## Research workbench
 
-## Automated enforcement
+The creation hierarchy is:
 
-`scripts/quality/check-visual-policy.sh` rejects known legacy warm/orange values, prohibited warm color names and selected decorative effects. `frontend/scripts/check-color-policy.mjs` additionally evaluates actual hex/RGB/HSL hue so a newly invented orange/tan literal cannot bypass the denylist.
+**Question → Source scope → Run**
 
-Visual acceptance should additionally verify:
+The composer must not degrade into a form wizard or chatbot. Source setup remains explicit but compresses after configuration. The primary action explains unmet prerequisites instead of appearing mysteriously disabled.
 
-- no fake progress precision,
-- no indistinguishable demo/live records,
-- no generic KPI-card wall,
-- no workflow-debugger-first completed state,
-- no theme flash,
-- no evidence inspector hidden behind other layers.
+Demo data is an explicit alternate collection mode and is always labeled as such.
 
-Aurora X is a product hierarchy, not a recolor.
+## Results and datasets
 
+Datasets are reusable research outputs, not generic task cards. Lists favor scanability and one dominant action. Result tables become denser than the research entry screen and use actual server-backed search, filtering, sorting and pagination only where supported.
+
+The browser displays source links only after parsing them as safe public HTTP(S) URLs. The actual destination hostname is exposed alongside the source label and isolated from bidirectional-text spoofing.
+
+## Evidence
+
+Selecting a result opens the evidence inspector without losing dataset context. The inspector distinguishes:
+
+- persisted result fields,
+- captured source evidence,
+- source identity,
+- NUMEN collection time,
+- fingerprint / technical provenance.
+
+Collection time is not publication time, event time or effective time.
+
+Source evidence and NUMEN interpretation must never be visually interchangeable.
 
 ## Sources workspace
 
-Sources are a first-class product surface rather than a hidden implementation detail. The source view uses exact backend aggregation from the full persisted dataset and therefore does not change when the user searches or quality-filters the Results table.
+Sources are a first-class provenance surface. Before selection, the page presents recent research with source activity instead of a giant empty panel. Once selected, the source workspace shows exact collection outcomes, record/evidence contribution and the correct temporal concept:
 
-Each source exposes record contribution, captured-evidence coverage, collection freshness, source type and explicit demo/live state.
+- **Last success** when a successful observation exists,
+- **Last attempt** when the latest attempt did not produce a successful observation.
 
-## Navigation and selection
+A failed recent attempt never makes older data appear fresh.
 
-Research, Datasets, Sources and Runs use durable hash routes. Selected research context is encoded into Research/Datasets/Sources URLs so refresh and browser back/forward preserve intent.
+## Runs
 
-New research is explicit: it clears the prior selection and filter state and presents an empty composer. Example prompts remain optional suggestions rather than prefilled user intent.
+Runs form an operational ledger. **Open run** is the primary row action; Dataset and Sources are secondary. Normal success is visually quiet. Repeated status text is avoided.
 
-## Infrastructure status
+## Density
 
-Healthy infrastructure remains visually quiet. The header surfaces service availability only when health has actually resolved to an unavailable state, avoiding both permanent engine-status clutter and false initial-offline flashes.
+Density follows the task:
 
-## Semantic integrity
+- Research entry: spacious
+- Research outcome: medium
+- Dataset library: medium-dense
+- Dataset explorer: dense
+- Sources: medium-dense
+- Runs: dense
+- Evidence: comfortable reading density
 
-Dataset-wide outcome metrics are never derived from the filtered Results table. The UI consumes the exact dataset summary API for total records, organization/location/source counts, evidence-linked records, demo-record count and top locations.
+## Surfaces
 
-Visual clarity must never be achieved by weakening data truthfulness.
+Use spacing, alignment and dividers before cards and shadows. The workbench and floating inspector may use elevation; ordinary repeated rows should not.
 
-## Aurora X outcome-first hardening
+Empty states must answer:
 
-The premium product hierarchy now enforces several additional rules that close gaps between visual polish and actual product clarity:
+- what is empty,
+- why,
+- what the user can do next.
 
-- when a research run is selected, the **New research** composer is not shown above the outcome; completed research opens directly into outcome summary and results,
-- **Refine research** is a real action that restores the prior question, demo/live mode and explicit source scope into a fresh composer,
-- **View sources** is a direct action from the completed outcome,
-- active live research reports measurable source progress such as `3 / 8 sources checked` from persisted source-attempt state instead of exposing milestone percentages,
-- demo-only datasets suppress arbitrary quality precision and disable the quality-threshold filter,
-- result ordering defaults to a neutral title sort rather than silently prioritizing heuristic quality scores,
-- the completed outcome uses a compact analytical fact strip instead of a generic icon-heavy KPI wall,
-- global overlays use a named layering model (`--z-sticky`, `--z-navigation`, `--z-inspector-backdrop`, `--z-inspector`, `--z-modal`, `--z-toast`) rather than arbitrary large z-index values,
-- non-interactive section icons are visually quieter than primary actions so Azure remains an interaction color rather than decoration,
-- mobile and non-research workspaces retain an explicit **New research** action so the primary task is never trapped behind desktop-only navigation.
+They must not become giant decorative rectangles.
 
-### Additional acceptance cases
+## Accessibility
 
-Visual quality must survive:
+Maintain:
 
-- a selected completed run with a very long research question,
-- an active run where some configured sources have succeeded, some failed and others have not been attempted,
-- a demo-only dataset where synthetic quality values exist internally but must not be presented as verified precision,
-- zero-result completion with a useful next step,
-- source-summary failure while published records remain available,
-- narrow mobile layouts with the sidebar hidden,
-- inspector focus trapping, Escape close, backdrop close and focus restoration,
-- 200% zoom without clipping the outcome actions or result controls,
-- dark mode without neon accents, glowing borders or washed-out slate text.
+- visible focus,
+- keyboard-operable controls,
+- semantic tables/forms/landmarks,
+- dialog focus trapping and restoration,
+- non-color state communication,
+- reduced-motion support,
+- forced-colors resilience,
+- 200–400% zoom operability,
+- IME-safe keyboard submission.
 
-Aurora X is considered successful only when product meaning remains obvious after removing all technical workflow terminology from the primary screen.
+## Async ownership
 
+A response may update the interface only while it still belongs to the current user intent. A late response from research A must not overwrite a newer draft, selection or research B.
 
-## Progressive source setup
+Cancelable read requests use AbortSignal ownership where supported. Page/tab resume revalidates connectivity and task state rather than assuming old state is current.
 
-The natural-language question remains the dominant creation surface. Exact public source URLs and Demo mode live inside a compact **Source scope** disclosure.
+## CSS architecture
 
-The disclosure summary must still communicate one of:
+`frontend/src/styles/global.css` is an authoritative consolidated cascade. Do not append another versioned Aurora override block. Edit the canonical selector or token instead.
 
-- source scope required,
-- N public sources configured,
-- Demo mode using labeled sample data.
+Design tokens own repeated color, radius, shadow and z-index semantics. Dark selectors and obsolete theme styles are prohibited.
 
-This keeps execution prerequisites understandable without turning the research composer into an operations form.
+## Reference synthesis
 
-## Research grouping and libraries
+The focused reference corpus is documented in [INTERFACE_REFERENCE_CORPUS.md](INTERFACE_REFERENCE_CORPUS.md). References inform interaction and hierarchy; they do not authorize copying logos, proprietary assets, exact layouts, trade dress or signature animation.
 
-Recent research groups repeated runs only when the normalized question, Demo/live mode and material source scope are equivalent. Every execution remains available in **Runs**.
+## Automated enforcement
 
-**Datasets** opens as a published-output library rather than inheriting an unrelated selection from another workspace. Opening a dataset deep-links into that specific output; returning to the top-level Datasets destination returns to the library.
-
-Navigation avoids bounded task-derived global counts. If an exact lifetime aggregate is not available, omit the badge rather than display a truncated total.
+Repository checks enforce the light-only/warm-color policy, component semantics, TypeScript correctness and production build. Automated success does not by itself prove visual quality: rendered-browser review remains a separate release gate.

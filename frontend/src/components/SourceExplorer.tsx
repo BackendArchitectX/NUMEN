@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { ArrowUpRight, Radio, Search } from 'lucide-react'
 import type { LoadState, SourceSummary } from '../model/types'
 import { formatInstant, formatRelativeInstant } from '../shared/time'
+import { safeExternalHttpUrl, sourceHostname } from '../shared/sourceUrl'
 
 interface SourceExplorerProps {
   sources: SourceSummary[]
@@ -65,7 +66,10 @@ export function SourceExplorer({ sources, totalRecords, state }: SourceExplorerP
     </div>}
 
     {visible.length ? <div className="sourceList">
-      {visible.map(source => <article className={`sourceRow ${sourceRowState(source)}`} key={source.url || `${source.type}:${source.name}`}>
+      {visible.map(source => {
+        const sourceHref = safeExternalHttpUrl(source.url)
+        const sourceHost = sourceHostname(source.url)
+        return <article className={`sourceRow ${sourceRowState(source)}`} key={source.url || `${source.type}:${source.name}`}>
         <div className="sourceIdentity">
           <span className={sourceDotClass(source)} aria-hidden="true"/>
           <div>
@@ -80,11 +84,12 @@ export function SourceExplorer({ sources, totalRecords, state }: SourceExplorerP
         <SourceTemporalMetric source={source}/>
 
         <div className="sourceAction">
-          {source.url?.startsWith('http')
-            ? <a href={source.url} target="_blank" rel="noreferrer">Open source <ArrowUpRight size={13} aria-hidden="true"/></a>
-            : <span className="sourceUnavailable">No external URL</span>}
+          {sourceHref
+            ? <a href={sourceHref} target="_blank" rel="noreferrer" aria-label={`Open source ${sourceHost || source.name} in a new tab`}><bdi className="sourceHost" dir="ltr">{sourceHost}</bdi><span>Open source</span><ArrowUpRight size={13} aria-hidden="true"/></a>
+            : <span className="sourceUnavailable">No safe external URL</span>}
         </div>
-      </article>)}
+      </article>
+      })}
     </div> : <div className="emptyState compact">
       <Radio aria-hidden="true"/>
       <h2>{sources.length ? 'No sources match your search' : 'No sources are associated with this research'}</h2>
@@ -116,7 +121,12 @@ function sourceStatusText(source: SourceSummary): string {
   if (source.demo) return 'Demo source'
   if (source.collectionStatus === 'UNAVAILABLE') return `${sourceType} · Source unavailable`
   if (source.collectionStatus === 'UNAUTHORIZED') return `${sourceType} · Access denied`
-  if (source.collectionStatus === 'REJECTED') return `${sourceType} · Rejected by source safety policy`
+  if (source.collectionStatus === 'REJECTED') {
+    if (source.errorCode === 'SOURCE_ACCESS_BARRIER') return `${sourceType} · Access barrier`
+    if (source.errorCode === 'SOURCE_REDIRECT_REJECTED') return `${sourceType} · Redirect rejected by source policy`
+    if (source.errorCode === 'UNSUPPORTED_MEDIA_TYPE') return `${sourceType} · Unsupported content type`
+    return `${sourceType} · Rejected by source safety policy`
+  }
   if (source.collectionStatus === 'RATE_LIMITED') return `${sourceType} · Rate limited`
   if (source.collectionStatus === 'FAILED') return `${sourceType} · Collection failed`
   if (source.collectionStatus === 'NOT_ATTEMPTED') return `${sourceType} · Not attempted`
