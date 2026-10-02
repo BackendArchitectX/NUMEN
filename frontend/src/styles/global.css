@@ -2667,7 +2667,6 @@ body {
 
 .brandGlyphSpark {
   fill: #53d6ff;
-  filter: drop-shadow(0 0 3px rgba(83, 214, 255, .45));
 }
 
 .brandCopy b {
