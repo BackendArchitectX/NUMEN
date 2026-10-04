@@ -50,6 +50,18 @@ Windows:
 
 Delete the local PostgreSQL volume as well with `./stop.sh --volumes` or `.\stop.ps1 -Volumes`.
 
+### Quick runtime verification
+
+After startup, confirm that Compose sees all three services and that both the backend readiness endpoint and public gateway health endpoint respond successfully:
+
+```bash
+docker compose ps
+curl --fail http://127.0.0.1:8080/actuator/health/readiness
+curl --fail http://127.0.0.1:5173/api/v1/health
+```
+
+On Windows PowerShell, use `curl.exe` for the two HTTP checks. If either check fails, inspect `docker compose ps` first and then follow [docs/RUNBOOK.md](docs/RUNBOOK.md) for targeted diagnostics.
+
 ## Problem Statement
 
 Teams often need a clean, structured dataset from a small set of permitted public sources, but the manual workflow is fragmented: interpret the request, visit sources, normalize fields, deduplicate results, retain evidence and track progress separately.
